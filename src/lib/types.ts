@@ -20,6 +20,13 @@ export interface SiteInfo {
    * exists, in which case "webapp" is assumed.
    */
   webapp?: string;
+  /**
+   * Locale tags `day localize` keeps in sync across the project's surfaces (translations,
+   * store listings, the iOS project, and this file). The store/ listings' locale set remains
+   * the render-time truth for what the site shows; this key exists so `day localize` and
+   * `day lint` can hold the website to the same locale set as the rest of the project.
+   */
+  locales?: string[];
   /** Show the /gallery page (default true when gallery data is present). */
   showGallery?: boolean;
   showSourceLink?: boolean;

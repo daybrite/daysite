@@ -24,7 +24,7 @@ export interface DayTarget {
 }
 
 export const DAY_TARGETS: DayTarget[] = [
-  { key: 'web',       target: 'web-dom',       name: 'Web',       displayName: 'Web (the DOM)',            icon: 'web-dom',       device: 'web',     packages: [] },
+  { key: 'web',       target: 'web-dom',       name: 'Web',       displayName: 'Web (DOM)',                icon: 'web-dom',       device: 'web',     packages: [] },
   { key: 'android',   target: 'android-mdc',   name: 'Android',   displayName: 'Android (Material)',       icon: 'android-mdc',   device: 'phone',   packages: ['.apk', '.aab'] },
   { key: 'ios',       target: 'ios-uikit',     name: 'iOS',       displayName: 'iOS (UIKit)',              icon: 'ios-uikit',     device: 'phone',   packages: ['.ipa'] },
   { key: 'harmony',   target: 'harmony-arkui', name: 'HarmonyOS', displayName: 'HarmonyOS (ArkUI)',        icon: 'harmony-arkui', device: 'phone',   packages: ['.hap'] },

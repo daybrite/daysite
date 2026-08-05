@@ -61,10 +61,24 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
-          # web-dom is what gets built and hosted; ios-uikit rides along so the scaffold
-          # includes store/ (the template drops it for store-less target sets) and the site's
-          # store-listing data path is exercised, not just its no-store degradation.
-          "$DAY_BIN" new app day-sample --toolkit web-dom,ios-uikit --no-input
+          # All eight platform-toolkit pairs the template knows (src/lib/day-targets.ts), so the
+          # platform picker, the download cards and the per-platform pages render from real
+          # appindex data instead of a two-entry subset. Only web-dom is built below: the runner
+          # has no Xcode, NDK, Qt or WinAppSDK, and that is the ordinary case anyway — platform
+          # entries come from Day.toml while artifacts come from a release the site links.
+          # ios-uikit and android-mdc are also what give the scaffold a store/ (the template
+          # drops it for a store-less target set), so the store-listing path is exercised too.
+          #
+          # --locales is what gives the picker something to show: the site's locale list comes
+          # from the scaffold's store/<tag>/ listings, so a single-locale scaffold would never
+          # exercise the LOCALE_NAMES metadata or the per-language UI-string tables. `en` is
+          # the scaffold's own default and is deliberately absent from the list — passing
+          # en-US would stand up a second en-US/ tree beside en/.
+          "$DAY_BIN" new app day-sample --no-input \
+            --toolkit macos-appkit,ios-uikit,android-mdc,linux-gtk \
+            --toolkit linux-qt,windows-xaml,harmony-arkui,web-dom \
+            --locales zh-Hans-CN,es-ES,pt-BR,fr-FR,de-DE,ja-JP,ko-KR,it-IT,ru-RU,ar-SA \
+            --locales id-ID,tr-TR,vi-VN,th-TH,pl-PL,nl-NL,zh-Hant-TW,uk-UA,cs-CZ,ms-MY
           test -f day-sample/website/site.toml
           # The scaffold cannot know where it will be hosted; this deploy hosts it on the
           # daysite repo's own Pages.
@@ -94,6 +108,48 @@ jobs:
           DAYSITE_CONFIG="$SITE_DIR/site.toml" npx astro build
           test -f dist/index.html
           test -f dist/webapp/index.html
+      - name: The site renders every scaffolded platform
+        run: |
+          set -euo pipefail
+          # appindex.json is what every page reads. A target generate-appindex.mjs doesn't map
+          # (TARGET_KEYS) drops out of it silently, and the pages would simply render one card
+          # fewer, so count the entries before looking at the HTML.
+          node -e '
+            const p = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).apps[0].platforms;
+            const keys = Object.keys(p);
+            if (keys.length !== 8) throw new Error(`appindex has ${keys.length} platform(s): ${keys}`);
+          ' "$RUNNER_TEMP/day-sample/website/appindex.json"
+          # …and the picker's label for each, as the page renders it. The short names come from
+          # src/lib/day-targets.ts; a target missing there degrades to its bare appindex key, so
+          # matching on the name is what catches a half-added target.
+          for name in macOS iOS Android HarmonyOS GNOME KDE Windows Web; do
+            grep -qF ">$name<" dist/index.html || {
+              echo "platform picker is missing $name" >&2
+              exit 1
+            }
+          done
+      - name: The picker offers every scaffolded locale
+        run: |
+          set -euo pipefail
+          # The picker labels each locale with its endonym, and a tag LOCALE_NAMES doesn't
+          # cover degrades to the bare code ("ms-MY" in the menu). Grepping endonyms is what
+          # catches that; grepping the tags would pass either way. One name per script the
+          # locale list brings in.
+          while IFS= read -r name; do
+            grep -qF "$name" dist/index.html || {
+              echo "language picker is missing $name" >&2
+              exit 1
+            }
+          done <<'ENDONYMS'
+          Čeština
+          Bahasa Melayu
+          Tiếng Việt
+          Türkçe
+          Українська
+          ไทย
+          简体中文
+          繁體中文
+          ENDONYMS
       - name: Upload the Pages artifact
         if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v5
