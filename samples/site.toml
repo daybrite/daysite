@@ -1,0 +1,12 @@
+# Configuration for a Day project website (website/site.toml).
+# This sample drives the bundled NetSkip fixture so a bare template checkout can build.
+# In an app repository, only `host` is required — everything else has a sensible default.
+
+title = "Net Skip"
+host = "https://netskip.app"
+appindex = "appindex.json"
+tagline = "A simple web browser"
+accent-color = "#3B82F6"
+default-theme = "system"
+default-platform = "ios"
+footer = "© {year} App Fair Project. Open source software."

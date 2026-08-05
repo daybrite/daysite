@@ -1,0 +1,57 @@
+---
+// The per-platform install story: the packages this platform ships, at their stable
+// releases/latest/download URLs. Store badges stay in the hero (StoreBadges); this card is the
+// direct-download tier every Day target has even before any store listing exists. Hidden for
+// platforms with nothing to download (web is hosted, and an unreleased app has no assets yet).
+import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import { dayTarget } from '../lib/day-targets.ts';
+import PlatformIcon from './PlatformIcon.astro';
+
+interface Props {
+  view: PlatformView;
+  site: SiteInfo;
+  locale: LocaleInfo;
+}
+
+const { view, locale } = Astro.props;
+const ui = uiStrings(locale.code);
+const day = dayTarget(view.id);
+
+function human(size?: number): string | undefined {
+  if (!size) return undefined;
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  if (size >= 1024) return `${(size / 1024).toFixed(0)} KB`;
+  return `${size} B`;
+}
+---
+
+{view.artifacts.length > 0 && (
+  <section
+    class="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-sm"
+    aria-label={`${ui.downloadHeading} — ${view.displayName}`}
+  >
+    <h2 class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[color:var(--color-text-soft)]">
+      <PlatformIcon id={day?.icon ?? view.id} class="size-4" />
+      {ui.downloadHeading} — {day?.displayName ?? view.displayName}
+    </h2>
+    <ul class="space-y-2">
+      {view.artifacts.map((a) => (
+        <li>
+          <a
+            href={a.url}
+            class="group flex items-baseline justify-between gap-3 rounded-lg px-3 py-2 transition hover:bg-[color:var(--color-accent)]/10"
+            download
+          >
+            <code class="text-sm font-medium text-[color:var(--color-accent)] group-hover:underline">
+              &#x2913; {a.name}
+            </code>
+            {human(a.size) && (
+              <span class="shrink-0 text-xs text-[color:var(--color-text-soft)]">{human(a.size)}</span>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

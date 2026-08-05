@@ -1,0 +1,27 @@
+---
+// Unlocalized /gallery/ entry: exists only when captures exist, and forwards to the
+// default locale's gallery the same way the root index forwards to the locale index.
+import { loadSite } from '../../lib/data.ts';
+import { galleryHref } from '../../lib/routes.ts';
+
+export async function getStaticPaths() {
+  const data = await loadSite();
+  return data.gallery ? [{ params: {} }] : [];
+}
+
+const data = await loadSite();
+const target = galleryHref(data.defaultLocale);
+---
+
+<!doctype html>
+<html lang={data.defaultLocale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Gallery</title>
+  </head>
+  <body>
+    <a href={target}>Gallery</a>
+  </body>
+</html>

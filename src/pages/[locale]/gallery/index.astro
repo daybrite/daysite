@@ -1,0 +1,231 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '../../../layouts/Layout.astro';
+import DeviceShell from '../../../components/DeviceShell.astro';
+import PlatformIcon from '../../../components/PlatformIcon.astro';
+import { loadSite } from '../../../lib/data.ts';
+import { shotLabel } from '../../../lib/gallery.ts';
+import { dayTarget, DAY_TARGETS } from '../../../lib/day-targets.ts';
+import { uiStrings } from '../../../lib/uistrings.ts';
+import { galleryHref, localeLinksFor } from '../../../lib/routes.ts';
+import '../../../styles/shells.css';
+
+// One row per captured screen, every platform's capture side by side, dressed in its shell.
+// Theme and locale switchers swap each image between its captured variants client-side; a
+// combination that wasn't captured falls back (theme first, then locale, then anything) the
+// way the daybrite.dev gallery does. Pages exist only when the manifest holds captures.
+export const getStaticPaths: GetStaticPaths = async () => {
+  const data = await loadSite();
+  if (!data.gallery) return [];
+  return data.locales.map((l) => ({ params: { locale: l.code } }));
+};
+
+const { locale: localeParam } = Astro.params;
+const data = await loadSite();
+const gallery = data.gallery!;
+const locale = data.locales.find((l) => l.code === localeParam)!;
+const ui = uiStrings(locale.code);
+const localeLinks = localeLinksFor(data.locales, galleryHref);
+const appView = data.apps[0]!;
+const hero = appView.hero(locale.code);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Platform column order: the Day vocabulary's, for the targets that actually have captures.
+const targetsPresent = new Set(gallery.shots.flatMap((s) => Object.keys(s.byPlatform)));
+const columns = DAY_TARGETS.filter((t) => targetsPresent.has(t.target)).map((t) => t.target);
+for (const t of targetsPresent) if (!columns.includes(t)) columns.push(t);
+
+const phoneTargets = new Set(
+  columns.filter((t) => dayTarget(t)?.device === 'phone'),
+);
+
+// The variant a (theme, locale) pair resolves to for a given platform's capture set — the same
+// fallback ladder at build time (initial srcs) and in the switcher script below.
+const showThemes = gallery.themes.filter((t) => t !== 'default');
+const showLocales = gallery.locales.length > 1 ? gallery.locales : [];
+function variantFor(caps: Record<string, unknown>, theme: string, loc: string): string {
+  const order = [
+    `${theme}-${loc}`,
+    loc,
+    theme,
+    `${theme}-${gallery.locales[0]}`,
+    'default',
+    Object.keys(caps)[0]!,
+  ];
+  return order.find((v) => v in caps)!;
+}
+const initialTheme = showThemes[0] ?? 'default';
+// The gallery page's own locale doubles as the preselected screenshot locale when captured.
+const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery.locales[0] ?? 'default');
+---
+
+<Layout
+  site={data.site}
+  localeLinks={localeLinks}
+  current={locale}
+  pageTitle={`${ui.galleryHeading} – ${hero.title}`}
+  pageDescription={ui.galleryBlurb}
+  socialImage={appView.socialImage ?? data.socialImage}
+  favicons={data.favicons}
+  sourceURL={appView.sourceURL}
+  releaseURL={appView.releaseURL}
+>
+  <div class="space-y-10">
+    <header class="space-y-3 text-center">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">{ui.galleryHeading}</h1>
+      <p class="text-[color:var(--color-text-soft)]">{ui.galleryBlurb}</p>
+      {(showThemes.length > 1 || showLocales.length > 1) && (
+        <div class="flex flex-wrap items-center justify-center gap-3" data-gallery-switchers data-pagefind-ignore>
+          {showThemes.length > 1 && (
+            <div class="inline-flex rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium" role="radiogroup" data-seg="theme">
+              {showThemes.map((t) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={t === initialTheme ? 'true' : 'false'}
+                  data-value={t}
+                  class="rounded-full px-3.5 py-1 transition aria-checked:bg-[color:var(--color-accent)] aria-checked:text-[color:var(--color-accent-fg)] text-[color:var(--color-text-soft)]"
+                >{t === 'light' ? ui.themeLight : t === 'dark' ? ui.themeDark : t}</button>
+              ))}
+            </div>
+          )}
+          {showLocales.length > 1 && (
+            <div class="inline-flex flex-wrap rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium" role="radiogroup" data-seg="slocale">
+              {showLocales.map((l) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={l === initialLocale ? 'true' : 'false'}
+                  data-value={l}
+                  class="rounded-full px-3.5 py-1 transition aria-checked:bg-[color:var(--color-accent)] aria-checked:text-[color:var(--color-accent-fg)] text-[color:var(--color-text-soft)]"
+                >{l === 'default' ? data.defaultLocale : l}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </header>
+
+    {gallery.shots.map((shot) => (
+      <section class="space-y-3">
+        <h2 class="text-lg font-semibold">{shotLabel(shot.id)}</h2>
+        <div class="-mx-4 overflow-x-auto px-4 pb-2">
+          <div class="flex items-stretch gap-5">
+            {columns.map((target) => {
+              const caps = shot.byPlatform[target];
+              if (!caps) return null;
+              const day = dayTarget(target);
+              const v = variantFor(caps, initialTheme, initialLocale);
+              const cap = caps[v]!;
+              const variantAttrs = Object.fromEntries(
+                Object.entries(caps).map(([name, c]) => [`data-v-${name}`, `${base}/${c.src}`]),
+              );
+              return (
+                <figure class="w-[15rem] flex-none space-y-2" class:list={[{ 'w-[24rem]': !phoneTargets.has(target) }]}>
+                  <div class="gal-frame">
+                    <DeviceShell
+                      platform={target}
+                      title={hero.title}
+                      w={cap.width}
+                      h={cap.height}
+                    >
+                      <img
+                        src={`${base}/${cap.src}`}
+                        alt={`${shotLabel(shot.id)} — ${day?.displayName ?? target}`}
+                        width={cap.width}
+                        height={cap.height}
+                        loading="lazy"
+                        decoding="async"
+                        class="gal-img"
+                        {...variantAttrs}
+                      />
+                    </DeviceShell>
+                  </div>
+                  <figcaption class="flex items-center justify-center gap-1.5 text-xs text-[color:var(--color-text-soft)]">
+                    <PlatformIcon id={day?.icon ?? target} class="size-3.5" />
+                    {day?.displayName ?? target}
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    ))}
+  </div>
+</Layout>
+
+<style is:global>
+  /* The row lane every tile shares. An explicit grid row (not just a height) so percentage
+     heights resolve INSIDE the frame: `max-height: 100%` against an auto-height ancestor
+     computes to none, and a 2600px-tall phone capture then blows straight through its bezel —
+     the same trap day's own gallery documents on its `.frame` rule. `--shell-h` must be a
+     LENGTH, not a percentage: shells.css derives a desktop window's width from
+     calc((var(--shell-h) - bar) * aspect), and a % inside that calc would resolve against the
+     containing block's WIDTH. */
+  .gal-frame {
+    --shell-h: 22rem;
+    height: var(--shell-h);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    justify-items: center;
+    align-items: center;
+  }
+  /* Phones: pin the bezel to the lane so the capture's max-height has a definite base. */
+  .gal-frame .sh-dev { height: 100%; }
+  .gal-img { border-radius: 6px; }
+</style>
+
+<script>
+  // Variant switching: every image carries data-v-<variant> URLs; the pickers re-resolve each
+  // image with the same fallback ladder the build used for the initial state.
+  const THEMES = ['light', 'dark'];
+  const state = { theme: '', slocale: '' };
+  const seg = (name: string) =>
+    document.querySelector<HTMLElement>(`[data-seg="${name}"]`);
+  for (const name of ['theme', 'slocale'] as const) {
+    const el = seg(name);
+    if (!el) continue;
+    state[name] = el.querySelector<HTMLElement>('[aria-checked="true"]')?.dataset.value ?? '';
+    el.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-value]');
+      if (!btn) return;
+      for (const b of el.querySelectorAll('[data-value]')) {
+        b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+      }
+      state[name] = btn.dataset.value!;
+      apply();
+    });
+  }
+
+  function apply() {
+    for (const img of document.querySelectorAll<HTMLImageElement>('.gal-img')) {
+      const variants = Object.keys(img.dataset)
+        .filter((k) => k.startsWith('v-') || k.startsWith('v'))
+        .map((k) => k.slice(1).replace(/^-/, ''));
+      const ladder = [
+        `${state.theme}-${state.slocale}`,
+        state.slocale,
+        state.theme,
+        'default',
+      ];
+      for (const want of ladder) {
+        // dataset camelCases: data-v-light-fr → vLightFr. Match case-insensitively on the
+        // normalized name instead of reconstructing the mangling.
+        const key = Object.keys(img.dataset).find(
+          (k) => k.toLowerCase() === `v${want.replace(/[^a-z0-9]/gi, '').toLowerCase()}`,
+        );
+        if (key && img.dataset[key]) {
+          if (img.src !== img.dataset[key]) img.src = img.dataset[key]!;
+          break;
+        }
+      }
+      void variants;
+    }
+    // Desktop shells follow the site theme for their chrome palette.
+    for (const win of document.querySelectorAll<HTMLElement>('.sh-win')) {
+      if (THEMES.includes(state.theme)) win.toggleAttribute('data-dark', state.theme === 'dark');
+    }
+  }
+  apply();
+</script>

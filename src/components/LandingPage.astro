@@ -1,0 +1,98 @@
+---
+import type { AppView, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+
+import Hero from './Hero.astro';
+import PlatformPicker from './PlatformPicker.astro';
+import ScreenshotCarousel from './ScreenshotCarousel.astro';
+import DescriptionBlock from './DescriptionBlock.astro';
+import PermissionsList from './PermissionsList.astro';
+import AboutCard from './AboutCard.astro';
+import DownloadCard from './DownloadCard.astro';
+import { galleryHref } from '../lib/routes.ts';
+
+interface Props {
+  site: SiteInfo;
+  appView: AppView;
+  locale: LocaleInfo;
+  /** Whether the site has gallery data (adds the "see every platform" link). */
+  hasGallery?: boolean;
+}
+
+const { site, appView, locale, hasGallery } = Astro.props;
+const ui = uiStrings(locale.code);
+
+const hero = appView.hero(locale.code);
+const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
+  appView.platforms.map((p) => [p, appView.view(locale.code, p)]),
+);
+---
+
+<div class="space-y-12 sm:space-y-16">
+  <Hero hero={hero} views={views} site={site} locale={locale} />
+
+  {appView.platforms.length > 1 && (
+    <div class="flex justify-center">
+      <PlatformPicker
+        platforms={appView.platforms}
+        defaultPlatform={site.defaultPlatform}
+        views={views}
+      />
+    </div>
+  )}
+
+  {appView.platforms.map((p) =>
+    views[p] ? (
+      <div data-platform-section={p} class="space-y-12 sm:space-y-16">
+        <ScreenshotCarousel view={views[p]!} />
+        {hasGallery && site.showGallery !== false && (
+          <p class="text-center -mt-6">
+            <a
+              href={galleryHref(locale.code)}
+              class="text-sm font-medium text-[color:var(--color-accent)] hover:underline"
+            >{ui.galleryLink} &rarr;</a>
+          </p>
+        )}
+
+        <div class="grid gap-8 lg:gap-12 lg:grid-cols-[1fr_320px] items-start">
+          <DescriptionBlock
+            view={views[p]!}
+            i18n={{
+              aboutHeading: ui.about,
+              releaseNotesHeading: ui.releaseNotes,
+            }}
+          />
+          <div class="space-y-8">
+          <DownloadCard view={views[p]!} site={site} locale={locale} />
+          <AboutCard
+            view={views[p]!}
+            site={site}
+            i18n={{
+              aboutHeading: ui.about,
+              versionLabel: ui.versionLabel,
+              buildLabel: ui.buildLabel,
+              bundleIdLabel: ui.bundleIdLabel,
+              appIdLabel: ui.appIdLabel,
+              privacyLink: ui.privacyLink,
+              supportLink: ui.supportLink,
+              dependenciesLabel: ui.dependenciesLabel,
+            }}
+          />
+          </div>
+        </div>
+
+        {site.showPermissions !== false && (
+          <PermissionsList
+            view={views[p]!}
+            i18n={{
+              heading: ui.permissions,
+              whyHeading: ui.whyNoDescription,
+              rawKeyLabel: ui.rawKeyLabel,
+              emptyText: ui.noPermissions,
+            }}
+          />
+        )}
+      </div>
+    ) : null,
+  )}
+</div>

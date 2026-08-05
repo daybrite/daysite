@@ -1,0 +1,81 @@
+---
+import type { PlatformView } from '../lib/types.ts';
+import { dayTarget } from '../lib/day-targets.ts';
+import PlatformIcon from './PlatformIcon.astro';
+
+interface Props {
+  platforms: string[];
+  defaultPlatform?: string;
+  views: Partial<Record<string, PlatformView | null>>;
+}
+
+const { platforms, defaultPlatform, views } = Astro.props;
+const initial =
+  defaultPlatform && platforms.includes(defaultPlatform) && views[defaultPlatform]
+    ? defaultPlatform
+    : (platforms.find((p) => views[p]) ?? platforms[0]);
+---
+
+{platforms.length > 1 && (
+  <div
+    class="inline-flex max-w-full flex-wrap justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium shadow-sm"
+    role="tablist"
+    aria-label="Choose platform"
+    data-platform-picker
+    data-initial={initial}
+    data-pagefind-ignore
+  >
+    {platforms.map((p) => (
+      <button
+        type="button"
+        role="tab"
+        aria-selected={p === initial ? 'true' : 'false'}
+        data-platform-tab={p}
+        class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition aria-selected:bg-[color:var(--color-accent)] aria-selected:text-[color:var(--color-accent-fg)] aria-selected:shadow text-[color:var(--color-text-soft)] hover:text-[color:var(--color-text)]"
+      >
+        <PlatformIcon id={dayTarget(p)?.icon ?? p} class="size-4" />
+        {dayTarget(p)?.name ?? p}
+      </button>
+    ))}
+  </div>
+)}
+
+<script>
+  const KEY = 'daysite-platform';
+
+  function applyPlatform(picker: HTMLElement, p: string) {
+    for (const tab of picker.querySelectorAll<HTMLElement>('[data-platform-tab]')) {
+      tab.setAttribute('aria-selected', tab.dataset.platformTab === p ? 'true' : 'false');
+    }
+    for (const section of document.querySelectorAll<HTMLElement>('[data-platform-section]')) {
+      const wants = section.dataset.platformSection;
+      section.classList.toggle('hidden', wants !== p);
+    }
+    try { localStorage.setItem(KEY, p); } catch {}
+  }
+
+  for (const picker of document.querySelectorAll<HTMLElement>('[data-platform-picker]')) {
+    let initial = picker.dataset.initial || '';
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved && picker.querySelector(`[data-platform-tab="${saved}"]`)) {
+        initial = saved;
+      }
+    } catch {}
+    if (initial) applyPlatform(picker, initial);
+
+    picker.addEventListener('click', (e) => {
+      const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-platform-tab]');
+      if (!tab) return;
+      const p = tab.dataset.platformTab!;
+      applyPlatform(picker, p);
+    });
+  }
+
+  // For documents with platform-only sections but no picker (single-platform apps),
+  // ensure the only section is shown.
+  if (!document.querySelector('[data-platform-picker]')) {
+    const sections = document.querySelectorAll<HTMLElement>('[data-platform-section]');
+    sections.forEach((s) => s.classList.remove('hidden'));
+  }
+</script>

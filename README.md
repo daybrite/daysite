@@ -5,10 +5,6 @@ website: a localized landing page, a per-platform screenshot gallery, download l
 packaged target, and the hosted web build — generated from data the repository already maintains,
 so the site needs almost no metadata of its own.
 
-Adapted from [appland](https://github.com/appfair/appland), the App Fair's landing-page template,
-and it speaks the same [appindex publication format](https://appfair.org/schemas/appindex/) —
-extended with Day's platform vocabulary.
-
 ## How an app uses it
 
 An app repository adds a `website/` directory holding only its site-specific choices:
@@ -61,10 +57,10 @@ CI generates two data files next to `site.toml`; neither is committed:
 | `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | the `screenshots-<target>` artifacts the dayscript walkthroughs capture (`<target>/<variant>/<shot>.png`) |
 
-`appindex.json` conforms to the App Fair schema — `platforms.ios` / `platforms.android` mean what
+`appindex.json` conforms to the appindex schema — `platforms.ios` / `platforms.android` mean what
 they mean there — plus Day's additive extension: entries under `macos`, `windows`, `linux-gtk`,
 `linux-qt`, `harmony`, and `web` keys, and a per-platform `artifacts` array carrying the stable
-`releases/latest/download/` URLs (`src/lib/day-targets.ts` is the vocabulary). An App Fair consumer
+`releases/latest/download/` URLs (`src/lib/day-targets.ts` is the vocabulary). An appindex consumer
 reads the subset it understands; the document doubles as the app's machine-readable publication
 record.
 

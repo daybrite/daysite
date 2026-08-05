@@ -1,0 +1,111 @@
+---
+import type { LocaleInfo, SiteInfo } from '../lib/types.ts';
+import { pickText } from '../lib/i18n.ts';
+import { sanitizeDescription } from '../lib/html.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+
+interface Props {
+  site: SiteInfo;
+  /** The locale this page is rendered in. Used to pick the localized footer. */
+  locale: LocaleInfo;
+  sourceURL?: string;
+  releaseURL?: string;
+}
+
+const { site, locale, sourceURL, releaseURL } = Astro.props;
+const now = new Date();
+const year = now.getFullYear();
+// Footer text may be a plain string or a locale-keyed map; in either case
+// it can carry the small subset of HTML the description sanitizer permits
+// (notably <a href="…">…</a>) so authors can include a project link.
+const localizedFooter = pickText(site.footer, locale.code).value ?? '';
+const footerHTML = sanitizeDescription(
+  localizedFooter.replace(/\{year\}/g, String(year)),
+);
+
+const ui = uiStrings(locale.code);
+
+// Build-time timestamp. The server-rendered text is the page-locale
+// formatting in UTC, which is the fallback for visitors with JavaScript
+// disabled. An inline script below re-formats it in the browser's local
+// timezone when JS is available.
+const generatedISO = now.toISOString();
+// Granular options (rather than dateStyle/timeStyle) so the formatter can
+// coexist with `timeZoneName` on every engine — combining the two with
+// dateStyle/timeStyle throws on older ICU builds.
+const dtOptions: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+};
+const generatedUTCText = new Intl.DateTimeFormat(locale.code, {
+  ...dtOptions,
+  timeZone: 'UTC',
+}).format(now);
+const localeCodeJSON = JSON.stringify(locale.code);
+---
+
+<footer class="mt-16 border-t border-[color:var(--color-border-soft)]">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[color:var(--color-text-muted)]">
+    <p set:html={footerHTML}></p>
+    <div class="flex items-center gap-4">
+      {site.showSourceLink !== false && sourceURL && (
+        <a
+          href={sourceURL}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1.5 hover:text-[color:var(--color-text)] transition"
+        >
+          <svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true">
+            <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.2.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.4-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11 11 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A12 12 0 0 0 12 .5z"/>
+          </svg>
+          Source
+        </a>
+      )}
+      {releaseURL && (
+        <a
+          href={releaseURL}
+          target="_blank"
+          rel="noopener"
+          class="hover:text-[color:var(--color-text)] transition"
+        >
+          Release
+        </a>
+      )}
+    </div>
+  </div>
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-2 pb-8 text-xs text-center text-[color:var(--color-text-muted)]">
+    {ui.generatedLabel}{' '}
+    <time
+      datetime={generatedISO}
+      data-generated-at={generatedISO}
+      data-generated-locale={locale.code}
+    >{generatedUTCText}</time>
+  </div>
+</footer>
+
+<script is:inline set:html={`
+  (function () {
+    try {
+      var el = document.querySelector('time[data-generated-at]');
+      if (!el) return;
+      var iso = el.getAttribute('data-generated-at');
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return;
+      // Leave timeZone unset so the formatter picks up the user's local
+      // zone. Granular options match the server-rendered fallback above.
+      var fmt = new Intl.DateTimeFormat(${localeCodeJSON}, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      });
+      el.textContent = fmt.format(d);
+    } catch (_) { /* leave the UTC server-rendered text in place */ }
+  })();
+`} />
