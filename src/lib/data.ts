@@ -18,7 +18,14 @@ import type {
   SiteData,
   SiteInfo,
 } from './types.ts';
-import { localeInfo, pickAsset, pickAssetList, pickText, sortLocales } from './i18n.ts';
+import {
+  dedupeLocales,
+  localeInfo,
+  pickAsset,
+  pickAssetList,
+  pickText,
+  sortLocales,
+} from './i18n.ts';
 import { DAY_TARGETS, dayTarget, orderKeys } from './day-targets.ts';
 import { describePermission, shouldHideAndroidPermission, sortPermissions } from './permissions.ts';
 import { lookupAndroidDescription, lookupPermissionLabel } from './permission-descriptions.ts';
@@ -365,7 +372,9 @@ export async function loadSite(): Promise<LoadedSite> {
   }
   if (localeUnion.size === 0) localeUnion.add(FALLBACK_DEFAULT_LOCALE);
 
-  const localesRaw = Array.from(localeUnion);
+  // The union mixes vocabularies (store tags, capture-variant names), so collapse the codes that
+  // name one language twice before anything routes or renders off them.
+  const localesRaw = dedupeLocales(Array.from(localeUnion));
   const defaultLocale = pickDefaultLocale(localesRaw);
   const orderedCodes = sortLocales(localesRaw, defaultLocale);
   const locales: LocaleInfo[] = orderedCodes.map((c) => localeInfo(c, defaultLocale));
@@ -420,18 +429,16 @@ export async function loadSite(): Promise<LoadedSite> {
     siteFavicons = apps[0]?.favicons;
   }
 
-  // site.toml's `title` and `footer` are optional for a Day app: the store listing already
-  // names the app in every locale, so absent values inherit from the (first) app.
+  // site.toml's `title` is optional for a Day app: the store listing already names the app in
+  // every locale, so an absent value inherits from the (first) app.
   if (!site.title) {
     const first = index.apps[0]!;
     site.title = first.title ?? first.name;
   }
-  if (!site.footer) {
-    const t = typeof site.title === 'string'
-      ? site.title
-      : Object.values(site.title)[0] ?? index.apps[0]!.name;
-    site.footer = `© {year} ${t}`;
-  }
+  // `footer` stays whatever site.toml says, including nothing. A synthesized "© <year> <app>"
+  // used to fill the slot, which put a copyright notice nobody had written under every page of
+  // every scaffold — and in one language, whatever the page's own. The footer instead carries
+  // the Day attribution, which is localized; an author who wants a copyright writes one.
 
   const gallery = await loadGallery(siteInfoPath());
   let themeCss: string | undefined;

@@ -44,7 +44,7 @@ show-gallery = true
 show-permissions = true
 show-store-badges = true
 show-source-link = true
-footer = "© {year} Daybrite"
+footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
 ```
 

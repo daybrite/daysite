@@ -3,6 +3,7 @@ import type { LocaleInfo, SiteInfo } from '../lib/types.ts';
 import { pickText } from '../lib/i18n.ts';
 import { sanitizeDescription } from '../lib/html.ts';
 import { uiStrings } from '../lib/uistrings.ts';
+import DayLogo from './DayLogo.astro';
 
 interface Props {
   site: SiteInfo;
@@ -18,10 +19,12 @@ const year = now.getFullYear();
 // Footer text may be a plain string or a locale-keyed map; in either case
 // it can carry the small subset of HTML the description sanitizer permits
 // (notably <a href="…">…</a>) so authors can include a project link.
+// It is optional, and a site that sets none gets the Day attribution alone
+// rather than a copyright line nobody wrote.
 const localizedFooter = pickText(site.footer, locale.code).value ?? '';
-const footerHTML = sanitizeDescription(
-  localizedFooter.replace(/\{year\}/g, String(year)),
-);
+const footerHTML = localizedFooter
+  ? sanitizeDescription(localizedFooter.replace(/\{year\}/g, String(year)))
+  : '';
 
 const ui = uiStrings(locale.code);
 
@@ -50,7 +53,18 @@ const localeCodeJSON = JSON.stringify(locale.code);
 
 <footer class="mt-16 border-t border-[color:var(--color-border-soft)]">
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[color:var(--color-text-muted)]">
-    <p set:html={footerHTML}></p>
+    <div class="flex flex-col items-center sm:items-start gap-1">
+      <a
+        href="https://daysite.dev"
+        target="_blank"
+        rel="noopener"
+        class="inline-flex items-center gap-2 font-medium hover:text-[color:var(--color-text)] transition"
+      >
+        <DayLogo size={20} class="rounded-md" />
+        <span>{ui.builtWith}</span>
+      </a>
+      {footerHTML && <p class="text-xs" set:html={footerHTML}></p>}
+    </div>
     <div class="flex items-center gap-4">
       {site.showSourceLink !== false && sourceURL && (
         <a
@@ -62,7 +76,7 @@ const localeCodeJSON = JSON.stringify(locale.code);
           <svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true">
             <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.2.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.4-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11 11 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A12 12 0 0 0 12 .5z"/>
           </svg>
-          Source
+          {ui.sourceLink}
         </a>
       )}
       {releaseURL && (
@@ -72,7 +86,7 @@ const localeCodeJSON = JSON.stringify(locale.code);
           rel="noopener"
           class="hover:text-[color:var(--color-text)] transition"
         >
-          Release
+          {ui.releaseLink}
         </a>
       )}
     </div>

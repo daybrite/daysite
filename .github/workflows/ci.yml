@@ -150,6 +150,17 @@ jobs:
           简体中文
           繁體中文
           ENDONYMS
+      - name: The footer carries the Day attribution
+        run: |
+          set -euo pipefail
+          grep -q 'href="https://daysite.dev"' dist/index.html
+          grep -qF 'Built with Day' dist/index.html
+          # …localized, like the rest of the template's own strings.
+          grep -qF '使用 Day 构建' dist/zh-Hans-CN/index.html
+          grep -qF 'Créé avec Day' dist/fr-FR/index.html
+          # A scaffold sets no `footer` in site.toml, and the template no longer invents a
+          # copyright line to fill the slot. An author who writes one gets it rendered here.
+          ! grep -qF '©' dist/index.html
       - name: Upload the Pages artifact
         if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v5

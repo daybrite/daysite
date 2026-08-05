@@ -6,72 +6,121 @@ import type {
   LocalizedText,
 } from './types.ts';
 
-// Native names for the locales we expect to encounter in publication-format
-// documents. The list is intentionally permissive — anything not present here
-// just falls back to the locale code itself.
+// Native names for the locales we expect to encounter in publication-format documents. The list
+// is intentionally permissive — anything not present here just falls back to the locale code
+// itself.
+//
+// ONE ENTRY PER NAME. A regional tag belongs here only when it is named differently from its
+// language (`pt-BR` is "Português (Brasil)", `pt-PT` is not), because `localeName` walks the tag
+// from most to least specific: `de-DE` finds `de`, `zh-Hans-CN` finds `zh-Hans`. Adding
+// `de-DE: Deutsch` beside `de: Deutsch` changes nothing except how many places the name has to
+// be corrected, and it is how `zh-CN` / `zh-Hans` / `zh-Hans-CN` ended up as three rows saying
+// 简体中文.
 const LOCALE_NAMES: Record<string, { native: string; english: string; rtl?: boolean }> = {
   ar: { native: 'العربية', english: 'Arabic', rtl: true },
-  'ar-SA': { native: 'العربية', english: 'Arabic (Saudi Arabia)', rtl: true },
   bn: { native: 'বাংলা', english: 'Bengali' },
   ca: { native: 'Català', english: 'Catalan' },
   cs: { native: 'Čeština', english: 'Czech' },
-  'cs-CZ': { native: 'Čeština', english: 'Czech (Czechia)' },
   da: { native: 'Dansk', english: 'Danish' },
   de: { native: 'Deutsch', english: 'German' },
-  'de-DE': { native: 'Deutsch', english: 'German' },
   el: { native: 'Ελληνικά', english: 'Greek' },
   en: { native: 'English', english: 'English' },
   'en-GB': { native: 'English (UK)', english: 'English (UK)' },
   'en-US': { native: 'English (US)', english: 'English (US)' },
   es: { native: 'Español', english: 'Spanish' },
-  'es-ES': { native: 'Español', english: 'Spanish (Spain)' },
   'es-MX': { native: 'Español (México)', english: 'Spanish (Mexico)' },
   fa: { native: 'فارسی', english: 'Persian', rtl: true },
   fi: { native: 'Suomi', english: 'Finnish' },
   fr: { native: 'Français', english: 'French' },
-  'fr-FR': { native: 'Français', english: 'French' },
   he: { native: 'עברית', english: 'Hebrew', rtl: true },
   hi: { native: 'हिन्दी', english: 'Hindi' },
-  'hi-IN': { native: 'हिन्दी', english: 'Hindi' },
   hu: { native: 'Magyar', english: 'Hungarian' },
   id: { native: 'Bahasa Indonesia', english: 'Indonesian' },
-  'id-ID': { native: 'Bahasa Indonesia', english: 'Indonesian (Indonesia)' },
   it: { native: 'Italiano', english: 'Italian' },
-  'it-IT': { native: 'Italiano', english: 'Italian' },
   ja: { native: '日本語', english: 'Japanese' },
-  'ja-JP': { native: '日本語', english: 'Japanese' },
   ko: { native: '한국어', english: 'Korean' },
-  'ko-KR': { native: '한국어', english: 'Korean' },
   ms: { native: 'Bahasa Melayu', english: 'Malay' },
-  'ms-MY': { native: 'Bahasa Melayu', english: 'Malay (Malaysia)' },
   nl: { native: 'Nederlands', english: 'Dutch' },
-  'nl-NL': { native: 'Nederlands', english: 'Dutch (Netherlands)' },
   no: { native: 'Norsk', english: 'Norwegian' },
   pl: { native: 'Polski', english: 'Polish' },
-  'pl-PL': { native: 'Polski', english: 'Polish (Poland)' },
   pt: { native: 'Português', english: 'Portuguese' },
   'pt-BR': { native: 'Português (Brasil)', english: 'Portuguese (Brazil)' },
   'pt-PT': { native: 'Português (Portugal)', english: 'Portuguese (Portugal)' },
   ro: { native: 'Română', english: 'Romanian' },
   ru: { native: 'Русский', english: 'Russian' },
-  'ru-RU': { native: 'Русский', english: 'Russian' },
   sv: { native: 'Svenska', english: 'Swedish' },
   th: { native: 'ไทย', english: 'Thai' },
-  'th-TH': { native: 'ไทย', english: 'Thai (Thailand)' },
   tr: { native: 'Türkçe', english: 'Turkish' },
-  'tr-TR': { native: 'Türkçe', english: 'Turkish (Türkiye)' },
   uk: { native: 'Українська', english: 'Ukrainian' },
-  'uk-UA': { native: 'Українська', english: 'Ukrainian (Ukraine)' },
   vi: { native: 'Tiếng Việt', english: 'Vietnamese' },
-  'vi-VN': { native: 'Tiếng Việt', english: 'Vietnamese (Vietnam)' },
   zh: { native: '中文', english: 'Chinese' },
-  'zh-CN': { native: '简体中文', english: 'Chinese (Simplified)' },
   'zh-Hans': { native: '简体中文', english: 'Chinese (Simplified)' },
-  'zh-Hans-CN': { native: '简体中文', english: 'Chinese (Simplified, China)' },
   'zh-Hant': { native: '繁體中文', english: 'Chinese (Traditional)' },
-  'zh-Hant-TW': { native: '繁體中文', english: 'Chinese (Traditional, Taiwan)' },
-  'zh-TW': { native: '繁體中文', english: 'Chinese (Traditional)' },
 };
+
+/**
+ * Chinese written with a region but no script. A site's locale codes arrive in two vocabularies:
+ * store listings carry the app's Day tags (`zh-Hans-CN`) and screenshots carry the locale their
+ * dayscript run was captured under (`zh-CN`). Every other language reconciles by subtag prefix,
+ * but `zh-CN` and `zh-Hans-CN` share only `zh` — which `zh-TW` shares too — so the script has to
+ * be filled in before the two can be recognized as one language.
+ */
+const CHINESE_SCRIPTS: Record<string, string> = {
+  CN: 'Hans',
+  SG: 'Hans',
+  HK: 'Hant',
+  MO: 'Hant',
+  TW: 'Hant',
+};
+
+/** `zh-CN` → `zh-Hans-CN`, `zh-TW` → `zh-Hant-TW`. Every other tag is returned unchanged. */
+export function expandLocale(code: string): string {
+  const parts = code.split('-');
+  if (parts[0] !== 'zh' || parts.length !== 2) return code;
+  const script = CHINESE_SCRIPTS[parts[1]!.toUpperCase()];
+  return script ? `zh-${script}-${parts[1]}` : code;
+}
+
+/** True when `a` is `b` or one of its ancestors: `zh-Hans` ⊐ `zh-Hans-CN`, `pt` ⊐ `pt-BR`. */
+function covers(a: string, b: string): boolean {
+  return b === a || b.startsWith(`${a}-`);
+}
+
+/**
+ * Collapse locale codes that name the same language written two ways, keeping the more specific
+ * spelling: `['zh-Hans-CN', 'zh-CN', 'fr-FR', 'fr']` → `['zh-Hans-CN', 'fr-FR']`. Genuinely
+ * different variants survive, because neither covers the other — `pt-BR` and `pt-PT` both stay.
+ *
+ * Without this a picker offers 简体中文 twice, once per spelling, and the site builds two page
+ * trees of the same content. Dropping the broader tag costs nothing: every lookup goes through
+ * `resolveLocaleKey`, which finds a `zh-CN`-keyed screenshot list from a `zh-Hans-CN` page.
+ */
+export function dedupeLocales(codes: string[]): string[] {
+  const uniq = Array.from(new Set(codes));
+  const expanded = new Map(uniq.map((c) => [c, expandLocale(c)]));
+  return uniq.filter((code) => {
+    const mine = expanded.get(code)!;
+    return !uniq.some((other) => {
+      if (other === code) return false;
+      const theirs = expanded.get(other)!;
+      if (!covers(mine, theirs)) return false;
+      if (theirs !== mine) return true; // the other is more specific
+      // Same language spelled two ways: keep the one already written that way, so a project's
+      // own Day tag survives rather than a capture-variant name.
+      return other === theirs || (code !== mine && other < code);
+    });
+  });
+}
+
+/** The display metadata for a tag, from the most specific ancestor that has any. */
+function localeName(code: string): { native: string; english: string; rtl?: boolean } | null {
+  const parts = expandLocale(code).split('-');
+  for (let i = parts.length; i > 0; i--) {
+    const meta = LOCALE_NAMES[parts.slice(0, i).join('-')];
+    if (meta) return meta;
+  }
+  return null;
+}
 
 /** Strip the region tag, e.g. "de-DE" → "de". */
 export function languageOf(code: string): string {
@@ -142,7 +191,7 @@ export function pickAssetList(
  * picker.
  */
 export function localeInfo(code: string, _defaultLocale: string): LocaleInfo {
-  const meta = LOCALE_NAMES[code] ?? LOCALE_NAMES[languageOf(code)] ?? null;
+  const meta = localeName(code);
   const native = meta?.native ?? code;
   const english = meta?.english ?? code;
   const rtl = !!meta?.rtl;
@@ -200,8 +249,8 @@ export function sortLocales(codes: string[], defaultLocale: string): string[] {
   return dedup.sort((a, b) => {
     if (a === defaultLocale) return -1;
     if (b === defaultLocale) return 1;
-    const an = LOCALE_NAMES[a]?.english ?? a;
-    const bn = LOCALE_NAMES[b]?.english ?? b;
-    return an.localeCompare(bn);
+    const an = localeName(a)?.english ?? a;
+    const bn = localeName(b)?.english ?? b;
+    return an.localeCompare(bn) || a.localeCompare(b);
   });
 }

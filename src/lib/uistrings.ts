@@ -27,6 +27,13 @@ export interface UIStrings {
   searchZeroResults: string;
   /** Footer label preceding the site-generation timestamp. */
   generatedLabel: string;
+  /** Footer link to the project's source repository. */
+  sourceLink: string;
+  /** Footer link to the project's latest release. */
+  releaseLink: string;
+  /** Footer attribution beside the Day mark. Carries the product name, because word order
+      around it differs by language. */
+  builtWith: string;
   /** Heading of the per-platform download card. */
   downloadHeading: string;
   /** Hero button that opens the hosted web-dom build. */
@@ -60,6 +67,9 @@ const EN: UIStrings = {
   searchClearLabel: 'Clear',
   searchZeroResults: 'No results for [SEARCH_TERM]',
   generatedLabel: 'Generated',
+  sourceLink: 'Source',
+  releaseLink: 'Release',
+  builtWith: 'Built with Day',
   downloadHeading: 'Download',
   openWebApp: 'Open the web app',
   galleryLink: 'Gallery',
@@ -88,6 +98,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'مسح',
     searchZeroResults: 'لا توجد نتائج لـ [SEARCH_TERM]',
     generatedLabel: 'تم الإنشاء',
+    sourceLink: 'المصدر',
+    releaseLink: 'الإصدار',
+    builtWith: 'أُنشئ باستخدام Day',
   },
   cs: {
     about: 'O aplikaci',
@@ -107,6 +120,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Vymazat',
     searchZeroResults: 'Žádné výsledky pro [SEARCH_TERM]',
     generatedLabel: 'Vygenerováno',
+    sourceLink: 'Zdrojový kód',
+    releaseLink: 'Vydání',
+    builtWith: 'Vytvořeno pomocí Day',
   },
   de: {
     about: 'Über die App',
@@ -126,6 +142,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Löschen',
     searchZeroResults: 'Keine Ergebnisse für [SEARCH_TERM]',
     generatedLabel: 'Erstellt am',
+    sourceLink: 'Quellcode',
+    releaseLink: 'Release',
+    builtWith: 'Erstellt mit Day',
   },
   es: {
     about: 'Acerca de',
@@ -145,6 +164,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Borrar',
     searchZeroResults: 'Sin resultados para [SEARCH_TERM]',
     generatedLabel: 'Generado el',
+    sourceLink: 'Código fuente',
+    releaseLink: 'Lanzamiento',
+    builtWith: 'Creado con Day',
   },
   fr: {
     about: 'À propos',
@@ -164,6 +186,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Effacer',
     searchZeroResults: 'Aucun résultat pour [SEARCH_TERM]',
     generatedLabel: 'Généré le',
+    sourceLink: 'Code source',
+    releaseLink: 'Publication',
+    builtWith: 'Créé avec Day',
   },
   hi: {
     about: 'ऐप के बारे में',
@@ -183,6 +208,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'साफ़ करें',
     searchZeroResults: '[SEARCH_TERM] के लिए कोई परिणाम नहीं',
     generatedLabel: 'उत्पन्न',
+    sourceLink: 'स्रोत',
+    releaseLink: 'रिलीज़',
+    builtWith: 'Day से निर्मित',
   },
   id: {
     about: 'Tentang aplikasi',
@@ -202,6 +230,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Bersihkan',
     searchZeroResults: 'Tidak ada hasil untuk [SEARCH_TERM]',
     generatedLabel: 'Dibuat pada',
+    sourceLink: 'Kode sumber',
+    releaseLink: 'Rilis',
+    builtWith: 'Dibuat dengan Day',
   },
   it: {
     about: 'Informazioni',
@@ -221,6 +252,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Cancella',
     searchZeroResults: 'Nessun risultato per [SEARCH_TERM]',
     generatedLabel: 'Generato il',
+    sourceLink: 'Codice sorgente',
+    releaseLink: 'Rilascio',
+    builtWith: 'Creato con Day',
   },
   ja: {
     about: 'アプリについて',
@@ -240,6 +274,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'クリア',
     searchZeroResults: '[SEARCH_TERM] の検索結果はありません',
     generatedLabel: '生成日時',
+    sourceLink: 'ソースコード',
+    releaseLink: 'リリース',
+    builtWith: 'Day で作成',
   },
   ko: {
     about: '앱 정보',
@@ -259,6 +296,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: '지우기',
     searchZeroResults: '[SEARCH_TERM]에 대한 결과가 없습니다',
     generatedLabel: '생성됨',
+    sourceLink: '소스 코드',
+    releaseLink: '릴리스',
+    builtWith: 'Day로 제작',
   },
   ms: {
     about: 'Tentang aplikasi',
@@ -278,6 +318,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Kosongkan',
     searchZeroResults: 'Tiada hasil untuk [SEARCH_TERM]',
     generatedLabel: 'Dijana pada',
+    sourceLink: 'Kod sumber',
+    releaseLink: 'Keluaran',
+    builtWith: 'Dibina dengan Day',
   },
   nl: {
     about: 'Over de app',
@@ -297,6 +340,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Wissen',
     searchZeroResults: 'Geen resultaten voor [SEARCH_TERM]',
     generatedLabel: 'Gegenereerd op',
+    sourceLink: 'Broncode',
+    releaseLink: 'Release',
+    builtWith: 'Gemaakt met Day',
   },
   pl: {
     about: 'O aplikacji',
@@ -316,6 +362,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Wyczyść',
     searchZeroResults: 'Brak wyników dla [SEARCH_TERM]',
     generatedLabel: 'Wygenerowano',
+    sourceLink: 'Kod źródłowy',
+    releaseLink: 'Wydanie',
+    builtWith: 'Utworzono za pomocą Day',
   },
   pt: {
     about: 'Sobre',
@@ -335,6 +384,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Limpar',
     searchZeroResults: 'Sem resultados para [SEARCH_TERM]',
     generatedLabel: 'Gerado em',
+    sourceLink: 'Código-fonte',
+    releaseLink: 'Lançamento',
+    builtWith: 'Criado com Day',
   },
   ru: {
     about: 'О приложении',
@@ -354,6 +406,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Очистить',
     searchZeroResults: 'Нет результатов для [SEARCH_TERM]',
     generatedLabel: 'Создано',
+    sourceLink: 'Исходный код',
+    releaseLink: 'Выпуск',
+    builtWith: 'Создано с помощью Day',
   },
   th: {
     about: 'เกี่ยวกับแอป',
@@ -373,6 +428,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'ล้าง',
     searchZeroResults: 'ไม่พบผลลัพธ์สำหรับ [SEARCH_TERM]',
     generatedLabel: 'สร้างเมื่อ',
+    sourceLink: 'ซอร์สโค้ด',
+    releaseLink: 'รุ่น',
+    builtWith: 'สร้างด้วย Day',
   },
   tr: {
     about: 'Uygulama hakkında',
@@ -392,6 +450,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Temizle',
     searchZeroResults: '[SEARCH_TERM] için sonuç bulunamadı',
     generatedLabel: 'Oluşturulma',
+    sourceLink: 'Kaynak kodu',
+    releaseLink: 'Yayın',
+    builtWith: 'Day ile oluşturuldu',
   },
   uk: {
     about: 'Про застосунок',
@@ -411,6 +472,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Очистити',
     searchZeroResults: 'Немає результатів для [SEARCH_TERM]',
     generatedLabel: 'Створено',
+    sourceLink: 'Вихідний код',
+    releaseLink: 'Випуск',
+    builtWith: 'Створено за допомогою Day',
   },
   vi: {
     about: 'Giới thiệu về ứng dụng',
@@ -430,6 +494,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: 'Xóa',
     searchZeroResults: 'Không có kết quả cho [SEARCH_TERM]',
     generatedLabel: 'Được tạo lúc',
+    sourceLink: 'Mã nguồn',
+    releaseLink: 'Bản phát hành',
+    builtWith: 'Được tạo bằng Day',
   },
   zh: {
     about: '关于',
@@ -449,6 +516,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: '清除',
     searchZeroResults: '没有 [SEARCH_TERM] 的结果',
     generatedLabel: '生成时间',
+    sourceLink: '源代码',
+    releaseLink: '发行版',
+    builtWith: '使用 Day 构建',
   },
   'zh-Hant': {
     about: '關於',
@@ -468,6 +538,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     searchClearLabel: '清除',
     searchZeroResults: '沒有 [SEARCH_TERM] 的結果',
     generatedLabel: '產生時間',
+    sourceLink: '原始碼',
+    releaseLink: '發行版',
+    builtWith: '使用 Day 建置',
   },
 };
 
