@@ -91,6 +91,16 @@ node .daysite/scripts/preview.mjs
 The preview generates the same data CI does — minus release downloads when offline — and picks up
 `build/day/screenshots/` from your last local `day launch --script` run for the gallery.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` builds the bundled sample on every push and PR, and — on pushes to
+`main` and version tags — scaffolds a **fresh Day project with the day CLI** (`day new app`,
+whose default scaffold includes `website/`), builds its web-dom target, runs this checkout of
+the template over the scaffold's own data, and deploys the result to this repository's GitHub
+Pages with the web app under `/webapp/`. Template changes are thereby exercised against exactly
+what the CLI generates, and the deployed artifact is browsable at
+<https://daybrite.github.io/daysite/>.
+
 ## Template development
 
 `npm install && npm run dev` in a bare checkout serves the bundled NetSkip sample

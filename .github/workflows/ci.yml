@@ -2,15 +2,21 @@ name: CI
 
 on:
   push:
-    branches: ['*']
+    branches: [main]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
   pull_request:
   workflow_dispatch:
 
-# Template self-test: build against the bundled sample (samples/site.toml resolves when neither
-# DAYSITE_CONFIG nor a conventional ../site.toml exists), which exercises the ios/android
-# appindex-compatibility path end to end.
+permissions:
+  contents: read
+  pages: write # the exercise job deploys its result to this repo's Pages
+  id-token: write
+
 jobs:
-  build:
+  # Template self-test: build against the bundled NetSkip sample (samples/site.toml resolves
+  # when neither DAYSITE_CONFIG nor a conventional ../site.toml exists), which keeps the
+  # ios/android appindex-compatibility path honest. Cheap, so it runs on PRs too.
+  sample:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -24,3 +30,76 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           grep -q "Net Skip" dist/index.html
+
+  # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
+  # ships a website/), build its web-dom target, and run THIS checkout of the template over the
+  # scaffold's own data — store/ listings, Day.toml, the built web app. Template changes are
+  # thereby exercised against exactly what a fresh `day new app` produces, not against a
+  # fixture that can drift from the CLI.
+  exercise:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: daysite-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: daybrite/actions/.github/actions/setup-day-cli@main
+        with:
+          # main, not latest: `day new app` gained the website/ scaffold after the latest
+          # crates.io release. Move to `latest` once a release carries it.
+          version: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Scaffold a fresh Day project
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          # web-dom is what gets built and hosted; ios-uikit rides along so the scaffold
+          # includes store/ (the template drops it for store-less target sets) and the site's
+          # store-listing data path is exercised, not just its no-store degradation.
+          "$DAY_BIN" new app day-sample --toolkit web-dom,ios-uikit --no-input
+          test -f day-sample/website/site.toml
+          # The scaffold cannot know where it will be hosted; this deploy hosts it on the
+          # daysite repo's own Pages.
+          sed -i 's|^host = .*|host = "https://daybrite.github.io/daysite"|' day-sample/website/site.toml
+      - name: Build the scaffold's web app
+        working-directory: ${{ runner.temp }}/day-sample
+        run: |
+          set -euo pipefail
+          "$DAY_BIN" build -p web-dom --profile release
+          DIST="$(dirname "$(find build/day -path '*web-dom*' -name index.html | head -1)")"
+          test -n "$DIST"
+          echo "WEB_DIST=$DIST" >> "$GITHUB_ENV"
+      - name: Build the website from the scaffold
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          SITE_DIR="$RUNNER_TEMP/day-sample/website"
+          node scripts/generate-appindex.mjs "$RUNNER_TEMP/day-sample" "$SITE_DIR"
+          # A fresh scaffold has no dayscript captures on this runner; the gallery page is
+          # simply absent, which is itself part of what this exercises.
+          node scripts/assemble-gallery.mjs "$RUNNER_TEMP/day-sample/build/day/screenshots" "$SITE_DIR"
+          mkdir -p public/webapp
+          cp -R "$RUNNER_TEMP/day-sample/$WEB_DIST/." public/webapp/
+          test -f public/webapp/index.html
+          DAYSITE_CONFIG="$SITE_DIR/site.toml" npx astro build
+          test -f dist/index.html
+          test -f dist/webapp/index.html
+      - name: Upload the Pages artifact
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+      - name: Deploy to GitHub Pages
+        if: ${{ github.event_name != 'pull_request' }}
+        id: deploy
+        uses: actions/deploy-pages@v5
