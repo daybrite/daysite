@@ -20,7 +20,10 @@ const { hero } = Astro.props;
     ></div>
   )}
 
-  <div class="rise grid gap-8 sm:gap-10 sm:grid-cols-[auto_1fr] items-center">
+  {/* A centered column, under the centered platform picker: with the install actions moved to the
+      About card, the hero is only the app's identity, and a left-aligned title beneath a centered
+      control reads as a misalignment rather than a layout. */}
+  <div class="rise flex flex-col items-center gap-6 text-center sm:gap-8">
     {hero.iconURL && (
       <img
         src={hero.iconURL}
@@ -32,10 +35,10 @@ const { hero } = Astro.props;
         decoding="async"
       />
     )}
-    <div class="space-y-4">
-      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">{hero.title}</h1>
+    <div class="space-y-3 sm:space-y-4">
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-balance">{hero.title}</h1>
       {hero.subtitle && (
-        <p class="text-lg sm:text-xl text-[color:var(--color-text-soft)]">{hero.subtitle}</p>
+        <p class="mx-auto max-w-2xl text-lg sm:text-xl text-[color:var(--color-text-soft)] text-pretty">{hero.subtitle}</p>
       )}
     </div>
   </div>

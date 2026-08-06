@@ -18,7 +18,7 @@ const initial =
 
 {platforms.length > 1 && (
   <div
-    class="inline-flex max-w-full flex-wrap justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium shadow-sm"
+    class="pf-picker flex max-w-full flex-nowrap snap-x items-center gap-0.5 overflow-x-auto rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium shadow-sm"
     role="tablist"
     aria-label="Choose platform"
     data-platform-picker
@@ -31,7 +31,7 @@ const initial =
         role="tab"
         aria-selected={p === initial ? 'true' : 'false'}
         data-platform-tab={p}
-        class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition aria-selected:bg-[color:var(--color-accent)] aria-selected:text-[color:var(--color-accent-fg)] aria-selected:shadow text-[color:var(--color-text-soft)] hover:text-[color:var(--color-text)]"
+        class="inline-flex shrink-0 cursor-pointer snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[color:var(--color-text-soft)] transition sm:px-3.5 ring-1 ring-inset ring-transparent hover:ring-[color:var(--color-border)] hover:text-[color:var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] aria-selected:bg-[color:var(--color-accent)] aria-selected:text-[color:var(--color-accent-fg)] aria-selected:shadow aria-selected:ring-transparent"
       >
         <span class="pf-tint" style={`--pf: var(--pf-${p}, currentColor)`} aria-hidden="true">
           <PlatformIcon id={dayTarget(p)?.icon ?? p} class="size-4" />
@@ -47,7 +47,12 @@ const initial =
 
   function applyPlatform(picker: HTMLElement, p: string) {
     for (const tab of picker.querySelectorAll<HTMLElement>('[data-platform-tab]')) {
-      tab.setAttribute('aria-selected', tab.dataset.platformTab === p ? 'true' : 'false');
+      const on = tab.dataset.platformTab === p;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      // The row scrolls on narrow screens, where the selected tab can sit outside the visible
+      // strip — a segmented control whose current value is off-screen reads as having none.
+      // `nearest` on both axes so bringing it into view never scrolls the page itself.
+      if (on) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
     for (const section of document.querySelectorAll<HTMLElement>('[data-platform-section]')) {
       const wants = section.dataset.platformSection;
@@ -87,4 +92,23 @@ const initial =
      the background and the platform color would fight it — there it inherits the pill's text. */
   .pf-tint { display: inline-flex; color: var(--pf); }
   [aria-selected='true'] .pf-tint { color: inherit; }
+
+  /* The row scrolls instead of wrapping, at every width: a segmented control that wraps inside a
+     rounded-full border stops reading as one control, and with eight targets it grows tall enough
+     to crowd the title below. It shrinks to its content and centers when it fits, so scrolling
+     only ever appears when it must. The scrollbar is hidden (the same treatment as .carousel) —
+     momentum scroll, the snap points, and scrolling the selected tab into view do the work. */
+  .pf-picker {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pf-picker::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A pointing hand on the whole control, so the affordance does not depend on hitting the label. */
+  .pf-picker,
+  .pf-picker [data-platform-tab] {
+    cursor: pointer;
+  }
 </style>

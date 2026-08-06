@@ -31,9 +31,10 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 <div class="space-y-12 sm:space-y-16">
   {/* Above the title and directly under the site header: the platform is the first choice a
       visitor makes, and everything below it — screenshots, description, About, downloads —
-      answers for the platform selected here. */}
+      answers for the platform selected here. Pulled UP into <main>'s padding rather than down
+      toward the hero, so it sits close to the header without crowding the title. */}
   {appView.platforms.length > 1 && (
-    <div class="flex justify-center -mb-4 sm:-mb-6">
+    <div class="-mt-4 flex justify-center sm:-mt-8">
       <PlatformPicker
         platforms={appView.platforms}
         defaultPlatform={site.defaultPlatform}
