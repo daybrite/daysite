@@ -33,7 +33,9 @@ const initial =
         data-platform-tab={p}
         class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition aria-selected:bg-[color:var(--color-accent)] aria-selected:text-[color:var(--color-accent-fg)] aria-selected:shadow text-[color:var(--color-text-soft)] hover:text-[color:var(--color-text)]"
       >
-        <PlatformIcon id={dayTarget(p)?.icon ?? p} class="size-4" />
+        <span class="pf-tint" style={`--pf: var(--pf-${p}, currentColor)`} aria-hidden="true">
+          <PlatformIcon id={dayTarget(p)?.icon ?? p} class="size-4" />
+        </span>
         {dayTarget(p)?.name ?? p}
       </button>
     ))}
@@ -79,3 +81,10 @@ const initial =
     sections.forEach((s) => s.classList.remove('hidden'));
   }
 </script>
+
+<style>
+  /* Each icon wears its platform's accent, except on the selected tab where the accent pill is
+     the background and the platform color would fight it — there it inherits the pill's text. */
+  .pf-tint { display: inline-flex; color: var(--pf); }
+  [aria-selected='true'] .pf-tint { color: inherit; }
+</style>

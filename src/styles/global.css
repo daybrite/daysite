@@ -19,8 +19,29 @@
   --color-accent-fg: oklch(99% 0 0);
 }
 
+/* Per-platform accents for the picker's icons — the same palette daybrite.dev tints its
+   platform cards with (day/website global.css), keyed by the appindex platforms key. */
+:root {
+  --pf-ios: #007aff;
+  --pf-android: #34c759;
+  --pf-macos: #5856d6;
+  --pf-windows: #30b0c7;
+  --pf-linux-gtk: #00c7be;
+  --pf-linux-qt: #32ade6;
+  --pf-harmony: #ff3b30;
+  --pf-web: #ff9500;
+}
+
 /* Dark theme overrides. Astro renders [data-theme="dark"] on <html>. */
 :root[data-theme='dark'] {
+  --pf-ios: #0a84ff;
+  --pf-android: #30d158;
+  --pf-macos: #5e5ce6;
+  --pf-windows: #40c8e0;
+  --pf-linux-gtk: #63e6e2;
+  --pf-linux-qt: #64d2ff;
+  --pf-harmony: #ff453a;
+  --pf-web: #ff9f0a;
   --color-bg: oklch(13% 0.01 250);
   --color-surface: oklch(17% 0.01 250);
   --color-surface-2: oklch(20% 0.012 250);
@@ -34,6 +55,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
+    --pf-ios: #0a84ff;
+    --pf-android: #30d158;
+    --pf-macos: #5e5ce6;
+    --pf-windows: #40c8e0;
+    --pf-linux-gtk: #63e6e2;
+    --pf-linux-qt: #64d2ff;
+    --pf-harmony: #ff453a;
+    --pf-web: #ff9f0a;
     --color-bg: oklch(13% 0.01 250);
     --color-surface: oklch(17% 0.01 250);
     --color-surface-2: oklch(20% 0.012 250);
