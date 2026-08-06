@@ -1,76 +1,99 @@
 ---
-import type { LocaleInfo, PlatformView } from '../lib/types.ts';
+// The hero's call-to-action row, one action set per platform, shown/hidden by the same
+// data-platform-section toggle the picker drives for the page's main sections — so the Web tab
+// offers "Open the web app", iOS/Android offer their localized store badge (or a sideload
+// download when no store listing exists yet), and every other platform offers its primary
+// package from the latest GitHub release (macOS → the .dmg, Windows → the .msix, …). The full
+// artifact list stays on the per-platform DownloadCard below; this row is the one-click story.
+import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import { badgeLocale } from '../lib/i18n.ts';
+import { dayTarget } from '../lib/day-targets.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import type { ArtifactEntry } from '../lib/types.ts';
 
 interface Props {
   views: Partial<Record<string, PlatformView | null>>;
+  site: SiteInfo;
   locale: LocaleInfo;
 }
 
-const { views, locale } = Astro.props;
-const ios = views.ios;
-const android = views.android;
+const { views, site, locale } = Astro.props;
+const ui = uiStrings(locale.code);
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Per-locale badge files live under public/badges/<code>/. badgeLocale()
-// resolves to a code we actually shipped for that store (with `en` as the
-// final fallback), so these URLs never 404. Apple and Google have
-// different destination locale sets, so each is resolved independently.
-const APPLE_BADGE = `/badges/${badgeLocale(locale.code, 'apple')}/apple-app-store.svg`;
-const GOOGLE_BADGE = `/badges/${badgeLocale(locale.code, 'google')}/google-play-store.svg`;
+const platforms = Object.keys(views).filter((p) => views[p]);
+const webappDir = site.webapp ?? (views['web'] !== undefined ? 'webapp' : undefined);
+const webappHref = webappDir ? `${BASE}/${webappDir}/` : undefined;
+
+// Per-locale badge files live under public/badges/<code>/ — badgeLocale() resolves to a code we
+// actually shipped (final fallback en), and BASE keeps them working on project-page deploys.
+const APPLE_BADGE = `${BASE}/badges/${badgeLocale(locale.code, 'apple')}/apple-app-store.svg`;
+const GOOGLE_BADGE = `${BASE}/badges/${badgeLocale(locale.code, 'google')}/google-play-store.svg`;
+
+/** The one package this platform leads with, by the target's preference order (.msix before
+ *  -setup.exe, .apk before .aab), falling back to whatever the release shipped first. */
+function primary(p: string): ArtifactEntry | undefined {
+  const view = views[p];
+  if (!view?.artifacts.length) return undefined;
+  for (const ext of dayTarget(p)?.packages ?? []) {
+    const hit = view.artifacts.find((a) => a.name.endsWith(ext));
+    if (hit) return hit;
+  }
+  return view.artifacts[0];
+}
+
+function ext(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i > 0 ? name.slice(i) : name;
+}
 ---
 
-<div class="flex flex-wrap gap-3 items-center" data-pagefind-ignore>
-  {ios?.storeURL && (
-    <a
-      href={ios.storeURL}
-      class="inline-block transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)] rounded-xl"
-      target="_blank"
-      rel="noopener"
-      aria-label="Download on the App Store"
-    >
-      {/*
-        Apple's SVG viewBox is tight to the artwork (≈120×40), while
-        Google's leaves ~50% extra "clear space" padding around the
-        badge artwork. To make both badges look the same size on the
-        page we render Apple a bit smaller and pad it with the same
-        amount of margin Google's built-in padding produces, so the
-        visible artwork heights match and the bounding boxes align.
-      */}
-      <img
-        src={APPLE_BADGE}
-        alt="Download on the App Store"
-        width="120"
-        height="40"
-        class="h-12 sm:h-14 w-auto mx-3 my-3"
-        loading="lazy"
-      />
-    </a>
-  )}
-  {android?.storeURL && (
-    <a
-      href={android.storeURL}
-      class="inline-block transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)] rounded-xl"
-      target="_blank"
-      rel="noopener"
-      aria-label="Get it on Google Play"
-    >
-      {/*
-        Google's SVG viewBox is 155×60 — the artwork itself only fills
-        ~40 of the 60 vertical units, with the rest being the "clear
-        space" Google's brand guidelines require around the badge. We
-        render the SVG at ~1.5× Apple's height (72/84px instead of
-        48/56px) so the visible artwork matches; the surrounding
-        padding inside the SVG is what the Apple badge mirrors with
-        its mx-3/my-3 margins.
-      */}
-      <img
-        src={GOOGLE_BADGE}
-        alt="Get it on Google Play"
-        width="155"
-        height="60"
-        class="h-[72px] sm:h-[84px] w-auto"
-        loading="lazy"
-      />
-    </a>
-  )}
+<div class="flex flex-wrap gap-3 items-center min-h-12" data-pagefind-ignore>
+  {platforms.map((p) => {
+    const view = views[p]!;
+    const badge =
+      site.showStoreBadges !== false && view.storeURL
+        ? p === 'ios'
+          ? { src: APPLE_BADGE, alt: 'Download on the App Store' }
+          : p === 'android'
+            ? { src: GOOGLE_BADGE, alt: 'Get it on Google Play' }
+            : undefined
+        : undefined;
+    const dl = badge ? undefined : primary(p);
+    return (
+      <span data-platform-section={p} class="flex flex-wrap items-center gap-3">
+        {p === 'web' && webappHref && (
+          <a
+            href={webappHref}
+            class="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-accent)] px-5 py-2.5 font-semibold text-[color:var(--color-accent-fg)] shadow transition hover:opacity-90"
+          >
+            {ui.openWebApp}
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        )}
+        {badge && (
+          <a
+            href={view.storeURL}
+            class="inline-block transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)] rounded-xl"
+            target="_blank"
+            rel="noopener"
+            aria-label={badge.alt}
+          >
+            <img src={badge.src} alt={badge.alt} width="120" height="40" class="h-12 sm:h-14 w-auto" loading="lazy" />
+          </a>
+        )}
+        {p !== 'web' && dl && (
+          <a
+            href={dl.url}
+            download
+            class="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-accent)] px-5 py-2.5 font-semibold text-[color:var(--color-accent-fg)] shadow transition hover:opacity-90"
+            aria-label={`${ui.downloadHeading}: ${dl.name}`}
+          >
+            <span aria-hidden="true">&#x2913;</span>
+            {ui.downloadHeading} {ext(dl.name)}
+          </a>
+        )}
+      </span>
+    );
+  })}
 </div>

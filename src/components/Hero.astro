@@ -1,6 +1,5 @@
 ---
 import type { HeroView, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
-import { uiStrings } from '../lib/uistrings.ts';
 import StoreBadges from './StoreBadges.astro';
 
 interface Props {
@@ -11,13 +10,7 @@ interface Props {
 }
 
 const { hero, views, site, locale } = Astro.props;
-const ui = uiStrings(locale.code);
 
-// The hosted web build: an explicit `webapp` dir in site.toml, or the presence of a `web`
-// platform entry with the default directory. Either way the button points inside this site.
-const webappDir = site.webapp ?? (views['web'] !== undefined ? 'webapp' : undefined);
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const webappHref = webappDir ? `${base}/${webappDir}/` : undefined;
 ---
 
 <section class="relative">
@@ -46,18 +39,7 @@ const webappHref = webappDir ? `${base}/${webappDir}/` : undefined;
       {hero.subtitle && (
         <p class="text-lg sm:text-xl text-[color:var(--color-text-soft)]">{hero.subtitle}</p>
       )}
-      <div class="flex flex-wrap items-center gap-4">
-        {webappHref && (
-          <a
-            href={webappHref}
-            class="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-accent)] px-5 py-2.5 font-semibold text-[color:var(--color-accent-fg)] shadow transition hover:opacity-90"
-          >
-            {ui.openWebApp}
-            <span aria-hidden="true">&rarr;</span>
-          </a>
-        )}
-        {site.showStoreBadges !== false && <StoreBadges views={views} locale={locale} />}
-      </div>
+      <StoreBadges views={views} site={site} locale={locale} />
     </div>
   </div>
 </section>
