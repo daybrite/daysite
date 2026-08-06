@@ -66,10 +66,12 @@ record.
 
 ## What renders
 
-- `/<locale>/` — the landing page: hero (with an **Open the web app** button when a web build is
-  hosted), platform picker across every built target, screenshot carousel, localized store
-  description, per-platform download card, permissions, release notes. One page per store locale,
-  with the same locale-fallback ladder as appland.
+- `/<locale>/` — the landing page: platform picker across every built target (first, since it
+  selects what everything below shows), hero, screenshot carousel, localized store description,
+  per-platform download card, and an About card carrying that platform's way to get the app — the
+  **Open the web app** button when a web build is hosted, the App Store or Google Play badge for a
+  listed app, otherwise the lead package from the latest GitHub release — then permissions and
+  release notes. One page per store locale, with the same locale-fallback ladder as appland.
 - `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones in
   hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale

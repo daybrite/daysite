@@ -1,9 +1,11 @@
 ---
-import type { PlatformView, SiteInfo } from '../lib/types.ts';
+import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import AppActions from './AppActions.astro';
 
 interface Props {
   view: PlatformView;
   site: SiteInfo;
+  locale: LocaleInfo;
   i18n: {
     aboutHeading: string;
     versionLabel: string;
@@ -16,7 +18,7 @@ interface Props {
   };
 }
 
-const { view, site, i18n } = Astro.props;
+const { view, site, locale, i18n } = Astro.props;
 ---
 
 <aside class="rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5 sm:p-6 space-y-4 shadow-lg shadow-black/5">
@@ -54,6 +56,8 @@ const { view, site, i18n } = Astro.props;
       </div>
     )}
   </dl>
+
+  <AppActions view={view} site={site} locale={locale} />
 
   {(view.privacyURL || view.supportURL) && (
     <div class="flex flex-wrap gap-2 pt-2 border-t border-[color:var(--color-border-soft)]" data-pagefind-ignore>

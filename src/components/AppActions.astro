@@ -1,0 +1,88 @@
+---
+// The "get the app" actions for ONE platform, rendered inside that platform's About card: the Web
+// tab offers "Open the web app", iOS/Android offer their localized store badge (or a sideload
+// download when no store listing exists yet), and every other platform offers its primary package
+// from the latest GitHub release (macOS → the .dmg, Windows → the .msix, …). The full artifact
+// list stays on the DownloadCard above; this is the one-click story.
+//
+// Per-view, not per-site: the About card already sits inside its platform's
+// `data-platform-section`, so the picker shows and hides these with everything else.
+import type { ArtifactEntry, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import { badgeLocale } from '../lib/i18n.ts';
+import { dayTarget } from '../lib/day-targets.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+
+interface Props {
+  view: PlatformView;
+  site: SiteInfo;
+  locale: LocaleInfo;
+}
+
+const { view, site, locale } = Astro.props;
+const ui = uiStrings(locale.code);
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const p = view.id;
+
+// Per-locale badge files live under public/badges/<code>/ — badgeLocale() resolves to a code we
+// actually shipped (final fallback en), and BASE keeps them working on project-page deploys.
+const badge =
+  site.showStoreBadges !== false && view.storeURL
+    ? p === 'ios'
+      ? { src: `${BASE}/badges/${badgeLocale(locale.code, 'apple')}/apple-app-store.svg`, alt: 'Download on the App Store' }
+      : p === 'android'
+        ? { src: `${BASE}/badges/${badgeLocale(locale.code, 'google')}/google-play-store.svg`, alt: 'Get it on Google Play' }
+        : undefined
+    : undefined;
+
+const webappHref = p === 'web' ? `${BASE}/${site.webapp ?? 'webapp'}/` : undefined;
+
+/** The one package this platform leads with, by the target's preference order (.msix before
+ *  -setup.exe, .apk before .aab), falling back to whatever the release shipped first. */
+function primary(): ArtifactEntry | undefined {
+  if (!view.artifacts.length) return undefined;
+  for (const suffix of dayTarget(p)?.packages ?? []) {
+    const hit = view.artifacts.find((a) => a.name.endsWith(suffix));
+    if (hit) return hit;
+  }
+  return view.artifacts[0];
+}
+
+// A store badge already IS the download button; showing both would offer the same app twice.
+const dl = badge || p === 'web' ? undefined : primary();
+
+function ext(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i > 0 ? name.slice(i) : name;
+}
+
+const BUTTON =
+  'inline-flex w-full items-center justify-center gap-2 rounded-full bg-[color:var(--color-accent)] px-5 py-2.5 font-semibold text-[color:var(--color-accent-fg)] shadow transition hover:opacity-90';
+---
+
+{(webappHref || badge || dl) && (
+  <div class="flex flex-col items-center gap-3 pt-4 border-t border-[color:var(--color-border-soft)]" data-pagefind-ignore>
+    {webappHref && (
+      <a href={webappHref} class={BUTTON}>
+        {ui.openWebApp}
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+    )}
+    {badge && (
+      <a
+        href={view.storeURL}
+        class="inline-block rounded-xl transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)]"
+        target="_blank"
+        rel="noopener"
+        aria-label={badge.alt}
+      >
+        <img src={badge.src} alt={badge.alt} width="120" height="40" class="h-12 sm:h-14 w-auto" loading="lazy" />
+      </a>
+    )}
+    {dl && (
+      <a href={dl.url} download class={BUTTON} aria-label={`${ui.downloadHeading}: ${dl.name}`}>
+        <span aria-hidden="true">&#x2913;</span>
+        {ui.downloadHeading} {ext(dl.name)}
+      </a>
+    )}
+  </div>
+)}

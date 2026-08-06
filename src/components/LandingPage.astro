@@ -29,10 +29,11 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  <Hero hero={hero} views={views} site={site} locale={locale} />
-
+  {/* Above the title and directly under the site header: the platform is the first choice a
+      visitor makes, and everything below it — screenshots, description, About, downloads —
+      answers for the platform selected here. */}
   {appView.platforms.length > 1 && (
-    <div class="flex justify-center">
+    <div class="flex justify-center -mb-4 sm:-mb-6">
       <PlatformPicker
         platforms={appView.platforms}
         defaultPlatform={site.defaultPlatform}
@@ -40,6 +41,8 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
       />
     </div>
   )}
+
+  <Hero hero={hero} />
 
   {appView.platforms.map((p) =>
     views[p] ? (
@@ -67,6 +70,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
           <AboutCard
             view={views[p]!}
             site={site}
+            locale={locale}
             i18n={{
               aboutHeading: ui.about,
               versionLabel: ui.versionLabel,

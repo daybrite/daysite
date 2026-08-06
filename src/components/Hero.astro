@@ -1,15 +1,13 @@
 ---
-import type { HeroView, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
-import StoreBadges from './StoreBadges.astro';
+import type { HeroView } from '../lib/types.ts';
 
 interface Props {
   hero: HeroView;
-  views: Partial<Record<string, PlatformView | null>>;
-  site: SiteInfo;
-  locale: LocaleInfo;
 }
 
-const { hero, views, site, locale } = Astro.props;
+// The install actions live in the About card (AppActions), one platform at a time, so the hero is
+// the app's identity and nothing else.
+const { hero } = Astro.props;
 
 ---
 
@@ -39,7 +37,6 @@ const { hero, views, site, locale } = Astro.props;
       {hero.subtitle && (
         <p class="text-lg sm:text-xl text-[color:var(--color-text-soft)]">{hero.subtitle}</p>
       )}
-      <StoreBadges views={views} site={site} locale={locale} />
     </div>
   </div>
 </section>
