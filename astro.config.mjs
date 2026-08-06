@@ -43,6 +43,26 @@ function pagefindIntegration(enabled) {
   };
 }
 
+/**
+ * GitHub Pages custom domains are declared by a CNAME file at the site root; without it a
+ * Pages deploy silently resets the domain binding. Emitted only for non-github.io hosts —
+ * project pages under <owner>.github.io need none.
+ *
+ * @returns {import('astro').AstroIntegration}
+ */
+function cnameIntegration() {
+  return {
+    name: 'cname',
+    hooks: {
+      'astro:build:done': async ({ dir }) => {
+        if (hostURL.hostname.endsWith('.github.io')) return;
+        const { writeFile } = await import('node:fs/promises');
+        await writeFile(new URL('CNAME', dir), hostURL.hostname + '\n');
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: data.site.host,
   base: basePath,
@@ -60,6 +80,7 @@ export default defineConfig({
       },
     }),
     pagefindIntegration(data.site.pagefind === true),
+    cnameIntegration(),
   ],
   vite: {
     plugins: [/** @type {any} */ (tailwindcss())],
