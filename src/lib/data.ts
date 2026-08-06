@@ -112,6 +112,25 @@ function resolveAssetURL(
   return trimmedBase + trimmedLoc;
 }
 
+/**
+ * The icon as something the favicon generator can READ, which is not the same thing as the URL a
+ * page links to.
+ *
+ * `resolveAssetURL` returns a browser path for a site-relative asset (`/<base>/app/icon.png`).
+ * That looks like an absolute filesystem path and is not one, so handing it to the generator ends
+ * in ENOENT — swallowed as "could not fetch the icon", leaving the site with no favicon and no
+ * error. A site-relative location is a file under `public/`, so resolve it there.
+ */
+function resolveIconSource(
+  location: string | undefined,
+  app: AppEntry,
+): string | undefined {
+  if (!location) return undefined;
+  if (/^https?:\/\//i.test(location)) return location;
+  if (app.source?.assets) return resolveAssetURL(location, app);
+  return resolve(projectRoot(), 'public', location.replace(/^\/+/, ''));
+}
+
 // Locale collection ──────────────────────────────────────────────────────────
 
 function collectLocales(app: AppEntry): string[] {
@@ -311,7 +330,7 @@ async function buildAppView(
   if (opts.generateAppFavicons) {
     let iconSource: string | undefined;
     for (const k of platformIds) {
-      iconSource = resolveAssetURL(app.platforms[k]?.assets?.icon?.location, app);
+      iconSource = resolveIconSource(app.platforms[k]?.assets?.icon?.location, app);
       if (iconSource) break;
     }
     if (iconSource) {

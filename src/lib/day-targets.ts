@@ -30,8 +30,8 @@ export const DAY_TARGETS: DayTarget[] = [
   { key: 'harmony',   target: 'harmony-arkui', name: 'HarmonyOS', displayName: 'HarmonyOS (ArkUI)',        icon: 'harmony-arkui', device: 'phone',   packages: ['.hap'] },
   { key: 'macos',     target: 'macos-appkit',  name: 'macOS',     displayName: 'macOS (AppKit)',           icon: 'macos-appkit',  device: 'desktop', packages: ['.dmg'] },
   { key: 'windows',   target: 'windows-xaml',  name: 'Windows',   displayName: 'Windows (XAML)',           icon: 'windows-xaml',  device: 'desktop', packages: ['.msix', '-setup.exe'] },
-  { key: 'linux-gtk', target: 'linux-gtk',     name: 'GNOME',     displayName: 'Linux (GTK 4 / GNOME)',    icon: 'linux-gtk',     device: 'desktop', packages: ['.flatpak'] },
-  { key: 'linux-qt',  target: 'linux-qt',      name: 'KDE',       displayName: 'Linux (Qt 6 / KDE)',       icon: 'linux-qt',      device: 'desktop', packages: ['.flatpak'] },
+  { key: 'linux-gtk', target: 'linux-gtk',     name: 'GNOME',     displayName: 'Linux (GTK 4 / GNOME)',    icon: 'linux-gtk',     device: 'desktop', packages: ['.appimage', '.flatpak'] },
+  { key: 'linux-qt',  target: 'linux-qt',      name: 'KDE',       displayName: 'Linux (Qt 6 / KDE)',       icon: 'linux-qt',      device: 'desktop', packages: ['.appimage', '.flatpak'] },
 ];
 
 const byKey = new Map(DAY_TARGETS.map((t) => [t.key, t]));

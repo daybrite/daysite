@@ -20,25 +20,30 @@ const { hero } = Astro.props;
     ></div>
   )}
 
-  {/* A centered column, under the centered platform picker: with the install actions moved to the
-      About card, the hero is only the app's identity, and a left-aligned title beneath a centered
-      control reads as a misalignment rather than a layout. */}
-  <div class="rise flex flex-col items-center gap-6 text-center sm:gap-8">
+  {/* The app mark at the leading edge, with the title and subtitle set against it. Both text
+      lines share one starting edge with the icon, which is what makes the group read as a unit
+      rather than as a centred stack that happens to have a picture on top.
+
+      It stacks below `sm`, keeping the leading alignment: a 40-unit icon beside a wrapping title
+      leaves the text about eleven characters wide on a phone. Above `sm` the text block centres
+      against the icon, which is taller than two lines of it — top-aligned, the pair reads as a
+      caption stranded at the top of a tall square. */}
+  <div class="rise flex flex-col items-start gap-5 text-start sm:flex-row sm:items-center sm:gap-8">
     {hero.iconURL && (
       <img
         src={hero.iconURL}
         alt=""
         width="160"
         height="160"
-        class="size-28 sm:size-40 rounded-3xl shadow-2xl shadow-black/10 ring-1 ring-black/5 bg-white"
+        class="size-24 shrink-0 rounded-3xl bg-white shadow-2xl shadow-black/10 ring-1 ring-black/5 sm:size-32 lg:size-40"
         loading="eager"
         decoding="async"
       />
     )}
     <div class="space-y-3 sm:space-y-4">
-      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-balance">{hero.title}</h1>
+      <h1 class="text-4xl font-bold tracking-tight text-balance sm:text-5xl">{hero.title}</h1>
       {hero.subtitle && (
-        <p class="mx-auto max-w-2xl text-lg sm:text-xl text-[color:var(--color-text-soft)] text-pretty">{hero.subtitle}</p>
+        <p class="max-w-2xl text-lg text-[color:var(--color-text-soft)] text-pretty sm:text-xl">{hero.subtitle}</p>
       )}
     </div>
   </div>

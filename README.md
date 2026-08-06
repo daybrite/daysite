@@ -57,6 +57,20 @@ CI generates two data files next to `site.toml`; neither is committed:
 | `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | the `screenshots-<target>` artifacts the dayscript walkthroughs capture (`<target>/<variant>/<shot>.png`) |
 
+### The app icon
+
+The largest PNG under the project's `resource/icons/` becomes the site's identity. The generator
+copies it to `public/app/icon.png` and records it in `appindex.json`; the build then masks it into
+the favicon set (`/_generated/favicons/`, regenerated only when the source bytes change), links it
+from every page's `<head>`, uses it as the Open Graph image, and renders it large at the leading
+edge of the landing page beside the title.
+
+Directory preference is `png/`, then `ios/`, `linux/`, `windows/`, `android/`, the `icons/` root,
+and `macos/` last — macOS art is drawn pre-rounded with transparent padding, so masking it again
+rounds it twice. Within a directory the largest wins, read from the trailing `-<size>` every Day
+icon name carries. A project with no PNG there simply gets no favicon and no app mark; the
+generator says so.
+
 `appindex.json` conforms to the appindex schema — `platforms.ios` / `platforms.android` mean what
 they mean there — plus Day's additive extension: entries under `macos`, `windows`, `linux-gtk`,
 `linux-qt`, `harmony`, and `web` keys, and a per-platform `artifacts` array carrying the stable

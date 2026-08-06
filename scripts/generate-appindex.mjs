@@ -21,7 +21,7 @@
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir> [--repo owner/name]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseTOML } from 'smol-toml';
@@ -41,21 +41,71 @@ const TARGET_KEYS = {
   'web-dom': 'web',
 };
 
+// The extensions an installable package ends with, per target. A release also carries screenshot
+// zips, the checksum manifest, and one provenance sidecar per artifact — and a sidecar is named
+// after its artifact (`app-macos-appkit.dmg.sbom-cdx.json`), so it contains the target id and the
+// package extension both. Matching the END of the name is what separates a download from a
+// document that merely describes one.
+const TARGET_PACKAGES = {
+  'ios-uikit': ['.ipa'],
+  'android-mdc': ['.apk', '.aab'],
+  'macos-appkit': ['.dmg'],
+  'windows-xaml': ['.msix', '-setup.exe'],
+  'linux-gtk': ['.appimage', '.flatpak'],
+  'linux-qt': ['.appimage', '.flatpak'],
+  'harmony-arkui': ['.hap'],
+  // web-dom is absent on purpose, mirroring day-targets.ts's empty `packages`: the web build is
+  // hosted under the site's own webapp/, and its release zip is plumbing for that pipeline.
+};
+
 // Which release-asset name belongs to which target. build-day-app packs with
-// `--no-version-in-name`, so assets look like `<name>-<target>[-arch][.ext]` — match on the
-// target id in the file name, which every Day release asset carries.
+// `--no-version-in-name`, so assets look like `<stem>-<platform>-<toolkit>[-extra].<ext>` — match
+// on the target id, which every Day release asset carries.
 function assetTarget(name) {
-  // Not everything on a release is installable: screenshot zips and the checksum manifest ride
-  // along for the gallery and for verification, not for the download card.
-  if (name.startsWith('screenshots-') || name === 'SHA256SUMS' || name.endsWith('.buildinfo')) {
-    return undefined;
+  if (name.startsWith('screenshots-')) return undefined;
+  for (const [target, exts] of Object.entries(TARGET_PACKAGES)) {
+    if (name.includes(target) && exts.some((e) => name.endsWith(e))) return target;
   }
-  for (const target of Object.keys(TARGET_KEYS)) {
-    if (name.includes(target)) return target;
-  }
-  // The default flatpak naming carries gtk/qt without the linux- prefix in some layouts.
+  // Older layouts named a flatpak with the toolkit alone, without the linux- prefix.
   if (/-gtk-.*\.flatpak$/.test(name)) return 'linux-gtk';
   if (/-qt-.*\.flatpak$/.test(name)) return 'linux-qt';
+  return undefined;
+}
+
+// Where a Day project keeps its icons, best source first. `png/` is the platform-neutral set
+// `day new` scaffolds, and the one to prefer: macOS art is drawn pre-rounded with transparent
+// padding, so masking it again for a favicon rounds it twice and shrinks it inside its own box.
+// macOS is therefore last, used only when a project ships nothing else.
+const ICON_DIRS = ['png', 'ios', 'linux', 'windows', 'android', '', 'macos'];
+
+/**
+ * The largest PNG under `resource/icons/`, as an absolute path, or undefined.
+ *
+ * Size comes from the trailing `-<N>` every Day icon name carries (`day-icon-1024.png`,
+ * `AppIcon-1024.png`, `day-icon-macos-512.png`); a name without one falls back to its byte count,
+ * which orders a set of the same artwork correctly even though it is not a pixel count. Biggest
+ * wins because both consumers scale DOWN — favicons to 512 and below, the landing page to 160.
+ */
+function findAppIcon(projectRoot) {
+  for (const sub of ICON_DIRS) {
+    const dir = join(projectRoot, 'resource', 'icons', sub);
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    let best;
+    for (const name of entries) {
+      if (!name.toLowerCase().endsWith('.png')) continue;
+      const path = join(dir, name);
+      const stem = name.slice(0, -4);
+      const tail = Number(stem.slice(stem.lastIndexOf('-') + 1));
+      const rank = Number.isFinite(tail) && tail > 0 ? tail : statSync(path).size / 1000;
+      if (!best || rank > best.rank) best = { path, rank };
+    }
+    if (best) return best.path;
+  }
   return undefined;
 }
 
@@ -141,17 +191,18 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   }
   for (const k of Object.keys(links)) if (!Object.keys(links[k]).length) delete links[k];
 
-  // App icon → served from the site so the appindex needs no external asset host.
+  // App icon → served from the site, so the appindex needs no external asset host. It becomes the
+  // favicon set and the landing page's app mark, both of which want the biggest source available.
   let iconLocation;
-  for (const candidate of ['resource/icons/icon.png', 'resource/icons/AppIcon.png', 'resource/icon.png']) {
-    const p = join(projectRoot, candidate);
-    if (existsSync(p)) {
-      const pub = join(TEMPLATE_ROOT, 'public', 'app');
-      mkdirSync(pub, { recursive: true });
-      copyFileSync(p, join(pub, 'icon.png'));
-      iconLocation = 'app/icon.png';
-      break;
-    }
+  const icon = findAppIcon(projectRoot);
+  if (icon) {
+    const pub = join(TEMPLATE_ROOT, 'public', 'app');
+    mkdirSync(pub, { recursive: true });
+    copyFileSync(icon, join(pub, 'icon.png'));
+    iconLocation = 'app/icon.png';
+    log(`app icon: ${icon.slice(projectRoot.length + 1)}`);
+  } else {
+    log('no PNG under resource/icons/ — the site gets no favicon and no app mark');
   }
 
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY;

@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
@@ -56,7 +57,10 @@ function cnameIntegration() {
     hooks: {
       'astro:build:done': async ({ dir }) => {
         if (hostURL.hostname.endsWith('.github.io')) return;
-        const { writeFile } = await import('node:fs/promises');
+        // `writeFile` is imported at the top rather than here: a dynamic import inside
+        // `astro:build:done` goes through Vite's module runner, which another hook (pagefind's
+        // indexing) can close first — the build then dies with "Vite module runner has been
+        // closed" and the site deploys without its CNAME, silently dropping the custom domain.
         await writeFile(new URL('CNAME', dir), hostURL.hostname + '\n');
       },
     },

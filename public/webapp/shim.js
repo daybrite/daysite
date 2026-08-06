@@ -1,0 +1,935 @@
+// day-dom shim — the DOM half of the web-dom backend (toolkits/day-dom/src/lib.rs is the
+// Rust half; the two mirror each other's tables). Owns every real DOM call, keyed by numeric
+// element ids, and calls back into wasm through a handful of exports. Plain ES module: no
+// bundler, no wasm-bindgen.
+
+let wasm = null;            // wasm exports once instantiated
+const els = [null, null];   // element registry; id 1 = the day root (set in start())
+let lastSetRoute = null;    // the route we last wrote to the hash (echo suppression)
+const PREF_NS = 'day.pref.'; // localStorage namespace for day-part-prefs
+let scriptWs = null;        // dayscript WebSocket once armed (?dayscript= token present)
+let scriptOutbox = [];      // reply lines queued while the socket is still connecting
+const httpInflight = new Map(); // request id → AbortController (day-part-http's browser arm)
+const utf8 = new TextDecoder();
+const utf8enc = new TextEncoder();
+
+// devicemotion state (see day_dom_sensor_*). One listener, both kinds.
+const SENSOR_GRACE_MS = 2000;
+// The live geolocation watch id (0 = none).
+let geoWatch = 0;
+
+const sensorState = { started: false, startedAt: 0, saw: false, accel: null, gyro: null, timers: [0, 0, 0] };
+
+const mem = () => new Uint8Array(wasm.memory.buffer);
+const f64 = (ptr, len) => new Float64Array(wasm.memory.buffer, ptr, len);
+const str = (ptr, len) => utf8.decode(new Uint8Array(wasm.memory.buffer, ptr, len));
+
+// Send a JS string into wasm: allocate, copy, return [ptr, len].
+function intoWasm(s) {
+  const bytes = utf8enc.encode(s);
+  const ptr = wasm.day_dom_alloc(bytes.length);
+  mem().set(bytes, ptr);
+  return [ptr, bytes.length];
+}
+
+// ---------------------------------------------------------------------------
+// Element creation (mirrors EL_* in lib.rs)
+// ---------------------------------------------------------------------------
+
+function create(kind) {
+  let el;
+  switch (kind) {
+    case 0: el = div('day-container'); break;
+    case 1: el = div('day-label'); break;
+    case 2: el = document.createElement('button'); el.className = 'day-btn'; el.type = 'button'; break;
+    case 3: { // switch-styled checkbox
+      el = document.createElement('label'); el.className = 'day-toggle';
+      const input = document.createElement('input'); input.type = 'checkbox';
+      const knob = div('day-toggle-knob');
+      el.append(input, knob); el.__input = input; break;
+    }
+    case 4: el = document.createElement('input'); el.type = 'range'; el.className = 'day-slider'; break;
+    case 5: el = document.createElement('input'); el.type = 'text'; el.className = 'day-field'; break;
+    case 6: el = document.createElement('textarea'); el.className = 'day-area'; break;
+    case 7: el = document.createElement('select'); el.className = 'day-select'; break;
+    case 8: el = document.createElement('progress'); el.className = 'day-progress'; break;
+    case 9: el = div('day-spinner'); break;
+    case 10: el = document.createElement('img'); el.className = 'day-img'; el.alt = ''; break;
+    case 11: el = document.createElement('canvas'); el.className = 'day-canvas'; break;
+    case 12: { el = div('day-scroll'); const c = div('day-scroll-content'); el.append(c); el.__content = c; break; }
+    case 13: el = div('day-divider'); break;
+    case 14: el = div('day-nav'); break;
+    case 15: el = div('day-page'); break;
+    case 16: el = div('day-navmenu'); break;
+    case 17: { // tabs: strip + pages area
+      el = div('day-tabs');
+      const strip = div('day-tabs-strip'); const pages = div('day-tabs-pages');
+      el.append(strip, pages); el.__strip = strip; el.__content = pages; break;
+    }
+    case 18: el = div('day-cell'); break;
+    case 19: el = div('day-segmented'); break;
+    case 20: el = div('day-radios'); break;
+    default: el = div('day-container');
+  }
+  return register(el);
+}
+
+/// Give an element its shim-side id and keep it addressable. Shared by create() and the
+/// tag-name escape hatch piece renderers use.
+function register(el) {
+  el.__id = els.length;
+  els.push(el);
+  return el.__id;
+}
+
+function div(cls) { const d = document.createElement('div'); d.className = cls; return d; }
+const E = (id) => els[id];
+// The element that carries value/checked/listeners (the toggle wraps its input).
+const V = (id) => E(id).__input || E(id);
+
+// ---------------------------------------------------------------------------
+// Imports: the DOM verbs lib.rs declares
+// ---------------------------------------------------------------------------
+
+const env = {
+  day_dom_create: (kind) => create(kind),
+
+  day_dom_insert(parent, child, index) {
+    const p = E(parent); const target = p.__content || p;
+    const ref = target.children[index] ?? null;
+    target.insertBefore(E(child), ref);
+  },
+  day_dom_remove: (child) => E(child)?.remove(),
+  day_dom_release(id) { E(id)?.remove(); els[id] = null; },
+
+  day_dom_set_frame(id, x, y, w, h) {
+    const s = E(id).style;
+    s.position = 'absolute';
+    s.left = x + 'px'; s.top = y + 'px';
+    s.width = w + 'px'; s.height = h + 'px';
+  },
+  day_dom_set_text(id, ptr, len) {
+    const el = E(id); const t = str(ptr, len);
+    if (el.tagName === 'TEXTAREA') el.value = t; else el.textContent = t;
+  },
+  day_dom_set_style(id, p, pl, v, vl) { E(id).style.setProperty(str(p, pl), str(v, vl)); },
+  day_dom_set_attr(id, a, al, v, vl) {
+    const el = V(id); const name = str(a, al); const val = str(v, vl);
+    if (name === 'value') { el.value = val; return; }
+    // Boolean attrs use a marker convention from the Rust side: "" removes, "-" sets.
+    if (name === 'disabled' || name === 'readonly') {
+      val === '' ? el.removeAttribute(name) : el.setAttribute(name, '');
+    } else el.setAttribute(name, val);
+  },
+  // The piece-renderer escape hatch (docs/extending.md): day-dom's own EL_* kind codes cover only
+  // the built-in vocabulary, so an external piece creates its element by tag name and drives it
+  // with zero-argument method calls (`play`, `pause`, `load`, …).
+  day_dom_create_tag(t, tl) { return register(document.createElement(str(t, tl))); },
+  day_dom_call(id, m, ml) {
+    const el = V(id); const name = str(m, ml);
+    try { el[name]?.(); } catch (e) { console.error('day: ' + name + '()', e); }
+  },
+  day_dom_set_class(id, ptr, len, on) { E(id).classList.toggle(str(ptr, len), !!on); },
+  day_dom_set_value(id, v) {
+    const el = V(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = v;
+    else el.value = v;
+  },
+  day_dom_set_checked(id, on) { V(id).checked = !!on; },
+
+  day_dom_listen: (id, mask) => listen(id, mask),
+
+  day_dom_measure_text(t, tl, f, fl, maxW, out) {
+    let text2, font;
+    if (t === 0) { // measure element `tl`'s own text and computed font
+      const el = E(tl); text2 = el.textContent || ''; font = getComputedStyle(el).font;
+    } else { text2 = str(t, tl); font = str(f, fl); }
+    const [w, h] = measure(text2, font, maxW);
+    f64(out, 2).set([w, h]);
+  },
+  day_dom_width: (id) => E(id).clientWidth,
+
+  day_dom_scroll_to(id, x, y, animated) {
+    E(id).scrollTo({ left: x, top: y, behavior: animated ? 'smooth' : 'instant' });
+  },
+  day_dom_scroll_edge(id, edge, animated) {
+    const el = E(id);
+    const top = edge === 0 ? 0 : el.scrollHeight;
+    el.scrollTo({ top, behavior: animated ? 'smooth' : 'instant' });
+  },
+  day_dom_scroll_offset(id, out) { const el = E(id); f64(out, 2).set([el.scrollLeft, el.scrollTop]); },
+  // Pointer-drag reorder for the emulated list (docs/list.md): the browser has no native list
+  // reorder, so this fakes the affordance — lift the pressed cell, slide a gap under it (CSS
+  // transitions on the other cells), autoscroll near the edges — while the DECISIONS stay
+  // Day's: every hovered slot is vetted synchronously through wasm.day_dom_list_can_move (the
+  // app's guard), and the drop commits through wasm.day_dom_list_move, which re-binds the cells.
+  day_dom_list_reorder(id) {
+    const host = E(id);
+    host.classList.add('day-reorder');
+    let d = null; // in-flight drag
+    const cells = () => [...host.querySelectorAll('.day-cell')];
+    const cleanup = () => {
+      if (!d) return;
+      for (const c of cells()) { c.style.transform = ''; c.classList.remove('day-drag'); }
+      host.classList.remove('day-no-drop');
+      clearTimeout(d.hold);
+      d = null;
+    };
+    host.addEventListener('pointerdown', (e) => {
+      const cell = e.target.closest('.day-cell');
+      if (!cell || d) return;
+      const rowH = cell.offsetHeight || 1;
+      d = {
+        cell, rowH,
+        from: Math.round(cell.offsetTop / rowH),
+        startY: e.clientY, startScroll: host.scrollTop,
+        engaged: false, accepted: null, pid: e.pointerId,
+        // Touch engages after a hold (so plain swipes still scroll); mouse/pen on first move.
+        hold: e.pointerType === 'touch' ? setTimeout(() => { if (d) engage(); }, 300) : null,
+      };
+    });
+    const engage = () => {
+      d.engaged = true;
+      host.setPointerCapture(d.pid);
+      d.cell.classList.add('day-drag');
+    };
+    host.addEventListener('pointermove', (e) => {
+      if (!d) return;
+      const dy = (e.clientY - d.startY) + (host.scrollTop - d.startScroll);
+      if (!d.engaged) {
+        if (e.pointerType === 'touch') return;      // waiting for the hold timer
+        if (Math.abs(dy) < 5) return;
+        engage();
+      }
+      e.preventDefault();
+      d.cell.style.transform = `translateY(${dy}px)`;
+      // Autoscroll near the viewport edges so long lists are reachable.
+      const r = host.getBoundingClientRect();
+      if (e.clientY < r.top + 24) host.scrollTop -= 12;
+      else if (e.clientY > r.bottom - 24) host.scrollTop += 12;
+      // The slot under the dragged cell's center, vetted by the app's guard.
+      const centre = d.cell.offsetTop + dy + d.rowH / 2;
+      const n = cells().length;
+      const slot = Math.max(0, Math.min(n - 1, Math.floor(centre / d.rowH)));
+      const verdict = wasm.day_dom_list_can_move(id, d.from, slot);
+      d.accepted = verdict < 0 ? null : verdict;
+      host.classList.toggle('day-no-drop', d.accepted === null);
+      for (const c of cells()) {
+        if (c === d.cell) continue;
+        const row = Math.round(c.offsetTop / d.rowH);
+        let shift = 0;
+        if (d.accepted !== null) {
+          if (d.from < d.accepted && row > d.from && row <= d.accepted) shift = -d.rowH;
+          else if (d.from > d.accepted && row >= d.accepted && row < d.from) shift = d.rowH;
+        }
+        c.style.transform = shift ? `translateY(${shift}px)` : '';
+      }
+    });
+    const finish = (commit) => {
+      if (!d) return;
+      const { engaged, from, accepted } = d;
+      cleanup();
+      if (commit && engaged && accepted !== null && accepted !== from) {
+        wasm.day_dom_list_move(id, from, accepted);
+      }
+    };
+    host.addEventListener('pointerup', () => finish(true));
+    host.addEventListener('pointercancel', () => finish(false));
+  },
+  day_dom_scroll_content(id, w, h) {
+    const c = E(id).__content; if (!c) return;
+    c.style.position = 'relative';
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+  },
+  day_dom_focus(id, focused) { const el = V(id); focused ? el.focus() : el.blur(); },
+
+  day_dom_canvas_replay: (id, ops, opsLen, strs, strsLen, w, h) =>
+    replay(E(id), f64(ops, opsLen), new Uint8Array(wasm.memory.buffer, strs, strsLen), w, h),
+
+  day_dom_present: (req, json, len) => present(req, JSON.parse(str(json, len))),
+  day_dom_dismiss(req) { dialogs.get(req)?.close('day-dismiss'); },
+
+  day_dom_nav_mode(id, split, t, tl) {
+    const nav = E(id);
+    nav.classList.add(split ? 'split' : 'stack');
+    if (split) {
+      const side = div('day-nav-sidebar'); const detail = div('day-nav-detail');
+      nav.append(side, detail); nav.__side = side; nav.__detail = detail;
+    } else {
+      const bar = div('day-nav-backbar');
+      const btn = document.createElement('button'); btn.className = 'day-nav-back'; btn.textContent = '‹';
+      const title = div('day-nav-title');
+      bar.append(btn, title); bar.style.display = 'none';
+      const detail = div('day-nav-detail');
+      nav.append(bar, detail);
+      nav.__bar = bar; nav.__title = title; nav.__detail = detail;
+      btn.addEventListener('click', () => wasm.day_dom_event(id, 14, 0, 0, 0, 0));
+    }
+  },
+  day_dom_nav_add_page(nav, page, sidebar) {
+    const n = E(nav);
+    (sidebar ? n.__side : n.__detail).append(E(page));
+  },
+  day_dom_nav_back_bar(nav, visible, t, tl) {
+    const n = E(nav); if (!n.__bar) return;
+    n.__bar.style.display = visible ? 'flex' : 'none';
+    n.__detail.classList.toggle('under-bar', !!visible);
+    n.__title.textContent = str(t, tl);
+  },
+
+  day_dom_navmenu(id, json, len) {
+    const el = E(id); const spec = JSON.parse(str(json, len));
+    el.textContent = '';
+    spec.items.forEach((item, i) => {
+      const row = div('day-navmenu-row');
+      if (item.icon) {
+        // Template rendering, the iOS model: the icon is a MASK painted with currentColor,
+        // so it follows the row's text color — light in dark mode, white when selected.
+        const icon = div('day-navmenu-icon');
+        icon.style.maskImage = `url("${item.icon}")`;
+        icon.style.webkitMaskImage = `url("${item.icon}")`;
+        row.append(icon);
+      }
+      const t = document.createElement('span'); t.textContent = item.title; row.append(t);
+      if (i === spec.selected) row.classList.add('selected');
+      row.addEventListener('click', () => wasm.day_dom_event(id, 6, i, 0, 0, 0));
+      el.append(row);
+    });
+  },
+  day_dom_navmenu_select(id, idx) {
+    [...E(id).children].forEach((row, i) => row.classList.toggle('selected', i === idx));
+  },
+
+  // Options/selection for tabs, selects, segmented controls, and radio groups (one verb,
+  // dispatched on the element's class — mirrors realize_picker/TabsProps on the Rust side).
+  day_dom_tabs(id, json, len) {
+    const el = E(id); const spec = JSON.parse(str(json, len));
+    if (el.tagName === 'SELECT') {
+      el.textContent = '';
+      spec.options.forEach((o) => { const opt = document.createElement('option'); opt.textContent = o; el.append(opt); });
+      el.selectedIndex = spec.selected;
+      return;
+    }
+    if (el.classList.contains('day-segmented') || el.classList.contains('day-radios')) {
+      el.textContent = '';
+      const radios = el.classList.contains('day-radios');
+      spec.options.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.className = radios ? 'day-radio' : 'day-seg';
+        if (radios) { const dot = div('day-radio-dot'); b.append(dot, document.createTextNode(o)); }
+        else b.textContent = o;
+        if (i === spec.selected) b.classList.add('selected');
+        b.addEventListener('click', () => {
+          selectAmong(el, i);
+          wasm.day_dom_event(id, 6, i, 0, 0, 0);
+        });
+        el.append(b);
+      });
+      return;
+    }
+    // tabs strip
+    el.__strip.textContent = '';
+    spec.titles.forEach((t, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'day-tab'; b.textContent = t;
+      if (i === spec.selected) b.classList.add('selected');
+      b.addEventListener('click', () => {
+        env.day_dom_tabs_select(id, i);
+        wasm.day_dom_event(id, 6, i, 0, 0, 0);
+      });
+      el.__strip.append(b);
+    });
+    el.__selected = spec.selected;
+    queueMicrotask(() => env.day_dom_tabs_select(id, spec.selected));
+  },
+  day_dom_tabs_select(id, idx) {
+    const el = E(id);
+    if (el.classList.contains('day-segmented') || el.classList.contains('day-radios')) { selectAmong(el, idx); return; }
+    if (el.tagName === 'SELECT') { el.selectedIndex = idx; return; }
+    [...el.__strip.children].forEach((b, i) => b.classList.toggle('selected', i === idx));
+    [...el.__content.children].forEach((p, i) => { p.style.display = i === idx ? 'block' : 'none'; });
+    el.__selected = idx;
+  },
+  day_dom_set_hash(ptr, len, replace) {
+    const route = str(ptr, len);
+    lastSetRoute = route;
+    const url = route ? '#' + route : location.pathname + location.search;
+    if (replace || route === location.hash.slice(1)) history.replaceState(null, '', url);
+    else if (route) location.hash = route;
+    else history.pushState(null, '', url);
+  },
+
+  // Motion sensors (docs/sensors.md): the browser arm of day-part-sensors, over `devicemotion`.
+  //
+  // ONE listener feeds both kinds — the event carries acceleration and rotation together. The
+  // magnetometer has no cross-browser API at all (Chromium's Generic Sensor `Magnetometer` is
+  // flag-gated and absent from Safari and Firefox), so kind 2 is always unavailable.
+  //
+  // Availability can only be known in retrospect: `'DeviceMotionEvent' in window` is true on a
+  // desktop browser with no hardware, so this reports "available" until a grace period passes with
+  // no event, and "unavailable" after — which is the honest answer for a laptop.
+  day_dom_sensor_start(kind) {
+    if (kind === 2 || sensorState.started) return;
+    sensorState.started = true;
+    sensorState.startedAt = Date.now();
+    addEventListener('devicemotion', (e) => {
+      const a = e.accelerationIncludingGravity;
+      if (a && a.x !== null) {
+        sensorState.accel = [a.x, a.y, a.z];
+        sensorState.saw = true;
+      }
+      const r = e.rotationRate;
+      if (r && r.alpha !== null) {
+        // day's gyroscope contract is rad/s about the device axes; the event reports deg/s, with
+        // beta about x, gamma about y and alpha about z.
+        const d = Math.PI / 180;
+        sensorState.gyro = [r.beta * d, r.gamma * d, r.alpha * d];
+        sensorState.saw = true;
+      }
+    });
+  },
+  /// 1 when a sample was written to `out` as three f64s, 0 when none has arrived.
+  day_dom_sensor_read(kind, out) {
+    const v = kind === 0 ? sensorState.accel : kind === 1 ? sensorState.gyro : null;
+    if (!v) return 0;
+    f64(out, 3).set(v);
+    return 1;
+  },
+  // The feed timer. wasm32 has no threads, so the browser drives sampling: this calls the module's
+  // exported day_sensors_tick(kind), which fans the newest reading out to that sensor's watchers.
+  day_dom_sensor_feed(kind, ms) {
+    if (sensorState.timers[kind]) return;
+    sensorState.timers[kind] = setInterval(() => {
+      try { wasm.day_sensors_tick(kind); } catch (e) { console.error('day: sensor tick', e); }
+    }, ms);
+  },
+  day_dom_sensor_unfeed(kind) {
+    clearInterval(sensorState.timers[kind]);
+    sensorState.timers[kind] = 0;
+  },
+  day_dom_sensor_available(kind) {
+    if (kind === 2 || typeof DeviceMotionEvent === 'undefined') return 0;
+    if (sensorState.saw) return 1;
+    // Not started yet, or still inside the grace period.
+    return !sensorState.started || Date.now() - sensorState.startedAt < SENSOR_GRACE_MS ? 1 : 0;
+  },
+
+  // Location (docs/location.md): the browser arm of day-part-location, over
+  // `navigator.geolocation.watchPosition`. The browser's API is already a subscription with an
+  // error channel, so it maps almost one-to-one.
+  //
+  // A field the browser did not measure is `null`, which crosses to Rust as NaN — the part turns a
+  // non-finite value back into `None` rather than inventing a zero.
+  day_dom_geo_available() {
+    return navigator.geolocation ? 1 : 0;
+  },
+  day_dom_geo_start(high) {
+    if (geoWatch !== 0 || !navigator.geolocation) return;
+    const n = (v) => (v === null || v === undefined ? NaN : v);
+    geoWatch = navigator.geolocation.watchPosition(
+      (p) => {
+        const c = p.coords;
+        wasm.day_location_fix(
+          c.latitude, c.longitude, n(c.altitude), n(c.accuracy),
+          n(c.altitudeAccuracy), n(c.speed), n(c.heading), n(p.timestamp),
+        );
+      },
+      (e) => wasm.day_location_error(e.code),
+      { enableHighAccuracy: high !== 0, timeout: 30000, maximumAge: 0 },
+    );
+  },
+  day_dom_geo_stop() {
+    if (geoWatch === 0) return;
+    navigator.geolocation.clearWatch(geoWatch);
+    geoWatch = 0;
+  },
+
+  // Preferences (docs/prefs.md): the browser arm of day-part-prefs. localStorage can throw
+  // (private browsing, storage pressure) — failures report as absent/uncommitted, matching
+  // the part's contract on every platform.
+  day_dom_pref_set(k, kl, v, vl) {
+    try { localStorage.setItem(PREF_NS + str(k, kl), str(v, vl)); return 1; }
+    catch { return 0; }
+  },
+  day_dom_pref_get(k, kl, out, cap) {
+    let v;
+    try { v = localStorage.getItem(PREF_NS + str(k, kl)); } catch { v = null; }
+    if (v === null) return -1;
+    const bytes = utf8enc.encode(v);
+    mem().set(bytes.slice(0, cap), out);
+    return bytes.length;
+  },
+  day_dom_pref_remove(k, kl) {
+    const key = PREF_NS + str(k, kl);
+    try {
+      const had = localStorage.getItem(key) !== null;
+      localStorage.removeItem(key);
+      return had ? 1 : 0;
+    } catch { return 0; }
+  },
+  day_dom_pref_has(k, kl) {
+    try { return localStorage.getItem(PREF_NS + str(k, kl)) !== null ? 1 : 0; }
+    catch { return 0; }
+  },
+
+  // HTTP (docs/http.md): the browser arm of day-part-http. One fetch() per request id, with
+  // an AbortController serving both day_dom_http_abort and the timeout timer (the timer
+  // bounds connect + response head; the body phase is uncapped — Rust-fallback parity). The
+  // completion re-enters wasm EXACTLY once per id: day_http_done, or day_http_failed with
+  // kind 1 BadUrl / 2 Timeout / 3 Cancelled / 0 Io (a browser hides DNS/connect/TLS detail).
+  // Headers cross as flat `u32-LE len, bytes` key/value records both ways — no JSON escaping,
+  // order and duplicates preserved. Request buffers are COPIED out before the first await:
+  // a day_http_alloc call may grow (and move) wasm memory under any borrowed view.
+  day_dom_http_start(id, m, ml, u, ul, h, hl, b, bl, hasBody, timeoutMs) {
+    const method = str(m, ml);
+    let url;
+    try { url = new URL(str(u, ul), document.baseURI).toString(); }
+    catch { httpFail(id, 1, str(u, ul)); return; }
+    const headers = new Headers();
+    const hb = new Uint8Array(wasm.memory.buffer, h, hl).slice();
+    const hv = new DataView(hb.buffer);
+    for (let i = 0; i + 4 <= hb.length;) {
+      const kl = hv.getUint32(i, true); const k = utf8.decode(hb.subarray(i + 4, i + 4 + kl)); i += 4 + kl;
+      const vl = hv.getUint32(i, true); const v = utf8.decode(hb.subarray(i + 4, i + 4 + vl)); i += 4 + vl;
+      headers.append(k, v);
+    }
+    const body = hasBody ? new Uint8Array(wasm.memory.buffer, b, bl).slice() : undefined;
+    const ctl = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, timeoutMs);
+    httpInflight.set(id, ctl);
+    (async () => {
+      try {
+        const resp = await fetch(url, { method, headers, body, signal: ctl.signal });
+        clearTimeout(timer); // head arrived — the body phase runs uncapped
+        const bodyBytes = new Uint8Array(await resp.arrayBuffer());
+        const recs = [];
+        let hdrLen = 0;
+        for (const [k, v] of resp.headers) {
+          const kb = utf8enc.encode(k); const vb = utf8enc.encode(v);
+          const rec = new Uint8Array(8 + kb.length + vb.length);
+          const dv = new DataView(rec.buffer);
+          dv.setUint32(0, kb.length, true); rec.set(kb, 4);
+          dv.setUint32(4 + kb.length, vb.length, true); rec.set(vb, 8 + kb.length);
+          recs.push(rec); hdrLen += rec.length;
+        }
+        const hdr = new Uint8Array(hdrLen);
+        let off = 0;
+        for (const rec of recs) { hdr.set(rec, off); off += rec.length; }
+        // Allocate-then-copy per buffer, refreshing the memory view after each alloc (see
+        // the note above about memory growth).
+        const hp = hdr.length ? wasm.day_http_alloc(hdr.length) : 0;
+        if (hdr.length) mem().set(hdr, hp);
+        const bp = bodyBytes.length ? wasm.day_http_alloc(bodyBytes.length) : 0;
+        if (bodyBytes.length) mem().set(bodyBytes, bp);
+        wasm.day_http_done(id, resp.status, hp, hdr.length, bp, bodyBytes.length);
+      } catch (e) {
+        if (e && e.name === 'AbortError') httpFail(id, timedOut ? 2 : 3, '');
+        else httpFail(id, 0, String((e && e.message) || e));
+      } finally {
+        clearTimeout(timer);
+        httpInflight.delete(id);
+      }
+    })();
+  },
+  day_dom_http_abort(id) { httpInflight.get(id)?.abort(); },
+
+  // App-local files (docs/fs.md): the browser arm of day-part-fs, stored in the Origin
+  // Private File System — a real origin-scoped file hierarchy.
+  // One operation per request id (op: 0 read, 1 write, 2 remove, 3 list); the completion
+  // re-enters wasm EXACTLY once: day_fs_done (bytes; list joins names with \u001f,
+  // directories carrying a trailing slash) or day_fs_failed (kind 1 NotFound, 2 no OPFS in
+  // this context — pre-OPFS browsers and private-browsing/ephemeral sessions, which WebKit
+  // gives no storage backing — 0 everything else). Request buffers are COPIED out before the
+  // first await. OPFS only, no fallback store: scripted runs use a persistent browser
+  // profile (scripts/ci/webdom-driver.mjs) so real OPFS is what CI exercises.
+  day_dom_fs_start(id, op, p, pl, d, dl) {
+    const path = str(p, pl);
+    const data = new Uint8Array(wasm.memory.buffer, d, dl).slice();
+    const fail = (kind, msg) => {
+      const bytes = utf8enc.encode(msg);
+      const mp = bytes.length ? wasm.day_fs_alloc(bytes.length) : 0;
+      if (bytes.length) mem().set(bytes, mp);
+      wasm.day_fs_failed(id, kind, mp, bytes.length);
+    };
+    const done = (bytes) => {
+      const bp = bytes.length ? wasm.day_fs_alloc(bytes.length) : 0;
+      if (bytes.length) mem().set(bytes, bp);
+      wasm.day_fs_done(id, bp, bytes.length);
+    };
+    (async () => {
+      if (!(navigator.storage && navigator.storage.getDirectory)) {
+        fail(2, '');
+        return;
+      }
+      try {
+        done(await fsOpfs(op, path, data));
+      } catch (e) {
+        if (e && e.name === 'NotFoundError') fail(1, '');
+        else fail(0, String((e && e.message) || e));
+      }
+    })();
+  },
+
+  day_dom_script_send(ptr, len) {
+    const line = str(ptr, len);
+    if (!scriptWs) return; // scripting not armed — nothing is listening
+    if (scriptWs.readyState === WebSocket.OPEN) scriptWs.send(line);
+    else scriptOutbox.push(line);
+  },
+
+  day_dom_schedule_post: () => queueMicrotask(() => wasm.day_dom_posted()),
+  day_dom_schedule_delayed: (token, ms) => setTimeout(() => wasm.day_dom_delayed(token), ms),
+  day_dom_request_frame: () => requestAnimationFrame((t) => wasm.day_dom_frame(t / 1000)),
+  day_dom_set_title(ptr, len) { document.title = str(ptr, len); },
+  day_dom_open_url(ptr, len) { window.open(str(ptr, len), '_blank', 'noopener'); },
+
+  day_dom_env(k, kl, out, cap) {
+    const key = str(k, kl);
+    const q = new URLSearchParams(location.search);
+    let v = '';
+    switch (key) {
+      case 'vw': v = String(root().clientWidth); break;
+      case 'vh': v = String(root().clientHeight); break;
+      case 'dpr': v = String(devicePixelRatio || 1); break;
+      case 'dark': v = (q.get('theme') ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark' ? '1' : '0'; break;
+      case 'locales': v = (q.get('locale') ? [q.get('locale')] : navigator.languages).join(','); break;
+      case 'route': v = location.hash.slice(1) || q.get('route') || ''; break;
+      default: v = q.get(key) ?? '';
+    }
+    const bytes = utf8enc.encode(v).slice(0, cap);
+    mem().set(bytes, out);
+    return bytes.length;
+  },
+  day_dom_warn: (ptr, len) => console.warn(str(ptr, len)),
+
+  // Appearance override (Toolkit::set_appearance): 0 light, 1 dark, 2 follow the browser.
+  // Returns the effective mode so the wasm side's dark_mode cache stays truthful.
+  day_dom_set_dark(mode) {
+    const dark = mode === 2 ? matchMedia('(prefers-color-scheme: dark)').matches : mode === 1;
+    document.documentElement.classList.toggle('dark', dark);
+    return dark ? 1 : 0;
+  },
+};
+
+function selectAmong(group, idx) {
+  [...group.children].forEach((b, i) => b.classList.toggle('selected', i === idx));
+}
+
+// ---- day-part-fs store (see day_dom_fs_start) ---------------------------------------------
+
+/** Resolve `path` under the origin's private OPFS root and run `op`. */
+async function fsOpfs(op, path, data) {
+  const root = await navigator.storage.getDirectory();
+  const segs = path === '' ? [] : path.split('/');
+  const walk = async (upTo, create) => {
+    let dir = root;
+    for (let i = 0; i < upTo; i++) dir = await dir.getDirectoryHandle(segs[i], { create });
+    return dir;
+  };
+  if (op === 0) { // read
+    const dir = await walk(segs.length - 1, false);
+    const f = await (await dir.getFileHandle(segs[segs.length - 1])).getFile();
+    return new Uint8Array(await f.arrayBuffer());
+  }
+  if (op === 1) { // write
+    const dir = await walk(segs.length - 1, true);
+    const fh = await dir.getFileHandle(segs[segs.length - 1], { create: true });
+    const w = await fh.createWritable();
+    await w.write(data);
+    await w.close();
+    return new Uint8Array(0);
+  }
+  if (op === 2) { // remove (a file, or an empty directory)
+    const dir = await walk(segs.length - 1, false);
+    await dir.removeEntry(segs[segs.length - 1]);
+    return new Uint8Array(0);
+  }
+  // list ('' = the root); a missing directory lists as empty (the first-run state).
+  let dir;
+  try {
+    dir = await walk(segs.length, false);
+  } catch (e) {
+    if (e && e.name === 'NotFoundError') return new Uint8Array(0);
+    throw e;
+  }
+  const names = [];
+  for await (const [name, handle] of dir.entries()) {
+    names.push(handle.kind === 'directory' ? name + '/' : name);
+  }
+  names.sort();
+  return utf8enc.encode(names.join('\u001f'));
+}
+
+// Deliver a day-part-http failure: kind per the taxonomy on day_dom_http_start above.
+function httpFail(id, kind, msg) {
+  const bytes = utf8enc.encode(msg);
+  const p = bytes.length ? wasm.day_http_alloc(bytes.length) : 0;
+  if (bytes.length) mem().set(bytes, p);
+  wasm.day_http_failed(id, kind, p, bytes.length);
+}
+
+// ---------------------------------------------------------------------------
+// Events (mirrors mod ev in lib.rs)
+// ---------------------------------------------------------------------------
+
+function mods(e) { return (e.ctrlKey || e.metaKey ? 1 : 0) | (e.shiftKey ? 2 : 0); }
+
+function listen(id, mask) {
+  const host = E(id); const el = V(id);
+  if (mask & 1) el.addEventListener('click', (e) => wasm.day_dom_event(id, 1, mods(e), 0, 0, 0));
+  if (mask & 2) el.addEventListener('input', () => {
+    if (el.type === 'range') wasm.day_dom_event(id, 5, Number(el.value), 0, 0, 0);
+    else { const [p, l] = intoWasm(el.value); wasm.day_dom_event_text(id, 2, p, l); }
+  });
+  if (mask & 4) el.addEventListener('change', () => {
+    if (el.type === 'checkbox') wasm.day_dom_event(id, 4, el.checked ? 1 : 0, 0, 0, 0);
+    else if (el.tagName === 'SELECT') wasm.day_dom_event(id, 6, el.selectedIndex, 0, 0, 0);
+  });
+  if (mask & 8) {
+    el.addEventListener('focus', () => wasm.day_dom_event(id, 7, 1, 0, 0, 0));
+    el.addEventListener('blur', () => wasm.day_dom_event(id, 7, 0, 0, 0, 0));
+  }
+  if (mask & 16) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') wasm.day_dom_event(id, 3, 0, 0, 0, 0); });
+  if (mask & 32) resizeObserver.observe(host);
+  if (mask & 64) host.addEventListener('scroll', () => wasm.day_dom_event(id, 12, host.scrollLeft, host.scrollTop, 0, 0));
+  if (mask & 128) host.addEventListener('pointerdown', (e) => {
+    const r = host.getBoundingClientRect();
+    wasm.day_dom_event(id, 8, e.clientX - r.left, e.clientY - r.top, 0, 0);
+  });
+  if (mask & 256) {
+    let start = null;
+    host.addEventListener('pointerdown', (e) => {
+      host.setPointerCapture(e.pointerId);
+      const r = host.getBoundingClientRect();
+      start = [e.clientX, e.clientY, r.left, r.top];
+      wasm.day_dom_event(id, 9, e.clientX - r.left, e.clientY - r.top, 0, 0);
+    });
+    host.addEventListener('pointermove', (e) => {
+      if (!start) return;
+      wasm.day_dom_event(id, 10, e.clientX - start[2], e.clientY - start[3], e.clientX - start[0], e.clientY - start[1]);
+    });
+    host.addEventListener('pointerup', (e) => {
+      if (!start) return;
+      wasm.day_dom_event(id, 11, e.clientX - start[2], e.clientY - start[3], e.clientX - start[0], e.clientY - start[1]);
+      start = null;
+    });
+  }
+}
+
+const resizeObserver = new ResizeObserver((entries) => {
+  if (!wasm) return;
+  for (const en of entries) {
+    const id = en.target.__id;
+    if (id) wasm.day_dom_event(id, 13, en.contentRect.width, en.contentRect.height, 0, 0);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Text measurement: an offscreen node, so wrapping metrics match real labels.
+// ---------------------------------------------------------------------------
+
+let measurer = null;
+function measure(text, font, maxW) {
+  if (!measurer) {
+    measurer = div('');
+    measurer.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;white-space:pre-wrap;overflow-wrap:break-word;';
+    document.body.append(measurer);
+  }
+  measurer.style.font = font;
+  measurer.style.maxWidth = (maxW < 1e5 ? maxW : 100000) + 'px';
+  measurer.textContent = text || ' ';
+  const r = measurer.getBoundingClientRect();
+  return [r.width, r.height];
+}
+
+// ---------------------------------------------------------------------------
+// Canvas replay (§11): interpret the f64 op stream from encode_ops (lib.rs).
+// ---------------------------------------------------------------------------
+
+function rgba(packed) {
+  const v = packed >>> 0;
+  return `rgba(${(v >>> 24) & 255},${(v >>> 16) & 255},${(v >>> 8) & 255},${(v & 255) / 255})`;
+}
+
+function replay(canvas, ops, strs, w, h) {
+  const dpr = devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(w * dpr));
+  canvas.height = Math.max(1, Math.round(h * dpr));
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  let i = 0;
+  const next = () => ops[i++];
+  const readPaint = () => {
+    const kind = next();
+    if (kind === 0) return rgba(next());
+    if (kind === 1) {
+      const g = ctx.createLinearGradient(next(), next(), next(), next());
+      const n = next();
+      for (let k = 0; k < n; k++) g.addColorStop(Math.min(1, Math.max(0, next())), rgba(next()));
+      return g;
+    }
+    // radial (elliptical): unit-circle gradient scaled to (rx, ry) about the center.
+    const cx = next(), cy = next(), rx = next(), ry = next(), n = next();
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    for (let k = 0; k < n; k++) g.addColorStop(Math.min(1, Math.max(0, next())), rgba(next()));
+    return { __radial: [cx, cy, Math.max(rx, 0.01), Math.max(ry, 0.01)], g };
+  };
+  const path = () => {
+    const kind = next(); const p = new Path2D();
+    if (kind === 0) p.rect(next(), next(), next(), next());
+    else if (kind === 1) { const x = next(), y = next(), pw = next(), ph = next(), r = next(); p.roundRect(x, y, pw, ph, r); }
+    else if (kind === 2) { const x = next(), y = next(), pw = next(), ph = next(); p.ellipse(x + pw / 2, y + ph / 2, pw / 2, ph / 2, 0, 0, Math.PI * 2); }
+    else if (kind === 3) {
+      const x = next(), y = next(), pw = next(), ph = next(), start = next(), sweep = next();
+      p.ellipse(x + pw / 2, y + ph / 2, pw / 2, ph / 2, 0, (start * Math.PI) / 180, ((start + sweep) * Math.PI) / 180);
+    } else if (kind === 4) { p.moveTo(next(), next()); p.lineTo(next(), next()); }
+    else if (kind === 5) {
+      const n = next();
+      for (let k = 0; k < n; k++) { const x = next(), y = next(); k === 0 ? p.moveTo(x, y) : p.lineTo(x, y); }
+      p.closePath();
+    }
+    return p;
+  };
+  while (i < ops.length) {
+    const op = next();
+    if (op === 0) { // fill
+      const paint = readPaint(); const p = path();
+      if (paint.__radial) {
+        const [cx, cy, rx, ry] = paint.__radial;
+        ctx.save(); ctx.clip(p); ctx.translate(cx, cy); ctx.scale(rx, ry);
+        ctx.fillStyle = paint.g; ctx.fillRect(-1, -1, 2, 2); ctx.restore();
+      } else { ctx.fillStyle = paint; ctx.fill(p); }
+    } else if (op === 1) { // stroke
+      ctx.strokeStyle = rgba(next()); ctx.lineWidth = next(); ctx.stroke(path());
+    } else if (op === 2) { // text
+      ctx.fillStyle = rgba(next());
+      const size = next(), anchor = next(), x = next(), y = next(), off = next(), len = next();
+      ctx.font = `${size}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = anchor === 1 ? 'center' : 'left';
+      ctx.textBaseline = anchor === 1 ? 'middle' : 'alphabetic';
+      ctx.fillText(utf8.decode(strs.slice(off, off + len)), x, y);
+    } else if (op === 3) ctx.save();
+    else if (op === 4) ctx.restore();
+    else if (op === 5) { const a = next(), b = next(), c = next(), d = next(), e = next(), f = next(); ctx.transform(a, b, c, d, e, f); }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dialogs (docs/dialogs.md): <dialog>-backed alert/confirm/sheet/prompt.
+// ---------------------------------------------------------------------------
+
+const dialogs = new Map();
+
+function present(req, spec) {
+  const dlg = document.createElement('dialog');
+  dlg.className = 'day-dialog' + (spec.sheet ? ' sheet' : '');
+  const title = div('day-dialog-title'); title.textContent = spec.title; dlg.append(title);
+  if (spec.message) { const m = div('day-dialog-msg'); m.textContent = spec.message; dlg.append(m); }
+  const answer = (which, text) => {
+    dialogs.delete(req); dlg.close(); dlg.remove();
+    if (text !== undefined) { const [p, l] = intoWasm(text); wasm.day_dom_present_result(req, which, p, l); }
+    else wasm.day_dom_present_result(req, which, 0, 0);
+  };
+  if (spec.kind === 'prompt') {
+    const input = document.createElement('input');
+    input.type = 'text'; input.className = 'day-field'; input.placeholder = spec.placeholder; input.value = spec.initial;
+    dlg.append(input);
+    const rowEl = div('day-dialog-buttons');
+    const cancel = document.createElement('button'); cancel.textContent = spec.cancel; cancel.className = 'day-btn';
+    const ok = document.createElement('button'); ok.textContent = spec.ok; ok.className = 'day-btn prominent';
+    cancel.addEventListener('click', () => answer(-1));
+    ok.addEventListener('click', () => answer(0, input.value));
+    rowEl.append(cancel, ok); dlg.append(rowEl);
+  } else {
+    const rowEl = div('day-dialog-buttons');
+    spec.buttons.forEach((b, i) => {
+      const btn = document.createElement('button'); btn.textContent = b.label;
+      btn.className = 'day-btn' + (b.role === 'destructive' ? ' destructive' : i === spec.buttons.length - 1 && b.role !== 'cancel' ? ' prominent' : '');
+      btn.addEventListener('click', () => answer(b.role === 'cancel' ? -1 : i));
+      rowEl.append(btn);
+    });
+    dlg.append(rowEl);
+  }
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); answer(-1); });
+  document.body.append(dlg);
+  dialogs.set(req, dlg);
+  dlg.showModal();
+}
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+function root() { return document.getElementById('day-root'); }
+
+export async function start(wasmUrl) {
+  try {
+    await boot(wasmUrl);
+  } catch (err) {
+    console.error('day: failed to start', err);
+    const r = root();
+    r.textContent = '';
+    const msg = div('day-boot-error');
+    msg.textContent = `Day could not start: ${err}. Reload the page to try again.`;
+    r.append(msg);
+  }
+}
+
+async function boot(wasmUrl) {
+  // Register bundled fonts before first layout, so custom families measure correctly.
+  try {
+    const manifest = await (await fetch('assets/fonts/fonts.json')).json();
+    await Promise.all(manifest.map(async ({ family, url }) => {
+      const face = new FontFace(family, `url(${url})`);
+      await face.load(); document.fonts.add(face);
+    }));
+  } catch { /* no bundled fonts */ }
+
+  const dark = (new URLSearchParams(location.search).get('theme')
+    ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+  document.documentElement.classList.toggle('dark', dark);
+
+  const r = root();
+  r.__id = 1; els[1] = r;
+
+  // Streaming instantiation needs the server to answer `application/wasm`; fall back to a
+  // buffered instantiate so the page also works on static hosts with looser MIME tables.
+  let instance;
+  try {
+    ({ instance } = await WebAssembly.instantiateStreaming(fetch(wasmUrl), { env }));
+  } catch {
+    const bytes = await (await fetch(wasmUrl)).arrayBuffer();
+    ({ instance } = await WebAssembly.instantiate(bytes, { env }));
+  }
+  wasm = instance.exports;
+
+  new ResizeObserver(() => wasm.day_dom_resized(r.clientWidth, r.clientHeight)).observe(r);
+  document.addEventListener('visibilitychange', () =>
+    wasm.day_dom_lifecycle(document.visibilityState === 'visible' ? 0 : 1));
+  // Hash changes we did not write ourselves (back/forward, a hand-edited URL) are route
+  // requests for the app.
+  window.addEventListener('hashchange', () => {
+    const route = location.hash.slice(1);
+    if (route === lastSetRoute) return;
+    lastSetRoute = route;
+    const [p, l] = intoWasm(route);
+    wasm.day_dom_hash_changed(p, l);
+  });
+
+  // dayscript (docs/web.md): when the serving `day launch` session armed scripting
+  // (?dayscript= token), open a same-origin WebSocket the dev server bridges to the runner's
+  // TCP protocol, and pipe request lines into the engine.
+  if (new URLSearchParams(location.search).get('dayscript')) {
+    scriptWs = new WebSocket(`ws://${location.host}/dayscript`);
+    scriptWs.addEventListener('open', () => {
+      for (const line of scriptOutbox.splice(0)) scriptWs.send(line);
+    });
+    scriptWs.addEventListener('message', (ev) => {
+      const [p, l] = intoWasm(String(ev.data));
+      wasm.day_dom_script_line(p, l);
+    });
+  }
+
+  wasm.day_dom_main();
+}
