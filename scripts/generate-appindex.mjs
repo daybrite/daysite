@@ -205,6 +205,37 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     log('no PNG under resource/icons/ — the site gets no favicon and no app mark');
   }
 
+  // The VECTOR master itself (the day icon pipeline's source, docs/icons.md in the day repo):
+  // preferred by the site wherever a browser renders the icon — the landing app mark and the
+  // favicon — because it stays crisp at every size. The PNG above remains the source for the
+  // DERIVED raster set (apple-touch, PWA tiles, legacy favicons) and the only icon for
+  // projects without an SVG master.
+  let iconVectorLocation;
+  for (const name of ['icon.svg', 'day-icon.svg']) {
+    const path = join(projectRoot, 'resource', 'icons', name);
+    let svg;
+    try {
+      svg = readFileSync(path, 'utf8');
+    } catch {
+      continue;
+    }
+    // Reserved layers (day:monochrome / day:dark) are data for the icon pipeline, not for
+    // display; a master may ship them visible, which would paint the black silhouette over
+    // the art in a plain <img> render. Hide them the way generated masters already ship.
+    for (const id of ['day:monochrome', 'day:dark']) {
+      svg = svg.replace(
+        new RegExp(`(<[a-zA-Z]+[^>]*\\bid="${id}")(?![^>]*\\bdisplay=)`),
+        '$1 display="none"',
+      );
+    }
+    const pub = join(TEMPLATE_ROOT, 'public', 'app');
+    mkdirSync(pub, { recursive: true });
+    writeFileSync(join(pub, 'icon.svg'), svg);
+    iconVectorLocation = 'app/icon.svg';
+    log(`app icon (vector master): ${path.slice(projectRoot.length + 1)}`);
+    break;
+  }
+
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY;
   const assets = await latestReleaseAssets(repo, log);
   const assetsByTarget = new Map();
@@ -265,9 +296,10 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     if (key === 'ios' && (storeApp['bundle-id'] ?? app.id)) entry.bundleIdentifier = storeApp['bundle-id'] ?? app.id;
     if (key === 'android' && app.id) entry.applicationId = app.id;
     const shots = screenshotsFor(target);
-    if (iconLocation || shots) {
+    if (iconLocation || iconVectorLocation || shots) {
       entry.assets = {
         ...(iconLocation ? { icon: { location: iconLocation } } : {}),
+        ...(iconVectorLocation ? { iconVector: { location: iconVectorLocation } } : {}),
         ...(shots ? { screenshots: shots } : {}),
       };
     }

@@ -80,6 +80,11 @@ jobs:
             --locales zh-Hans-CN,es-ES,pt-BR,fr-FR,de-DE,ja-JP,ko-KR,it-IT,ru-RU,ar-SA \
             --locales id-ID,tr-TR,vi-VN,th-TH,pl-PL,nl-NL,zh-Hant-TW,uk-UA,cs-CZ,ms-MY
           test -f day-sample/website/site.toml
+          # `day new app` generates the app's icon as a seeded SVG master (deterministic on
+          # the app id; docs/icons.md#generate in the day repo). The site prefers that master
+          # raw — landing app mark and favicon — so its presence is load-checked here, and its
+          # use is asserted after the build below. Needs a day CLI new enough to generate it.
+          test -f day-sample/resource/icons/icon.svg
           # The scaffold cannot know where it will be hosted; this deploy hosts it on the
           # daysite repo's own Pages.
           sed -i 's|^host = .*|host = "https://daybrite.github.io/daysite"|' day-sample/website/site.toml
@@ -128,6 +133,17 @@ jobs:
               exit 1
             }
           done
+      - name: The landing page uses the raw vector icon
+        run: |
+          set -euo pipefail
+          # The scaffold's generated SVG master is served as-is and preferred everywhere a
+          # browser renders the mark: the favicon <link> and the hero app mark. The PNG set
+          # must still be there — apple-touch/PWA slots take no SVG, and it is the fallback
+          # for projects with no master.
+          test -f dist/app/icon.svg
+          grep -q 'rel="icon" type="image/svg+xml"' dist/en/index.html
+          grep -q 'app/icon.svg' dist/en/index.html
+          test -f dist/_generated/favicons/apple-touch-icon.png
       - name: The picker offers every scaffolded locale
         run: |
           set -euo pipefail

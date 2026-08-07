@@ -299,12 +299,18 @@ async function buildAppView(
 
   const hero = (locale: string): HeroView => {
     const primary =
-      platformIds.map((k) => app.platforms[k]).find((p) => p?.assets?.icon) ??
+      platformIds
+        .map((k) => app.platforms[k])
+        .find((p) => p?.assets?.icon || p?.assets?.iconVector) ??
       app.platforms[platformIds[0]!]!;
     const title = pickText(app.title ?? primary.title, locale).value ?? app.name;
     const subtitle = pickText(app.subtitle ?? primary.subtitle, locale).value ?? '';
     const description = pickText(app.description ?? primary.description, locale).value ?? '';
-    const iconURL = resolveAssetURL(primary.assets?.icon?.location, app);
+    // The SVG master, when the project ships one — crisp at any size; else the raster.
+    const iconURL = resolveAssetURL(
+      primary.assets?.iconVector?.location ?? primary.assets?.icon?.location,
+      app,
+    );
     const fg = pickAsset(primary.assets?.featureGraphic, locale);
     const featureGraphicURL = resolveAssetURL(fg.value?.location, app);
     return { title, subtitle, description, iconURL, featureGraphicURL };
@@ -347,6 +353,15 @@ async function buildAppView(
     }
   }
 
+  // The SVG master, served raw: the preferred favicon and mark wherever a browser renders
+  // it. The raster set above still covers apple-touch / PWA slots (no SVG there) and doubles
+  // as the fallback for projects without a master.
+  let vectorIconURL: string | undefined;
+  for (const k of platformIds) {
+    vectorIconURL = resolveAssetURL(app.platforms[k]?.assets?.iconVector?.location, app);
+    if (vectorIconURL) break;
+  }
+
   return {
     app,
     slug: app.name,
@@ -359,6 +374,7 @@ async function buildAppView(
     releaseURL: app.source?.release,
     socialImage,
     favicons,
+    vectorIconURL,
   };
 }
 
@@ -474,6 +490,8 @@ export async function loadSite(): Promise<LoadedSite> {
     multiApp,
     socialImage: siteSocialImage,
     favicons: siteFavicons,
+    // The primary app's SVG master doubles as the site-wide favicon preference.
+    vectorIcon: apps[0]?.vectorIconURL,
     appView: apps[0]!,
   };
   return cached;

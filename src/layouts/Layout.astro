@@ -24,6 +24,12 @@ interface Props {
   pageDescription: string;
   socialImage?: string;
   favicons?: FaviconPaths;
+  /**
+   * URL of the app's SVG icon master. When present it becomes the primary favicon
+   * (crisp at every size); the raster set stays for apple-touch / PWA slots and as
+   * the fallback for browsers that don't take SVG favicons.
+   */
+  vectorIcon?: string;
   /** Optional links shown in the footer. */
   sourceURL?: string;
   releaseURL?: string;
@@ -45,6 +51,7 @@ const {
   pageDescription,
   socialImage,
   favicons,
+  vectorIcon,
   sourceURL,
   releaseURL,
   autoRedirect = false,
@@ -107,6 +114,10 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     <meta name="description" content={pageDescription} />
     <link rel="canonical" href={canonical} />
 
+    {/* The SVG master first: browsers pick the sharpest declared icon, and a vector wins
+        at every size. The PNG set remains for apple-touch / PWA slots and as the raster
+        fallback — and the whole set for projects that ship no SVG master. */}
+    {vectorIcon && <link rel="icon" type="image/svg+xml" href={vectorIcon} />}
     {favicons && (
       <>
         <link rel="icon" type="image/png" href={faviconHref(favicons.icon)} />

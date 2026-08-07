@@ -111,6 +111,12 @@ export interface PlatformEntry {
   /** Image assets: icon, screenshots, featureGraphic. */
   assets?: {
     icon?: AssetFile;
+    /**
+     * Day extension: the app's SVG icon master, served as-is. Preferred over `icon`
+     * wherever a browser renders the mark (landing page, favicon); the raster `icon`
+     * stays the source for derived PNG sizes and the fallback when this is absent.
+     */
+    iconVector?: AssetFile;
     featureGraphic?: LocalizedAsset;
     screenshots?: LocalizedAssetList;
   };
@@ -259,6 +265,12 @@ export interface AppView {
   socialImage?: string;
   /** Site-root-relative URLs for the auto-generated favicon set. */
   favicons?: FaviconPaths;
+  /**
+   * URL of the app's SVG icon master (`assets.iconVector`), when the project ships one.
+   * Pages prefer it for the favicon and every rendered mark; the raster favicon set
+   * stays for apple-touch / PWA slots and older browsers.
+   */
+  vectorIconURL?: string;
 }
 
 /**
@@ -277,6 +289,8 @@ export interface SiteData {
   socialImage?: string;
   /** Site-wide favicon set (used on the multi-app index). */
   favicons?: FaviconPaths;
+  /** Site-wide SVG icon master URL (the primary app's), preferred for the favicon. */
+  vectorIcon?: string;
 }
 
 export interface FaviconPaths {
