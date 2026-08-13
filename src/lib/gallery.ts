@@ -13,8 +13,12 @@ export interface GalleryCapture {
 
 export interface GalleryShot {
   id: string;
-  /** Curated row heading (site.toml `[gallery]`); absent, the label derives from the id. */
-  title?: string;
+  /** Localized row heading, keyed by locale tag — the dayscript `screenshot:` step's
+   *  `title:` metadata, carried through `day screenshot index`. Absent, the label derives
+   *  from the id. */
+  title?: Record<string, string>;
+  /** Localized caption, same shape and source as `title`. */
+  caption?: Record<string, string>;
   /** Path of the code the screen renders from, relative to the app repository. */
   source?: string;
   /** Day target id → variant name → capture. */
@@ -24,7 +28,7 @@ export interface GalleryShot {
 export interface GalleryManifest {
   themes: string[];
   locales: string[];
-  /** Curated column order (site.toml `[gallery] platforms`); absent, the page picks its own. */
+  /** Column order from the index (`day screenshot index`); absent, the page picks its own. */
   platforms?: string[];
   shots: GalleryShot[];
 }
@@ -39,4 +43,21 @@ export async function loadGallery(siteInfoFile: string): Promise<GalleryManifest
 /** `san-francisco-fahrenheit` → `San Francisco Fahrenheit` — the shot's display label. */
 export function shotLabel(id: string): string {
   return id.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Resolve a locale-keyed text for `locale`: the exact tag, then any tag with the same
+ *  primary language (`fr` ↔ `fr-FR`), then English, then anything — the same ladder the day
+ *  CLI's own resolution uses, so a page and its published index can never disagree. */
+export function localizedText(
+  text: Record<string, string> | undefined,
+  locale: string,
+): string | undefined {
+  if (!text) return undefined;
+  if (text[locale] !== undefined) return text[locale];
+  const lang = (t: string) => t.split(/[-_]/)[0].toLowerCase();
+  const near = Object.keys(text).find((k) => lang(k) === lang(locale));
+  if (near) return text[near];
+  const en = Object.keys(text).find((k) => lang(k) === 'en');
+  if (en) return text[en];
+  return Object.values(text)[0];
 }

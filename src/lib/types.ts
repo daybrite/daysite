@@ -29,16 +29,6 @@ export interface SiteInfo {
   locales?: string[];
   /** Show the /gallery page (default true when gallery data is present). */
   showGallery?: boolean;
-  /**
-   * Gallery curation (optional; read by scripts/assemble-gallery.mjs, not at render time).
-   * `platforms` pins the column set and order; `shots` selects, orders, and titles the rows
-   * (`[[gallery.shots]]` tables with `id`, `title`, optional `source`). Without it every
-   * capture appears alphabetically, labeled from its file name.
-   */
-  gallery?: {
-    platforms?: string[];
-    shots?: { id: string; title?: string; source?: string }[];
-  };
   showSourceLink?: boolean;
   showStoreBadges?: boolean;
   showPermissions?: boolean;

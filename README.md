@@ -46,19 +46,12 @@ show-store-badges = true
 show-source-link = true
 footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
-
-# Optional gallery curation. Without it the gallery shows every capture, alphabetically,
-# labeled from its file name. `platforms` pins the column set and order (unlisted targets are
-# hidden); each [[gallery.shots]] selects one row, in list order, with its heading and —
-# optionally — the source file it renders from, linked from the row.
-[gallery]
-platforms = ["ios-uikit", "macos-appkit", "web-dom"]
-
-[[gallery.shots]]
-id = "home"                    # the capture's file name, without .png
-title = "Home"
-source = "src/lib.rs"          # relative to the app repository
 ```
+
+Gallery curation lives in the app's dayscripts, not here: a `screenshot:` step with a
+localized `title:` (and optionally `caption:` and `source:`) becomes a curated gallery row, in
+the script's own order — `day screenshot index` carries the metadata into the gallery.json
+this template consumes. See the day repository's DESIGN.md §14.7.
 
 ## Where the content comes from
 
@@ -67,8 +60,8 @@ CI generates two data files next to `site.toml`; neither is committed:
 | File | Written by | From |
 | --- | --- | --- |
 | `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
-| `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | the `screenshots-<target>` artifacts the dayscript walkthroughs capture (`<target>/<variant>/<shot>.png`) |
-| `public/gallery/gallery.json` | `scripts/assemble-gallery.mjs` | the same captures — the published machine-readable index (see "What renders") |
+| `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
+| `public/gallery/gallery.json` | republished by `scripts/assemble-gallery.mjs` | `day screenshot index` — the published machine-readable index (see "What renders") |
 
 ### The app icon
 
@@ -102,14 +95,16 @@ record.
 - `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones in
   hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale
-  switchers when the capture matrix has them. Clicking a screenshot opens a full-size viewer
-  with two-axis navigation: ←/→ walk platforms across one screen, ↑/↓ walk screens on one
-  platform. Generated only when captures exist.
-- `/gallery/gallery.json` — a machine-readable index of every published screenshot: file name,
-  absolute URL, shot id and title, platform-toolkit, theme, locale, pixel dimensions, byte
-  size, and sha-256. Other sites reference the gallery through it — daybrite.dev builds its
-  showcase gallery from the Day Showcase site's copy — and any tool can enumerate the
-  screenshots without scraping pages.
+  switchers when the capture matrix has them. Row headings and captions come from the
+  dayscript metadata, in the page's own locale (missing locales fall back to English).
+  Clicking a screenshot opens a full-size viewer with two-axis navigation: ←/→ walk platforms
+  across one screen, ↑/↓ walk screens on one platform. Generated only when captures exist.
+- `/gallery/gallery.json` — the machine-readable index of every published screenshot, written
+  by `day screenshot index` and republished verbatim: file name, absolute URL, shot id,
+  localized title and caption, platform-toolkit, theme, locale, pixel dimensions, byte size,
+  and sha-256. Other sites reference the gallery through it — daybrite.dev builds its showcase
+  gallery from the Day Showcase site's copy — and any tool can enumerate the screenshots
+  without scraping pages.
 - `/<webapp>/` — the web-dom build itself, staged by the deploy workflow next to the site.
 
 A repo with a `web-dom` target and **no** `website/` directory keeps the old behavior: the

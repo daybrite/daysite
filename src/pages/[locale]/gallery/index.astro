@@ -4,7 +4,7 @@ import Layout from '../../../layouts/Layout.astro';
 import DeviceShell from '../../../components/DeviceShell.astro';
 import PlatformIcon from '../../../components/PlatformIcon.astro';
 import { loadSite } from '../../../lib/data.ts';
-import { shotLabel } from '../../../lib/gallery.ts';
+import { localizedText, shotLabel } from '../../../lib/gallery.ts';
 import { dayTarget, DAY_TARGETS } from '../../../lib/day-targets.ts';
 import { uiStrings } from '../../../lib/uistrings.ts';
 import { galleryHref, localeLinksFor } from '../../../lib/routes.ts';
@@ -48,8 +48,12 @@ const phoneTargets = new Set(
   columns.filter((t) => dayTarget(t)?.device === 'phone'),
 );
 
-/** The row heading: curated title, else derived from the capture's file name. */
-const titleOf = (shot: (typeof gallery.shots)[number]) => shot.title ?? shotLabel(shot.id);
+/** The row heading in THIS page's locale (falling back through the language, then English —
+ *  `localizedText`), else derived from the capture's file name. */
+const titleOf = (shot: (typeof gallery.shots)[number]) =>
+  localizedText(shot.title, locale.code) ?? shotLabel(shot.id);
+const captionOf = (shot: (typeof gallery.shots)[number]) =>
+  localizedText(shot.caption, locale.code);
 
 // The variant a (theme, locale) pair resolves to for a given platform's capture set — the same
 // fallback ladder at build time (initial srcs) and in the switcher script below.
@@ -151,6 +155,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                   data-r={ri}
                   data-c={ci}
                   data-shot={titleOf(shot)}
+                  data-caption={captionOf(shot)}
                   data-plat={target}
                   data-name={day?.displayName ?? target}
                 >
@@ -202,6 +207,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
       <figcaption class="lb-cap">
         <span class="lb-shot" data-lb-shot></span>
         <span class="lb-plat"><i class="lb-icon" data-lb-icon aria-hidden="true"></i><b data-lb-name></b></span>
+        <span class="lb-note" data-lb-note hidden></span>
       </figcaption>
     </figure>
   </div>
@@ -271,6 +277,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
   .lb-shot { color: var(--color-accent); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.1em; }
   .lb-plat { color: var(--color-text-soft); font-size: 0.98rem; display: inline-flex; align-items: center; gap: 8px; }
   .lb-plat b { color: var(--color-text); font-weight: 600; }
+  .lb-note { color: var(--color-text-soft); font-size: 0.85rem; max-width: 34ch; }
   .lb-icon { display: inline-flex; }
   .lb-icon svg { width: 1.05rem; height: 1.05rem; }
 
@@ -356,6 +363,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
   const imgEl = box?.querySelector<HTMLImageElement>('[data-lb-img]');
   const shotEl = box?.querySelector<HTMLElement>('[data-lb-shot]');
   const nameEl = box?.querySelector<HTMLElement>('[data-lb-name]');
+  const noteEl = box?.querySelector<HTMLElement>('[data-lb-note]');
   const lbIcon = box?.querySelector<HTMLElement>('[data-lb-icon]');
 
   // grid[row][col] = <figure>, sparse.
@@ -380,6 +388,10 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
     imgEl.hidden = false;
     if (shotEl) shotEl.textContent = fig.dataset.shot ?? '';
     if (nameEl) nameEl.textContent = fig.dataset.name ?? '';
+    if (noteEl) {
+      noteEl.textContent = fig.dataset.caption ?? '';
+      noteEl.hidden = !fig.dataset.caption;
+    }
     // Reuse the tile's own mark rather than shipping a second copy of every icon.
     if (lbIcon) lbIcon.innerHTML = fig.querySelector('figcaption svg')?.outerHTML ?? '';
   }

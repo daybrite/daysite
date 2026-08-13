@@ -5,40 +5,27 @@
 //         downloading every `screenshots-<target>` artifact (same layout either way):
 //
 //             <in>/<target>/<variant>/<shot>.png
+//             <in>/gallery.json            (written by `day screenshot index`)
 //
-//         Variant names follow day's capture matrix (cli.rs `capture_matrix`): locales alone
-//         produce `en`, `fr`, …; themes × locales produce `light`, `dark-fr`, …; a bare run
-//         produces `default`. Treated as data, not re-derived: the union of what is present
-//         drives the gallery's switchers.
+//         The index is the preferred source: the day CLI generates it from the capture trees
+//         plus each `screenshot:` step's localized `title:`/`caption:` metadata, and this
+//         script just parses it. Without one (a local preview that skipped the CLI), the
+//         trees are scanned directly — every capture, alphabetically, labels derived from
+//         file names, and no index is published.
 //
 // Output: images copied into the template's `public/gallery/<target>/<variant>/<shot>.png`,
-//         a `gallery-manifest.json` written next to site.toml (the same split as the
-//         appindex: generated data beside the config, generated assets where they serve from),
-//         and `public/gallery/gallery.json` — the machine-readable index of every published
-//         screenshot, served at `<host>/gallery/gallery.json`. Each entry carries the file
-//         name, published URL, shot id and title, platform-toolkit, theme, locale, pixel
-//         dimensions, byte size, and sha-256, so another site (or any tool) can reference the
-//         screenshots without scraping the pages. daybrite.dev consumes the Showcase's copy to
-//         build its own gallery from these hosted images.
-//
-// Curation (optional): a `[gallery]` table in site.toml selects, orders, and titles what the
-// gallery shows — without it, every capture appears, alphabetically, labeled from its file
-// name. Shots the curation lists but no capture matches are reported, not silently dropped.
-//
-//     [gallery]
-//     platforms = ["ios-uikit", "macos-appkit"]   # column order; unlisted targets are hidden
-//     [[gallery.shots]]
-//     id = "home"                # the capture's file name, without .png
-//     title = "Home"             # the row heading (otherwise derived from the id)
-//     source = "src/lib.rs"      # optional: the code the screen renders from, in the app repo
+//         the index republished verbatim at `public/gallery/gallery.json` (so the site
+//         serves it at `<host>/gallery/gallery.json` — the machine-readable form other
+//         sites reference, the way daybrite.dev references the Day Showcase's), and a
+//         `gallery-manifest.json` written next to site.toml — the same split as the
+//         appindex: generated data beside the config, generated assets where they serve
+//         from.
 //
 // Usage : node scripts/assemble-gallery.mjs <screenshots-dir> [site-toml-dir]
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse as parseToml } from 'smol-toml';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -59,80 +46,82 @@ function parseVariant(name) {
 }
 
 /** Width/height straight out of the PNG IHDR — no image library for 8 fixed bytes. */
-function pngSize(buf) {
+function pngSize(path) {
+  const buf = readFileSync(path);
   if (buf.length < 24 || buf.readUInt32BE(12) !== 0x49484452 /* IHDR */) return {};
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-/** `san-francisco-fahrenheit` → `San Francisco Fahrenheit` (mirrors src/lib/gallery.ts). */
-function shotLabel(id) {
-  return id.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+/** Build the manifest from `day screenshot index`'s gallery.json: copy each described image
+ *  and shape the page's shot-major view. Shots WITH a title are the curated set — when any
+ *  exist, only they render (the untitled extras stay machine-readable in the index). */
+function fromIndex(index, shotsDir, outImages, log) {
+  const curated = index.shots.some((s) => s.title);
+  const shown = index.shots.filter((s) => !curated || s.title);
+  const shownIds = new Set(shown.map((s) => s.id));
+  const byShot = new Map(shown.map((s) => [s.id, {}]));
+  let copied = 0;
+  for (const e of index.screenshots) {
+    if (!shownIds.has(e.shot)) continue;
+    const src = join(shotsDir, e.platform, e.variant, e.file);
+    if (!existsSync(src)) continue;
+    mkdirSync(join(outImages, e.platform, e.variant), { recursive: true });
+    copyFileSync(src, join(outImages, e.platform, e.variant, e.file));
+    copied += 1;
+    const plat = (byShot.get(e.shot)[e.platform] ??= {});
+    plat[e.variant] = {
+      src: `gallery/${e.platform}/${e.variant}/${e.file}`,
+      width: e.width ?? undefined,
+      height: e.height ?? undefined,
+    };
+  }
+  // Theme/locale vocabularies re-derived from the variants actually copied, in the same
+  // spelling the switchers use ('default' included) rather than the index's resolved tags.
+  const themes = new Set();
+  const locales = new Set();
+  for (const caps of byShot.values()) {
+    for (const variants of Object.values(caps)) {
+      for (const v of Object.keys(variants)) {
+        const { theme, locale } = parseVariant(v);
+        themes.add(theme);
+        locales.add(locale);
+      }
+    }
+  }
+  if (curated) log(`curated: ${shown.length} titled shot(s) of ${index.shots.length} in the index`);
+  return {
+    copied,
+    manifest: {
+      themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
+      locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
+      platforms: index.platforms,
+      shots: shown
+        .map((s) => ({
+          id: s.id,
+          ...(s.title ? { title: s.title } : {}),
+          ...(s.caption ? { caption: s.caption } : {}),
+          ...(s.source ? { source: s.source } : {}),
+          byPlatform: byShot.get(s.id),
+        }))
+        .filter((s) => Object.keys(s.byPlatform).length > 0),
+    },
+  };
 }
 
-// A variant segment that reads as a language tag (`fr`, `zh-CN`). Variant names are data and
-// anything may appear (a local capture run leaves `ipad` or `landscape` behind); the manifest
-// keeps them all, but gallery.json only CLAIMS a locale for one shaped like a locale.
-const LOCALE_RE = /^[a-z]{2,3}(-[A-Za-z0-9]+)*$/;
-
-/** site.toml, for the published host (absolute URLs), the locale list, and `[gallery]`.
- *  Absent or unparsable is fine — the index just carries no absolute URLs or curation. */
-function readSiteToml(siteDir) {
-  try {
-    return parseToml(readFileSync(join(siteDir, 'site.toml'), 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-export function assembleGallery(shotsDir, siteDir, opts = {}) {
-  const log = (m) => opts.quiet || console.log(`[gallery] ${m}`);
-  const outImages = join(TEMPLATE_ROOT, 'public', 'gallery');
-  rmSync(outImages, { recursive: true, force: true });
-
-  const site = readSiteToml(siteDir);
-  const curation = site.gallery ?? {};
-  const curatedShots = Array.isArray(curation.shots) ? curation.shots.filter((s) => s?.id) : [];
-  const curatedPlatforms = Array.isArray(curation.platforms) ? curation.platforms : [];
-  const titleOf = new Map(curatedShots.map((s) => [s.id, s.title]));
-  const sourceOf = new Map(curatedShots.map((s) => [s.id, s.source]));
-  // The locale a bare `light`/`dark`/`default` capture is in: the app's first declared locale —
-  // the same aliasing the appindex generator applies when it feeds the store carousels.
-  const defaultLocale = Array.isArray(site.locales) ? (site.locales[0] ?? null) : null;
-  // `host` may carry a base path (a github.io project page); split it into origin + base so
-  // published URLs come out right either way.
-  let origin = null;
-  let basePath = '';
-  try {
-    const u = new URL(site.host);
-    origin = u.origin;
-    basePath = u.pathname.replace(/\/$/, '');
-  } catch {
-    /* no host — the index carries paths only */
-  }
-
-  let targets = existsSync(shotsDir)
+/** The no-index fallback (a local preview without the day CLI): scan the trees directly. */
+function fromScan(shotsDir, outImages) {
+  const targets = existsSync(shotsDir)
     ? readdirSync(shotsDir).filter((t) => {
         if (SKIP_DIRS.has(t)) return false;
         return statSync(join(shotsDir, t)).isDirectory();
       })
     : [];
-  // Curated platforms are the column set AND order; anything unlisted is deliberately hidden.
-  if (curatedPlatforms.length) {
-    targets = curatedPlatforms.filter((t) => targets.includes(t));
-  } else {
-    targets = targets.sort();
-  }
-
   const themes = new Set();
   const locales = new Set();
-  const shots = new Map(); // shot id -> { byPlatform: { target: { variant: {src,width,height} } } }
-  const index = []; // one flat entry per published capture (gallery.json)
-
-  for (const target of targets) {
+  const shots = new Map();
+  let copied = 0;
+  for (const target of targets.sort()) {
     const tDir = join(shotsDir, target);
-    // `<os>-<toolkit>` by construction (ios-uikit, harmony-arkui, web-dom).
-    const [os, ...tk] = target.split('-');
-    const toolkit = tk.join('-');
     for (const variant of readdirSync(tDir).sort()) {
       const vDir = join(tDir, variant);
       if (!statSync(vDir).isDirectory()) continue;
@@ -140,102 +129,65 @@ export function assembleGallery(shotsDir, siteDir, opts = {}) {
       for (const file of readdirSync(vDir).sort()) {
         if (!file.toLowerCase().endsWith('.png')) continue;
         const id = file.slice(0, -4);
-        if (curatedShots.length && !titleOf.has(id)) continue; // curated out, stays in the artifact
         const src = `gallery/${target}/${variant}/${file}`;
-        const buf = readFileSync(join(vDir, file));
         mkdirSync(join(outImages, target, variant), { recursive: true });
-        writeFileSync(join(outImages, target, variant, file), buf);
-        const size = pngSize(buf);
+        copyFileSync(join(vDir, file), join(outImages, target, variant, file));
+        copied += 1;
         const entry = shots.get(id) ?? { byPlatform: {} };
         const plat = (entry.byPlatform[target] ??= {});
-        plat[variant] = { src, ...size };
+        plat[variant] = { src, ...pngSize(join(vDir, file)) };
         shots.set(id, entry);
         themes.add(theme);
         locales.add(locale);
-        index.push({
-          file,
-          path: src,
-          url: origin ? `${origin}${basePath}/${src}` : null,
-          shot: id,
-          title: titleOf.get(id) ?? shotLabel(id),
-          platform: target,
-          os,
-          toolkit,
-          variant,
-          theme: theme === 'default' ? null : theme,
-          locale: locale === 'default' ? defaultLocale : LOCALE_RE.test(locale) ? locale : null,
-          width: size.width ?? null,
-          height: size.height ?? null,
-          bytes: buf.length,
-          sha256: createHash('sha256').update(buf).digest('hex'),
-        });
       }
     }
   }
-
-  // Row order: the curation's, else alphabetical. A curated shot nothing captured is a broken
-  // walkthrough step (or a typo here) — name it in the log rather than shrinking the page quietly.
-  const shotOrder = curatedShots.length
-    ? curatedShots.map((s) => s.id).filter((id) => shots.has(id))
-    : [...shots.keys()].sort((a, b) => a.localeCompare(b));
-  const missing = curatedShots.map((s) => s.id).filter((id) => !shots.has(id));
-  if (missing.length && shots.size > 0) {
-    log(`curated shot(s) with no capture: ${missing.join(', ')}`);
-  }
-  const rank = new Map(shotOrder.map((id, i) => [id, i]));
-  index.sort(
-    (a, b) =>
-      rank.get(a.shot) - rank.get(b.shot) ||
-      targets.indexOf(a.platform) - targets.indexOf(b.platform) ||
-      a.variant.localeCompare(b.variant),
-  );
-
-  const manifest = {
-    themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
-    locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
-    // Column order for the page — present only when the curation pinned one.
-    ...(curatedPlatforms.length ? { platforms: targets } : {}),
-    shots: shotOrder.map((id) => ({
-      id,
-      ...(titleOf.get(id) ? { title: titleOf.get(id) } : {}),
-      ...(sourceOf.get(id) ? { source: sourceOf.get(id) } : {}),
-      byPlatform: shots.get(id).byPlatform,
-    })),
+  return {
+    copied,
+    manifest: {
+      themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
+      locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
+      shots: [...shots.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([id, s]) => ({ id, byPlatform: s.byPlatform })),
+    },
   };
+}
+
+export function assembleGallery(shotsDir, siteDir, opts = {}) {
+  const log = (m) => opts.quiet || console.log(`[gallery] ${m}`);
+  const outImages = join(TEMPLATE_ROOT, 'public', 'gallery');
+  rmSync(outImages, { recursive: true, force: true });
+
+  const indexPath = join(shotsDir, 'gallery.json');
+  let index = null;
+  if (existsSync(indexPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(indexPath, 'utf8'));
+      if (Array.isArray(parsed.screenshots) && Array.isArray(parsed.shots)) index = parsed;
+    } catch {
+      log(`unreadable ${indexPath} — falling back to a directory scan`);
+    }
+  }
+
+  const { copied, manifest } = index
+    ? fromIndex(index, shotsDir, outImages, log)
+    : fromScan(shotsDir, outImages);
+
+  // Republish the machine-readable index beside the images it describes. Only the day CLI
+  // writes one (`day screenshot index`); a scanned preview publishes none.
+  if (index && copied > 0) {
+    mkdirSync(outImages, { recursive: true });
+    copyFileSync(indexPath, join(outImages, 'gallery.json'));
+  } else if (!index && copied > 0) {
+    log('no gallery.json in the capture tree — run `day screenshot index` to publish the machine-readable index');
+  }
+
   const manifestPath = join(siteDir, 'gallery-manifest.json');
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
-
-  // The published machine-readable index, beside the images it describes. Written only when
-  // there are captures: an empty gallery generates no /gallery pages, so it publishes no index.
-  if (index.length > 0) {
-    mkdirSync(outImages, { recursive: true });
-    const galleryJson = {
-      generator: 'daysite/assemble-gallery',
-      generated: new Date().toISOString(),
-      site: origin ? `${origin}${basePath}` : null,
-      themes: manifest.themes.filter((t) => t !== 'default'),
-      locales: [
-        ...new Set(
-          manifest.locales
-            .map((l) => (l === 'default' ? defaultLocale : LOCALE_RE.test(l) ? l : null))
-            .filter(Boolean),
-        ),
-      ],
-      platforms: targets,
-      shots: manifest.shots.map(({ id, title, source }) => ({
-        id,
-        title: title ?? shotLabel(id),
-        ...(source ? { source } : {}),
-      })),
-      screenshots: index,
-    };
-    writeFileSync(join(outImages, 'gallery.json'), JSON.stringify(galleryJson, null, 2) + '\n');
-  }
-
-  const total = index.length;
   log(
     manifest.shots.length > 0
-      ? `${manifest.shots.length} screen(s) × ${targets.length} target(s), ${total} capture(s) → ${manifestPath} + gallery.json`
+      ? `${manifest.shots.length} screen(s), ${copied} capture(s) → ${manifestPath}${index ? ' + gallery.json' : ''}`
       : 'no screenshots found — wrote an empty manifest (the gallery page will be skipped)',
   );
   return manifest;
