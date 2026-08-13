@@ -272,6 +272,10 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
         const locale = variant === 'default' || variant === 'light'
           ? 'default'
           : variant.replace(/^light-/, '');
+        // Only locale-SHAPED keys become appindex locales: variant names are data, and a
+        // local capture run's ad-hoc set (`ipad`, `uicheck`) must not mint a site locale —
+        // an invalid tag takes the whole build down at the first Intl call.
+        if (locale !== 'default' && !/^[a-z]{2,3}(-[A-Za-z0-9]+)*$/.test(locale)) continue;
         (byLocale[locale] ??= []).push({ location: cap.src, width: cap.width, height: cap.height });
       }
     }

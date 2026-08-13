@@ -98,7 +98,6 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
             }}
           />
           <div class="space-y-8">
-          <DownloadCard view={views[p]!} site={site} locale={locale} />
           <AboutCard
             view={views[p]!}
             site={site}
@@ -114,6 +113,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
               dependenciesLabel: ui.dependenciesLabel,
             }}
           />
+          <DownloadCard view={views[p]!} site={site} locale={locale} />
           </div>
         </div>
 

@@ -28,25 +28,43 @@ const shots = view.screenshots;
         tabindex="0"
         aria-label={`${view.displayName} screenshots`}
       >
-        {shots.map((s, i) => (
-          <figure
-            class="shrink-0 w-[68%] sm:w-[42%] md:w-[28%] lg:w-[22%]"
-            data-carousel-item
-            data-index={i}
-          >
-            <div class="relative aspect-[9/19.5] rounded-3xl overflow-hidden bg-[color:var(--color-surface-2)] ring-1 ring-[color:var(--color-border)] shadow-xl">
-              <img
-                src={s.url}
-                alt={s.alt}
-                width={s.width}
-                height={s.height}
-                loading={i < 2 ? 'eager' : 'lazy'}
-                decoding="async"
-                class="absolute inset-0 size-full object-cover"
-              />
-            </div>
-          </figure>
-        ))}
+        {shots.map((s, i) => {
+          // A desktop capture is landscape; framing it in the phone tile crops it to a
+          // portrait sliver. Landscape tiles run wider and keep the capture's OWN aspect
+          // ratio, so nothing is cropped; portrait — and captures whose dimensions the
+          // appindex doesn't carry (store-listing uploads) — keep the phone frame.
+          const portrait = !s.width || !s.height || s.height >= s.width;
+          return (
+            <figure
+              class:list={[
+                'shrink-0',
+                portrait
+                  ? 'w-[68%] sm:w-[42%] md:w-[28%] lg:w-[22%]'
+                  : 'w-[92%] sm:w-[64%] md:w-[50%] lg:w-[42%]',
+              ]}
+              data-carousel-item
+              data-index={i}
+            >
+              <div
+                class:list={[
+                  'relative overflow-hidden bg-[color:var(--color-surface-2)] ring-1 ring-[color:var(--color-border)] shadow-xl',
+                  portrait ? 'aspect-[9/19.5] rounded-3xl' : 'rounded-xl',
+                ]}
+                style={portrait ? undefined : `aspect-ratio: ${s.width} / ${s.height}`}
+              >
+                <img
+                  src={s.url}
+                  alt={s.alt}
+                  width={s.width}
+                  height={s.height}
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  class="absolute inset-0 size-full object-cover"
+                />
+              </div>
+            </figure>
+          );
+        })}
       </div>
 
       {shots.length > 1 && (
