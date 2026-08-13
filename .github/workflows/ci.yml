@@ -169,7 +169,7 @@ jobs:
       - name: The footer carries the Day attribution
         run: |
           set -euo pipefail
-          grep -q 'href="https://daysite.dev"' dist/index.html
+          grep -q 'href="https://daybrite.dev"' dist/index.html
           grep -qF 'Built with Day' dist/index.html
           # …localized, like the rest of the template's own strings.
           grep -qF '使用 Day 构建' dist/zh-Hans-CN/index.html
