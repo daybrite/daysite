@@ -49,13 +49,44 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
     views[p] ? (
       <div data-platform-section={p} class="space-y-12 sm:space-y-16">
         <ScreenshotCarousel view={views[p]!} />
+        {/* The gallery is the most persuasive page on the site — the same app drawn by seven
+            different native toolkits — and it used to be advertised by four words of small
+            print under the carousel, which read as a footnote to the screenshots rather than
+            an invitation past them. A card states what is on the other side and gives the
+            link a real target: the whole panel is the hit area, not a 60px run of text. */}
         {hasGallery && site.showGallery !== false && (
-          <p class="text-center -mt-6">
+          <div class="-mt-6 flex justify-center">
             <a
               href={galleryHref(locale.code)}
-              class="text-sm font-medium text-[color:var(--color-accent)] hover:underline"
-            >{ui.galleryLink} &rarr;</a>
-          </p>
+              class="group flex w-full max-w-xl items-center gap-4 rounded-2xl border border-[color:var(--color-accent-soft)] bg-[color:var(--color-accent-soft)] px-5 py-4 no-underline transition hover:border-[color:var(--color-accent)] hover:shadow-lg hover:shadow-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-accent)] sm:px-6"
+            >
+              {/* Overlapping frames: the one shape that says "more screenshots" without a word
+                  of copy, so it carries the meaning in every locale. */}
+              <svg
+                class="h-8 w-8 shrink-0 text-[color:var(--color-accent)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="7.5" y="3.5" width="13" height="13" rx="2.5" />
+                <path d="M16.5 20.5H6a2.5 2.5 0 0 1-2.5-2.5V7.5" />
+                <path d="m10.5 12.5 2.5-2.5 3 3 1.5-1.5 3 3" />
+              </svg>
+              <span class="min-w-0 flex-1">
+                <span class="block font-semibold text-[color:var(--color-text)]">{ui.galleryLink}</span>
+                <span class="mt-0.5 block text-sm text-[color:var(--color-text-muted)]">{ui.galleryBlurb}</span>
+              </span>
+              {/* rtl:-scale-x-100 so the arrow points AWAY from the text in Arabic too. */}
+              <span
+                class="shrink-0 text-[color:var(--color-accent)] transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
+                aria-hidden="true"
+              >&rarr;</span>
+            </a>
+          </div>
         )}
 
         <div class="grid gap-8 lg:gap-12 lg:grid-cols-[1fr_320px] items-start">

@@ -101,6 +101,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'المصدر',
     releaseLink: 'الإصدار',
     builtWith: 'أُنشئ باستخدام Day',
+    galleryLink: 'المعرض',
+    galleryHeading: 'لقطات الشاشة',
+    galleryBlurb: 'التطبيق نفسه على كل منصة — مُلتقط من خط الإصدار، لا مُهيّأ للعرض.',
   },
   cs: {
     about: 'O aplikaci',
@@ -189,6 +192,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Code source',
     releaseLink: 'Publication',
     builtWith: 'Créé avec Day',
+    galleryLink: 'Galerie',
+    galleryHeading: 'Captures d’écran',
+    galleryBlurb: 'La même application sur chaque plateforme — capturée par le pipeline de publication, pas mise en scène.',
   },
   hi: {
     about: 'ऐप के बारे में',
@@ -519,6 +525,9 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: '源代码',
     releaseLink: '发行版',
     builtWith: '使用 Day 构建',
+    galleryLink: '图库',
+    galleryHeading: '截图',
+    galleryBlurb: '同一个应用在每个平台上的样子 —— 由发布流水线自动截取，而非摆拍。',
   },
   'zh-Hant': {
     about: '關於',
