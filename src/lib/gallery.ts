@@ -13,6 +13,10 @@ export interface GalleryCapture {
 
 export interface GalleryShot {
   id: string;
+  /** Curated row heading (site.toml `[gallery]`); absent, the label derives from the id. */
+  title?: string;
+  /** Path of the code the screen renders from, relative to the app repository. */
+  source?: string;
   /** Day target id → variant name → capture. */
   byPlatform: Record<string, Record<string, GalleryCapture>>;
 }
@@ -20,6 +24,8 @@ export interface GalleryShot {
 export interface GalleryManifest {
   themes: string[];
   locales: string[];
+  /** Curated column order (site.toml `[gallery] platforms`); absent, the page picks its own. */
+  platforms?: string[];
   shots: GalleryShot[];
 }
 

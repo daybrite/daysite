@@ -14,6 +14,9 @@ import '../../../styles/shells.css';
 // Theme and locale switchers swap each image between its captured variants client-side; a
 // combination that wasn't captured falls back (theme first, then locale, then anything) the
 // way the daybrite.dev gallery does. Pages exist only when the manifest holds captures.
+// Clicking a screenshot opens the full-size viewer below — the same 2-D navigator as
+// daybrite.dev's gallery: ←/→ walk platforms across one screen, ↑/↓ walk screens on one
+// platform.
 export const getStaticPaths: GetStaticPaths = async () => {
   const data = await loadSite();
   if (!data.gallery) return [];
@@ -30,14 +33,23 @@ const appView = data.apps[0]!;
 const hero = appView.hero(locale.code);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// Platform column order: the Day vocabulary's, for the targets that actually have captures.
+// Platform column order: the curation's when site.toml pinned one (assemble-gallery carries it
+// through the manifest), else the Day vocabulary's, for the targets that have captures.
 const targetsPresent = new Set(gallery.shots.flatMap((s) => Object.keys(s.byPlatform)));
-const columns = DAY_TARGETS.filter((t) => targetsPresent.has(t.target)).map((t) => t.target);
-for (const t of targetsPresent) if (!columns.includes(t)) columns.push(t);
+let columns: string[];
+if (gallery.platforms?.length) {
+  columns = gallery.platforms.filter((t) => targetsPresent.has(t));
+} else {
+  columns = DAY_TARGETS.filter((t) => targetsPresent.has(t.target)).map((t) => t.target);
+  for (const t of targetsPresent) if (!columns.includes(t)) columns.push(t);
+}
 
 const phoneTargets = new Set(
   columns.filter((t) => dayTarget(t)?.device === 'phone'),
 );
+
+/** The row heading: curated title, else derived from the capture's file name. */
+const titleOf = (shot: (typeof gallery.shots)[number]) => shot.title ?? shotLabel(shot.id);
 
 // The variant a (theme, locale) pair resolves to for a given platform's capture set — the same
 // fallback ladder at build time (initial srcs) and in the switcher script below.
@@ -107,12 +119,23 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
       )}
     </header>
 
-    {gallery.shots.map((shot) => (
+    {gallery.shots.map((shot, ri) => (
       <section class="space-y-3">
-        <h2 class="text-lg font-semibold">{shotLabel(shot.id)}</h2>
+        <div class="flex items-baseline gap-3">
+          <h2 class="text-lg font-semibold">{titleOf(shot)}</h2>
+          {shot.source && appView.sourceURL && (
+            <a
+              class="gal-src"
+              href={`${appView.sourceURL}/blob/main/${shot.source}`}
+              target="_blank"
+              rel="noopener"
+              title={shot.source}
+            >{shot.source.split('/').pop()}</a>
+          )}
+        </div>
         <div class="-mx-4 overflow-x-auto px-4 pb-2">
           <div class="flex items-stretch gap-5">
-            {columns.map((target) => {
+            {columns.map((target, ci) => {
               const caps = shot.byPlatform[target];
               if (!caps) return null;
               const day = dayTarget(target);
@@ -122,7 +145,15 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                 Object.entries(caps).map(([name, c]) => [`data-v-${name}`, `${base}/${c.src}`]),
               );
               return (
-                <figure class="w-[15rem] flex-none space-y-2" class:list={[{ 'w-[24rem]': !phoneTargets.has(target) }]}>
+                <figure
+                  class="w-[15rem] flex-none space-y-2"
+                  class:list={[{ 'w-[24rem]': !phoneTargets.has(target) }]}
+                  data-r={ri}
+                  data-c={ci}
+                  data-shot={titleOf(shot)}
+                  data-plat={target}
+                  data-name={day?.displayName ?? target}
+                >
                   <div class="gal-frame">
                     <DeviceShell
                       platform={target}
@@ -132,7 +163,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                     >
                       <img
                         src={`${base}/${cap.src}`}
-                        alt={`${shotLabel(shot.id)} — ${day?.displayName ?? target}`}
+                        alt={`${titleOf(shot)} — ${day?.displayName ?? target}`}
                         width={cap.width}
                         height={cap.height}
                         loading="lazy"
@@ -154,6 +185,26 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
       </section>
     ))}
   </div>
+
+  {/* Full-size viewer, ported from daybrite.dev's gallery: navigation is 2-D and
+      platform-aware — ←/→ cycle platforms across the SAME screen, ↑/↓ move to the
+      previous/next screen on the SAME platform. Rows here can be sparse (a platform with no
+      capture renders no tile), so every direction skips the holes. */}
+  <div class="lightbox" data-lightbox hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Screenshot viewer">
+    <div class="lb-backdrop" data-lb-close></div>
+    <button class="lb-btn lb-close" data-lb-close type="button" aria-label="Close (Esc)">✕</button>
+    <button class="lb-btn lb-arrow lb-up" data-lb-dir="up" type="button" aria-label="Previous screen, same platform (↑)">↑</button>
+    <button class="lb-btn lb-arrow lb-down" data-lb-dir="down" type="button" aria-label="Next screen, same platform (↓)">↓</button>
+    <button class="lb-btn lb-arrow lb-left" data-lb-dir="left" type="button" aria-label="Previous platform (←)">‹</button>
+    <button class="lb-btn lb-arrow lb-right" data-lb-dir="right" type="button" aria-label="Next platform (→)">›</button>
+    <figure class="lb-stage">
+      <img class="lb-img" data-lb-img alt="" hidden />
+      <figcaption class="lb-cap">
+        <span class="lb-shot" data-lb-shot></span>
+        <span class="lb-plat"><i class="lb-icon" data-lb-icon aria-hidden="true"></i><b data-lb-name></b></span>
+      </figcaption>
+    </figure>
+  </div>
 </Layout>
 
 <style is:global>
@@ -171,10 +222,76 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
     grid-template-rows: minmax(0, 1fr);
     justify-items: center;
     align-items: center;
+    cursor: zoom-in;
   }
   /* Phones: pin the bezel to the lane so the capture's max-height has a definite base. */
   .gal-frame .sh-dev { height: 100%; }
   .gal-img { border-radius: 6px; }
+
+  /* The row's source chip: the file the screen is rendered from, monospace like a path. */
+  .gal-src {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    color: var(--color-text-soft);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 1px 9px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .gal-src::before { content: '</> '; opacity: 0.65; }
+  .gal-src:hover { color: var(--color-text); border-color: var(--color-text-soft); }
+
+  /* ---- Full-size viewer ---- */
+  .lightbox { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; }
+  .lightbox[hidden] { display: none; }
+  .lightbox:not([hidden]) { animation: lb-fade 0.18s ease; }
+  @keyframes lb-fade { from { opacity: 0; } to { opacity: 1; } }
+  .lb-backdrop { position: absolute; inset: 0; background: rgba(3, 6, 14, 0.86); backdrop-filter: blur(6px); }
+  .lb-stage {
+    position: absolute; inset: 0; z-index: 1; margin: 0;
+    display: grid; place-items: center;
+    pointer-events: none;
+  }
+  .lb-img {
+    max-width: 92vw; max-height: 78vh; width: auto; height: auto; object-fit: contain;
+    border-radius: 12px; background: var(--color-surface);
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+    animation: lb-pop 0.18s ease;
+  }
+  @keyframes lb-pop { from { transform: scale(0.985); opacity: 0.6; } to { transform: scale(1); opacity: 1; } }
+  .lb-cap {
+    position: absolute; left: 18px; top: 18px;
+    z-index: 2; text-align: left;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 8px 16px; border-radius: 14px;
+    background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .lb-shot { color: var(--color-accent); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .lb-plat { color: var(--color-text-soft); font-size: 0.98rem; display: inline-flex; align-items: center; gap: 8px; }
+  .lb-plat b { color: var(--color-text); font-weight: 600; }
+  .lb-icon { display: inline-flex; }
+  .lb-icon svg { width: 1.05rem; height: 1.05rem; }
+
+  .lb-btn {
+    position: absolute; z-index: 2; appearance: none; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: 999px;
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent); color: var(--color-text);
+    backdrop-filter: blur(8px); display: grid; place-items: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .lb-btn:hover { color: var(--color-accent); }
+  .lb-close { top: 18px; right: 18px; width: 42px; height: 42px; font-size: 1.05rem; }
+  .lb-arrow { width: 52px; height: 52px; font-size: 1.7rem; line-height: 1; }
+  .lb-left { left: 20px; top: 50%; transform: translateY(-50%); }
+  .lb-right { right: 20px; top: 50%; transform: translateY(-50%); }
+  .lb-up { top: 18px; left: 50%; transform: translateX(-50%); }
+  .lb-down { bottom: 18px; left: 50%; transform: translateX(-50%); }
+  @media (max-width: 620px) {
+    .lb-arrow { width: 42px; height: 42px; font-size: 1.3rem; }
+    .lb-left { left: 8px; } .lb-right { right: 8px; }
+  }
 </style>
 
 <script>
@@ -201,9 +318,6 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
 
   function apply() {
     for (const img of document.querySelectorAll<HTMLImageElement>('.gal-img')) {
-      const variants = Object.keys(img.dataset)
-        .filter((k) => k.startsWith('v-') || k.startsWith('v'))
-        .map((k) => k.slice(1).replace(/^-/, ''));
       const ladder = [
         `${state.theme}-${state.slocale}`,
         state.slocale,
@@ -221,12 +335,121 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
           break;
         }
       }
-      void variants;
     }
     // Desktop shells follow the site theme for their chrome palette.
     for (const win of document.querySelectorAll<HTMLElement>('.sh-win')) {
       if (THEMES.includes(state.theme)) win.toggleAttribute('data-dark', state.theme === 'dark');
     }
+    // The open viewer follows a switcher change too: re-render picks up the tile's new src.
+    render();
   }
+  // The initial apply() runs at the END of this script: it reaches render(), whose lightbox
+  // bindings are consts declared below — calling it here would hit their temporal dead zone.
+
+  // ---- Full-size viewer: 2-D, platform-aware navigation ----
+  //   ←/→  cycle platforms across the SAME screen (the tiles of one row)
+  //   ↑/↓  move to the previous/next screen on the SAME platform (same column index)
+  // Column index IS the platform (assigned from the shared column list at build time), but a
+  // platform with no capture of a screen renders NO tile — the grid is sparse, so every
+  // direction walks until it lands on a cell that exists.
+  const box = document.querySelector<HTMLElement>('[data-lightbox]');
+  const imgEl = box?.querySelector<HTMLImageElement>('[data-lb-img]');
+  const shotEl = box?.querySelector<HTMLElement>('[data-lb-shot]');
+  const nameEl = box?.querySelector<HTMLElement>('[data-lb-name]');
+  const lbIcon = box?.querySelector<HTMLElement>('[data-lb-icon]');
+
+  // grid[row][col] = <figure>, sparse.
+  const grid: HTMLElement[][] = [];
+  let cols = 0;
+  const figures = Array.from(document.querySelectorAll<HTMLElement>('figure[data-r]'));
+  for (const fig of figures) {
+    const r = Number(fig.dataset.r), c = Number(fig.dataset.c);
+    (grid[r] ??= [])[c] = fig;
+    cols = Math.max(cols, c + 1);
+  }
+  let cur: { r: number; c: number } | null = null;
+
+  function render() {
+    if (!cur || !box || !imgEl) return;
+    const fig = grid[cur.r]?.[cur.c];
+    if (!fig) return;
+    const im = fig.querySelector<HTMLImageElement>('img.gal-img');
+    if (!im) return;
+    imgEl.src = im.currentSrc || im.src;
+    imgEl.alt = im.alt;
+    imgEl.hidden = false;
+    if (shotEl) shotEl.textContent = fig.dataset.shot ?? '';
+    if (nameEl) nameEl.textContent = fig.dataset.name ?? '';
+    // Reuse the tile's own mark rather than shipping a second copy of every icon.
+    if (lbIcon) lbIcon.innerHTML = fig.querySelector('figcaption svg')?.outerHTML ?? '';
+  }
+
+  function open(r: number, c: number) {
+    if (!box) return;
+    cur = { r, c };
+    box.hidden = false;
+    box.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    render();
+    box.querySelector<HTMLElement>('.lb-close')?.focus();
+  }
+  function close() {
+    if (!box) return;
+    box.hidden = true;
+    box.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    cur = null;
+  }
+
+  function navigate(dir: string) {
+    if (!cur) return;
+    if (dir === 'left' || dir === 'right') {
+      let nc = cur.c;
+      for (let i = 0; i < cols; i++) {
+        nc = (nc + (dir === 'right' ? 1 : cols - 1)) % cols;
+        if (grid[cur.r]?.[nc]) break;
+      }
+      cur.c = nc;
+    } else {
+      const n = grid.length;
+      let nr = cur.r;
+      for (let i = 0; i < n; i++) {
+        nr = (nr + (dir === 'down' ? 1 : n - 1)) % n;
+        if (grid[nr]?.[cur.c]) break;
+      }
+      cur.r = nr;
+    }
+    render();
+  }
+
+  // Open on click / Enter / Space of a tile's frame.
+  for (const fig of figures) {
+    const frame = fig.querySelector<HTMLElement>('.gal-frame');
+    if (!frame || !fig.querySelector('img.gal-img')) continue;
+    frame.setAttribute('role', 'button');
+    frame.setAttribute('tabindex', '0');
+    frame.setAttribute('aria-label', `${fig.dataset.shot} — ${fig.dataset.name}`);
+    const go = () => open(Number(fig.dataset.r), Number(fig.dataset.c));
+    frame.addEventListener('click', go);
+    frame.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+    });
+  }
+
+  box?.querySelectorAll<HTMLElement>('[data-lb-dir]').forEach((btn) =>
+    btn.addEventListener('click', () => navigate(btn.dataset.lbDir!)),
+  );
+  box?.querySelectorAll<HTMLElement>('[data-lb-close]').forEach((el) =>
+    el.addEventListener('click', close),
+  );
+
+  document.addEventListener('keydown', (e) => {
+    if (!box || box.hidden) return;
+    const k = e.key;
+    if (k === 'Escape') return close();
+    const dir = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[k];
+    if (dir) { e.preventDefault(); navigate(dir); }
+  });
+
   apply();
 </script>

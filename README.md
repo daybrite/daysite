@@ -46,6 +46,18 @@ show-store-badges = true
 show-source-link = true
 footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
+
+# Optional gallery curation. Without it the gallery shows every capture, alphabetically,
+# labeled from its file name. `platforms` pins the column set and order (unlisted targets are
+# hidden); each [[gallery.shots]] selects one row, in list order, with its heading and —
+# optionally — the source file it renders from, linked from the row.
+[gallery]
+platforms = ["ios-uikit", "macos-appkit", "web-dom"]
+
+[[gallery.shots]]
+id = "home"                    # the capture's file name, without .png
+title = "Home"
+source = "src/lib.rs"          # relative to the app repository
 ```
 
 ## Where the content comes from
@@ -56,6 +68,7 @@ CI generates two data files next to `site.toml`; neither is committed:
 | --- | --- | --- |
 | `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | the `screenshots-<target>` artifacts the dayscript walkthroughs capture (`<target>/<variant>/<shot>.png`) |
+| `public/gallery/gallery.json` | `scripts/assemble-gallery.mjs` | the same captures — the published machine-readable index (see "What renders") |
 
 ### The app icon
 
@@ -89,7 +102,14 @@ record.
 - `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones in
   hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale
-  switchers when the capture matrix has them. Generated only when captures exist.
+  switchers when the capture matrix has them. Clicking a screenshot opens a full-size viewer
+  with two-axis navigation: ←/→ walk platforms across one screen, ↑/↓ walk screens on one
+  platform. Generated only when captures exist.
+- `/gallery/gallery.json` — a machine-readable index of every published screenshot: file name,
+  absolute URL, shot id and title, platform-toolkit, theme, locale, pixel dimensions, byte
+  size, and sha-256. Other sites reference the gallery through it — daybrite.dev builds its
+  showcase gallery from the Day Showcase site's copy — and any tool can enumerate the
+  screenshots without scraping pages.
 - `/<webapp>/` — the web-dom build itself, staged by the deploy workflow next to the site.
 
 A repo with a `web-dom` target and **no** `website/` directory keeps the old behavior: the
