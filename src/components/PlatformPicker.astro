@@ -10,10 +10,43 @@ interface Props {
 }
 
 const { platforms, defaultPlatform, views } = Astro.props;
+/**
+ * The build-time selection, and the LAST resort at runtime: the client prefers the visitor's own
+ * OS, then Web. `default-platform` in site.toml therefore only decides the no-JS rendering and
+ * the case where the user agent names no OS the app ships and the app has no web build.
+ */
 const initial =
   defaultPlatform && platforms.includes(defaultPlatform) && views[defaultPlatform]
     ? defaultPlatform
     : (platforms.find((p) => views[p]) ?? platforms[0]);
+
+/**
+ * Which platform each browser-detectable OS should select, resolved HERE so the client script
+ * needs no knowledge of the Day target vocabulary — it detects an OS name and looks it up.
+ *
+ * Only platforms this app actually ships appear, so a visitor on an OS the app skips falls
+ * through to Web (and, failing that, to `initial`). Linux lists both desktop toolkits because a
+ * user agent cannot say GNOME or KDE; whichever the app ships wins, GTK first.
+ */
+const OS_PLATFORMS: Record<string, string[]> = {
+  harmony: ['harmony'],
+  android: ['android'],
+  ios: ['ios'],
+  macos: ['macos'],
+  windows: ['windows'],
+  linux: ['linux-gtk', 'linux-qt'],
+  web: ['web'],
+};
+const uaMap: Record<string, string> = {};
+for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
+  for (const key of keys) {
+    const hit = platforms.find((p) => dayTarget(p)?.key === key && views[p]);
+    if (hit) {
+      uaMap[os] = hit;
+      break;
+    }
+  }
+}
 ---
 
 {platforms.length > 1 && (
@@ -23,6 +56,7 @@ const initial =
     aria-label="Choose platform"
     data-platform-picker
     data-initial={initial}
+    data-ua-map={JSON.stringify(uaMap)}
     data-pagefind-ignore
   >
     {platforms.map((p) => (
@@ -61,13 +95,41 @@ const initial =
     try { localStorage.setItem(KEY, p); } catch {}
   }
 
+  /**
+   * The visitor's OS, as one of the keys the server put in `data-ua-map`, or '' when the user
+   * agent does not say. Order matters twice over: HarmonyOS and Android both claim "Android",
+   * and every Android UA also contains "Linux".
+   */
+  function guessOs(): string {
+    const ua = navigator.userAgent || '';
+    if (/HarmonyOS|OpenHarmony/i.test(ua)) return 'harmony';
+    if (/Android/i.test(ua)) return 'android';
+    if (/iPhone|iPod/i.test(ua)) return 'ios';
+    // iPadOS ships a desktop Safari UA claiming Macintosh; touch points are what separate a
+    // real Mac from an iPad, and getting this wrong sends every iPad visitor to macOS.
+    if (/iPad/i.test(ua)) return 'ios';
+    if (/Mac/i.test(ua)) return navigator.maxTouchPoints > 1 ? 'ios' : 'macos';
+    if (/Windows/i.test(ua)) return 'windows';
+    // ChromeOS is deliberately absent: it is not a Linux-desktop target, so it falls to Web.
+    if (/Linux|X11/i.test(ua) && !/CrOS/i.test(ua)) return 'linux';
+    return '';
+  }
+
   for (const picker of document.querySelectorAll<HTMLElement>('[data-platform-picker]')) {
+    const has = (p: string) => Boolean(p && picker.querySelector(`[data-platform-tab="${p}"]`));
     let initial = picker.dataset.initial || '';
+    // Open on the visitor's own OS, and on Web when the user agent identifies none the app
+    // ships. Only if neither resolves does the build-time default stand.
+    let uaMap: Record<string, string> = {};
+    try {
+      uaMap = JSON.parse(picker.dataset.uaMap || '{}');
+    } catch {}
+    const guess = uaMap[guessOs()] || uaMap.web || '';
+    if (has(guess)) initial = guess;
+    // A choice the visitor made themselves outranks both.
     try {
       const saved = localStorage.getItem(KEY);
-      if (saved && picker.querySelector(`[data-platform-tab="${saved}"]`)) {
-        initial = saved;
-      }
+      if (has(saved || '')) initial = saved!;
     } catch {}
     if (initial) applyPlatform(picker, initial);
 

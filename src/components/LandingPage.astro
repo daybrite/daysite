@@ -29,41 +29,28 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  {/* Above the title and directly under the site header: the platform is the first choice a
-      visitor makes, and everything below it — screenshots, description, About, downloads —
-      answers for the platform selected here. Pulled UP into <main>'s padding rather than down
-      toward the hero, so it sits close to the header without crowding the title. */}
-  {appView.platforms.length > 1 && (
-    <div class="-mt-4 flex justify-center sm:-mt-8">
-      <PlatformPicker
-        platforms={appView.platforms}
-        defaultPlatform={site.defaultPlatform}
-        views={views}
-      />
-    </div>
-  )}
-
   <Hero hero={hero} />
 
+  {/* The per-platform content is split around the picker: screenshots above it, everything that
+      describes the app below. The picker hides and shows by `data-platform-section` across the
+      WHOLE document, so both halves switch together and neither needs to know about the other. */}
   {appView.platforms.map((p) =>
     views[p] ? (
       <div data-platform-section={p} class="space-y-12 sm:space-y-16">
         <ScreenshotCarousel view={views[p]!} />
-        {/* The gallery is the most persuasive page on the site — the same app drawn by seven
-            different native toolkits — and it used to be advertised by four words of small
-            print under the carousel, which read as a footnote to the screenshots rather than
-            an invitation past them. A card states what is on the other side and gives the
-            link a real target: the whole panel is the hit area, not a 60px run of text. */}
+        {/* A compact link, not a card: the label alone carries it, and the platform picker now
+            sits directly below — a full-width panel between the screenshots and the picker
+            separated the two things a visitor is most likely to use in sequence. */}
         {hasGallery && site.showGallery !== false && (
           <div class="-mt-6 flex justify-center">
             <a
               href={galleryHref(locale.code)}
-              class="group flex w-full max-w-xl items-center gap-4 rounded-2xl border border-[color:var(--color-accent-soft)] bg-[color:var(--color-accent-soft)] px-5 py-4 no-underline transition hover:border-[color:var(--color-accent)] hover:shadow-lg hover:shadow-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-accent)] sm:px-6"
+              class="group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-[color:var(--color-accent)] no-underline transition hover:bg-[color:var(--color-accent-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-accent)]"
             >
               {/* Overlapping frames: the one shape that says "more screenshots" without a word
                   of copy, so it carries the meaning in every locale. */}
               <svg
-                class="h-8 w-8 shrink-0 text-[color:var(--color-accent)]"
+                class="h-4 w-4 shrink-0"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -76,19 +63,35 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
                 <path d="M16.5 20.5H6a2.5 2.5 0 0 1-2.5-2.5V7.5" />
                 <path d="m10.5 12.5 2.5-2.5 3 3 1.5-1.5 3 3" />
               </svg>
-              <span class="min-w-0 flex-1">
-                <span class="block font-semibold text-[color:var(--color-text)]">{ui.galleryLink}</span>
-                <span class="mt-0.5 block text-sm text-[color:var(--color-text-muted)]">{ui.galleryBlurb}</span>
-              </span>
+              {ui.galleryLink}
               {/* rtl:-scale-x-100 so the arrow points AWAY from the text in Arabic too. */}
               <span
-                class="shrink-0 text-[color:var(--color-accent)] transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
+                class="shrink-0 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
                 aria-hidden="true"
               >&rarr;</span>
             </a>
           </div>
         )}
+      </div>
+    ) : null,
+  )}
 
+  {/* Everything above answers for the platform chosen HERE, and everything below it does too —
+      the picker sits between the screenshots and the description so the choice is visible at the
+      moment the screenshots invite it, rather than announced above the title. */}
+  {appView.platforms.length > 1 && (
+    <div class="flex justify-center">
+      <PlatformPicker
+        platforms={appView.platforms}
+        defaultPlatform={site.defaultPlatform}
+        views={views}
+      />
+    </div>
+  )}
+
+  {appView.platforms.map((p) =>
+    views[p] ? (
+      <div data-platform-section={p} class="space-y-12 sm:space-y-16">
         <div class="grid gap-8 lg:gap-12 lg:grid-cols-[1fr_320px] items-start">
           <DescriptionBlock
             view={views[p]!}
