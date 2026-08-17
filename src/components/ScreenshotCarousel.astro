@@ -23,31 +23,23 @@ const shots = view.screenshots;
       data-carousel-root
     >
       <div
-        class="carousel flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-0 pb-4"
+        class="shot-lane carousel flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-0 pb-4"
         data-carousel-track
         tabindex="0"
         aria-label={`${view.displayName} screenshots`}
       >
         {shots.map((s, i) => {
           // A desktop capture is landscape; framing it in the phone tile crops it to a
-          // portrait sliver. Landscape tiles run wider and keep the capture's OWN aspect
-          // ratio, so nothing is cropped; portrait — and captures whose dimensions the
-          // appindex doesn't carry (store-listing uploads) — keep the phone frame.
+          // portrait sliver. Landscape tiles keep the capture's OWN aspect ratio, so nothing
+          // is cropped; portrait — and captures whose dimensions the appindex doesn't carry
+          // (store-listing uploads) — keep the phone frame. Every tile shares the lane's
+          // height either way, so the ratio decides the WIDTH alone (see the style below).
           const portrait = !s.width || !s.height || s.height >= s.width;
           return (
-            <figure
-              class:list={[
-                'shrink-0',
-                portrait
-                  ? 'w-[68%] sm:w-[42%] md:w-[28%] lg:w-[22%]'
-                  : 'w-[92%] sm:w-[64%] md:w-[50%] lg:w-[42%]',
-              ]}
-              data-carousel-item
-              data-index={i}
-            >
+            <figure class="shrink-0" data-carousel-item data-index={i}>
               <div
                 class:list={[
-                  'relative overflow-hidden bg-[color:var(--color-surface-2)] ring-1 ring-[color:var(--color-border)] shadow-xl',
+                  'shot-frame relative overflow-hidden bg-[color:var(--color-surface-2)] ring-1 ring-[color:var(--color-border)] shadow-xl',
                   portrait ? 'aspect-[9/19.5] rounded-3xl' : 'rounded-xl',
                 ]}
                 style={portrait ? undefined : `aspect-ratio: ${s.width} / ${s.height}`}
@@ -89,26 +81,50 @@ const shots = view.screenshots;
               <path d="m9 6 6 6-6 6" />
             </svg>
           </button>
-
-          <div
-            class="mt-1 flex justify-center gap-1.5"
-            data-carousel-dots
-            aria-hidden="true"
-          >
-            {shots.map((_, i) => (
-              <span
-                class="size-1.5 rounded-full bg-[color:var(--color-border)] transition-all aria-current:bg-[color:var(--color-accent)] aria-current:w-4"
-                data-dot
-                data-index={i}
-                aria-current={i === 0 ? 'true' : 'false'}
-              ></span>
-            ))}
-          </div>
         </>
       )}
+
+      {/* Always in the layout, dots or not: a platform that ships a single screenshot would
+          otherwise be 10px shorter than its neighbours, and the picker below would step by that
+          much every time the visitor selected it. `h-1.5` matches the dot size, so the strip
+          occupies its own height whether or not it has anything to draw. */}
+      <div
+        class="mt-1 flex h-1.5 justify-center gap-1.5"
+        data-carousel-dots
+        aria-hidden="true"
+      >
+        {shots.length > 1 &&
+          shots.map((_, i) => (
+            <span
+              class="size-1.5 rounded-full bg-[color:var(--color-border)] transition-all aria-current:bg-[color:var(--color-accent)] aria-current:w-4"
+              data-dot
+              data-index={i}
+              aria-current={i === 0 ? 'true' : 'false'}
+            ></span>
+          ))}
+      </div>
     </div>
   </section>
 )}
+
+<style>
+  /* One lane height for every tile, whatever platform it belongs to. The landing page stacks a
+     carousel per platform and the picker shows one at a time, so tiles that sized themselves
+     from a percentage width — a tall 9:19.5 phone against a wide 16:10 desktop window — gave
+     each platform a different section height, and everything below moved when the visitor
+     switched, including the picker they had just clicked. Pinning the HEIGHT and letting each
+     tile's aspect ratio derive its WIDTH holds the section still.
+
+     `--shot-h` has to be a LENGTH, not a percentage: the widths resolve against it, and a
+     percentage would resolve against the containing block's width instead (the same trap the
+     gallery's `--shell-h` documents). */
+  .shot-lane { --shot-h: 20rem; }
+  @media (min-width: 640px) { .shot-lane { --shot-h: 24rem; } }
+  @media (min-width: 1024px) { .shot-lane { --shot-h: 28rem; } }
+  /* The max-width keeps an ultra-wide capture from outgrowing a narrow viewport; there the
+     aspect ratio yields and `object-cover` trims the sides, rather than the lane shrinking. */
+  .shot-frame { height: var(--shot-h); width: auto; max-width: 92vw; }
+</style>
 
 <script>
   for (const root of document.querySelectorAll<HTMLElement>('[data-carousel-root]')) {

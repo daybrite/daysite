@@ -96,13 +96,13 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
   }
 
   /**
-   * `anchor` keeps the picker under the pointer across the swap. The platform sections ABOVE the
-   * picker (the screenshots) change height when the shell changes — a phone shell for one target,
-   * a desktop window for another — so the control the visitor just clicked slid down the screen,
-   * measured at ~1000px on a desktop viewport and ~1240px on a phone. Re-scrolling by however far
-   * it moved puts it back where it was, so switching platform looks like the content changing
-   * rather than the page leaping. Off for the first apply: the visitor is at the top of the page
-   * and nothing should scroll at all.
+   * `anchor` keeps the picker under the pointer across the swap. The screenshot carousel above
+   * the picker now shares one lane height across platforms (`--shot-h` in ScreenshotCarousel),
+   * so a swap normally moves nothing and this measures zero; it stays as the guard for anything
+   * above the picker that still sizes to its content, which used to slide the control the
+   * visitor had just clicked ~1000px down a desktop viewport and ~1240px down a phone.
+   * Re-scrolling by however far it moved puts it back. Off for the first apply: the visitor is
+   * at the top of the page and nothing should scroll at all.
    */
   function applyPlatform(picker: HTMLElement, p: string, anchor = false) {
     const before = anchor ? picker.getBoundingClientRect().top : 0;
