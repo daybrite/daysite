@@ -1,5 +1,5 @@
 ---
-// The Day mark: a rust-to-amber sun rising over two ember horizon lines, the same art the
+// The Day mark: a rust-to-marigold sun rising over two warm horizon lines, the same art the
 // framework's own site and the Showcase app icon use (master: daybrite/Day-Showcase
 // icons/day-icon.svg). Inline SVG so it needs no network request and stays crisp at any size.
 //
@@ -25,12 +25,12 @@ const { size = 20, class: cls = '', gradientId: gid = 'day-mark' } = Astro.props
 >
   <defs>
     <linearGradient id={gid} x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#B7410E" />
-      <stop offset="1" stop-color="#EFA94A" />
+      <stop offset="0" stop-color="#E8541C" />
+      <stop offset="1" stop-color="#FFD84D" />
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="120" height="120" rx="27" fill="#201512" />
-  <g stroke="#EFA94A" stroke-width="6" stroke-linecap="round">
+  <rect x="0" y="0" width="120" height="120" rx="27" fill="#123246" />
+  <g stroke="#FFD84D" stroke-width="6" stroke-linecap="round">
     <line x1="60" y1="48" x2="60" y2="30" />
     <line x1="60" y1="48" x2="60" y2="40" transform="rotate(20 60 78)" />
     <line x1="60" y1="48" x2="60" y2="40" transform="rotate(-20 60 78)" />
@@ -48,6 +48,6 @@ const { size = 20, class: cls = '', gradientId: gid = 'day-mark' } = Astro.props
     stroke-width="5"
     stroke-linejoin="round"
   />
-  <line x1="28" y1="90" x2="92" y2="90" stroke="#D95B29" stroke-width="4" stroke-linecap="round" />
-  <line x1="38" y1="98" x2="82" y2="98" stroke="#D95B29" stroke-width="4" stroke-linecap="round" />
+  <line x1="28" y1="90" x2="92" y2="90" stroke="#FF8A3C" stroke-width="4" stroke-linecap="round" />
+  <line x1="38" y1="98" x2="82" y2="98" stroke="#FF8A3C" stroke-width="4" stroke-linecap="round" />
 </svg>

@@ -79,18 +79,47 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
 <script>
   const KEY = 'daysite-platform';
 
-  function applyPlatform(picker: HTMLElement, p: string) {
+  /**
+   * Bring the selected tab into view WITHIN the strip, by scrolling the strip itself.
+   *
+   * Not `scrollIntoView`: that walks every scrollable ancestor up to the document, so on a page
+   * where the picker sits below the fold it scrolled the whole window down to reach the tab —
+   * a page that jumped ~1800px the moment it loaded. `block: 'nearest'` does not prevent that;
+   * it only means "scroll the least amount needed", and when the element is off-screen the least
+   * amount is still a page scroll. Moving `scrollLeft` can only ever move this one element.
+   */
+  function revealTab(picker: HTMLElement, tab: HTMLElement) {
+    const strip = picker.getBoundingClientRect();
+    const box = tab.getBoundingClientRect();
+    if (box.left < strip.left) picker.scrollLeft -= strip.left - box.left;
+    else if (box.right > strip.right) picker.scrollLeft += box.right - strip.right;
+  }
+
+  /**
+   * `anchor` keeps the picker under the pointer across the swap. The platform sections ABOVE the
+   * picker (the screenshots) change height when the shell changes — a phone shell for one target,
+   * a desktop window for another — so the control the visitor just clicked slid down the screen,
+   * measured at ~1000px on a desktop viewport and ~1240px on a phone. Re-scrolling by however far
+   * it moved puts it back where it was, so switching platform looks like the content changing
+   * rather than the page leaping. Off for the first apply: the visitor is at the top of the page
+   * and nothing should scroll at all.
+   */
+  function applyPlatform(picker: HTMLElement, p: string, anchor = false) {
+    const before = anchor ? picker.getBoundingClientRect().top : 0;
     for (const tab of picker.querySelectorAll<HTMLElement>('[data-platform-tab]')) {
       const on = tab.dataset.platformTab === p;
       tab.setAttribute('aria-selected', on ? 'true' : 'false');
       // The row scrolls on narrow screens, where the selected tab can sit outside the visible
       // strip — a segmented control whose current value is off-screen reads as having none.
-      // `nearest` on both axes so bringing it into view never scrolls the page itself.
-      if (on) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (on) revealTab(picker, tab);
     }
     for (const section of document.querySelectorAll<HTMLElement>('[data-platform-section]')) {
       const wants = section.dataset.platformSection;
       section.classList.toggle('hidden', wants !== p);
+    }
+    if (anchor) {
+      const moved = picker.getBoundingClientRect().top - before;
+      if (moved) window.scrollBy(0, moved);
     }
     try { localStorage.setItem(KEY, p); } catch {}
   }
@@ -137,7 +166,7 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
       const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-platform-tab]');
       if (!tab) return;
       const p = tab.dataset.platformTab!;
-      applyPlatform(picker, p);
+      applyPlatform(picker, p, true);
     });
   }
 
