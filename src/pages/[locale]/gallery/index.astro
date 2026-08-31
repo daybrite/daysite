@@ -4,7 +4,7 @@ import Layout from '../../../layouts/Layout.astro';
 import DeviceShell from '../../../components/DeviceShell.astro';
 import PlatformIcon from '../../../components/PlatformIcon.astro';
 import { loadSite } from '../../../lib/data.ts';
-import { localizedText, shotLabel } from '../../../lib/gallery.ts';
+import { localizedText, shotLabel, columnParts, deviceLabel } from '../../../lib/gallery.ts';
 import { dayTarget, DAY_TARGETS } from '../../../lib/day-targets.ts';
 import { uiStrings } from '../../../lib/uistrings.ts';
 import { galleryHref, localeLinksFor } from '../../../lib/routes.ts';
@@ -35,17 +35,31 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 // Platform column order: the curation's when site.toml pinned one (assemble-gallery carries it
 // through the manifest), else the Day vocabulary's, for the targets that have captures.
-const targetsPresent = new Set(gallery.shots.flatMap((s) => Object.keys(s.byPlatform)));
+// Columns are COLUMN IDS, not target ids: `ios-uikit`, or `ios-uikit/ipad` when a target's
+// captures came from more than one device (lib/gallery.ts). Everything below resolves a column
+// back to its target for labels, icons and shell sizing, and appends the device to the caption
+// so two form factors of the same target are told apart.
+const columnsPresent = new Set(gallery.shots.flatMap((s) => Object.keys(s.byPlatform)));
 let columns: string[];
 if (gallery.platforms?.length) {
-  columns = gallery.platforms.filter((t) => targetsPresent.has(t));
+  columns = gallery.platforms.filter((c) => columnsPresent.has(c));
 } else {
-  columns = DAY_TARGETS.filter((t) => targetsPresent.has(t.target)).map((t) => t.target);
-  for (const t of targetsPresent) if (!columns.includes(t)) columns.push(t);
+  columns = DAY_TARGETS.flatMap((t) =>
+    [...columnsPresent].filter((c) => columnParts(c)[0] === t.target).sort(),
+  );
+  for (const c of columnsPresent) if (!columns.includes(c)) columns.push(c);
 }
 
+/** A column's Day target metadata, and how it should be named in the caption. */
+const columnInfo = (column: string) => {
+  const [target, device] = columnParts(column);
+  const day = dayTarget(target);
+  const base = day?.displayName ?? target;
+  return { target, device, day, name: device ? `${base} · ${deviceLabel(device)}` : base };
+};
+
 const phoneTargets = new Set(
-  columns.filter((t) => dayTarget(t)?.device === 'phone'),
+  columns.filter((c) => dayTarget(columnParts(c)[0])?.device === 'phone'),
 );
 
 /** The row heading in THIS page's locale (falling back through the language, then English —
@@ -139,10 +153,10 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
         </div>
         <div class="-mx-4 overflow-x-auto px-4 pb-2">
           <div class="flex items-stretch gap-5">
-            {columns.map((target, ci) => {
-              const caps = shot.byPlatform[target];
+            {columns.map((column, ci) => {
+              const caps = shot.byPlatform[column];
               if (!caps) return null;
-              const day = dayTarget(target);
+              const { target, day, name } = columnInfo(column);
               const v = variantFor(caps, initialTheme, initialLocale);
               const cap = caps[v]!;
               const variantAttrs = Object.fromEntries(
@@ -151,13 +165,13 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
               return (
                 <figure
                   class="w-[15rem] flex-none space-y-2"
-                  class:list={[{ 'w-[24rem]': !phoneTargets.has(target) }]}
+                  class:list={[{ 'w-[24rem]': !phoneTargets.has(column) }]}
                   data-r={ri}
                   data-c={ci}
                   data-shot={titleOf(shot)}
                   data-caption={captionOf(shot)}
-                  data-plat={target}
-                  data-name={day?.displayName ?? target}
+                  data-plat={column}
+                  data-name={name}
                 >
                   <div class="gal-frame">
                     <DeviceShell
@@ -168,7 +182,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                     >
                       <img
                         src={`${base}/${cap.src}`}
-                        alt={`${titleOf(shot)} — ${day?.displayName ?? target}`}
+                        alt={`${titleOf(shot)} — ${name}`}
                         width={cap.width}
                         height={cap.height}
                         loading="lazy"
@@ -180,7 +194,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                   </div>
                   <figcaption class="flex items-center justify-center gap-1.5 text-xs text-[color:var(--color-text-soft)]">
                     <PlatformIcon id={day?.icon ?? target} class="size-3.5" />
-                    {day?.displayName ?? target}
+                    {name}
                   </figcaption>
                 </figure>
               );

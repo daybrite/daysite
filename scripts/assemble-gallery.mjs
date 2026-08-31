@@ -60,17 +60,24 @@ function fromIndex(index, shotsDir, outImages, log) {
   const shown = index.shots.filter((s) => !curated || s.title);
   const shownIds = new Set(shown.map((s) => s.id));
   const byShot = new Map(shown.map((s) => [s.id, {}]));
+  const columns = [];
   let copied = 0;
   for (const e of index.screenshots) {
     if (!shownIds.has(e.shot)) continue;
-    const src = join(shotsDir, e.platform, e.variant, e.file);
+    // A capture taken on a named device carries an extra path level, and becomes its own
+    // COLUMN — `ios-uikit/ipad` beside `ios-uikit/iphone` — so one screenshot row can show two
+    // form factors side by side. Without a device the column id is the bare target, which is
+    // what every project that does not use device profiles keeps producing.
+    const rel = e.device ? `${e.platform}/${e.device}` : e.platform;
+    const src = join(shotsDir, ...rel.split('/'), e.variant, e.file);
     if (!existsSync(src)) continue;
-    mkdirSync(join(outImages, e.platform, e.variant), { recursive: true });
-    copyFileSync(src, join(outImages, e.platform, e.variant, e.file));
+    mkdirSync(join(outImages, ...rel.split('/'), e.variant), { recursive: true });
+    copyFileSync(src, join(outImages, ...rel.split('/'), e.variant, e.file));
     copied += 1;
-    const plat = (byShot.get(e.shot)[e.platform] ??= {});
+    if (!columns.includes(rel)) columns.push(rel);
+    const plat = (byShot.get(e.shot)[rel] ??= {});
     plat[e.variant] = {
-      src: `gallery/${e.platform}/${e.variant}/${e.file}`,
+      src: `gallery/${rel}/${e.variant}/${e.file}`,
       width: e.width ?? undefined,
       height: e.height ?? undefined,
     };
@@ -94,7 +101,14 @@ function fromIndex(index, shotsDir, outImages, log) {
     manifest: {
       themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
       locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
-      platforms: index.platforms,
+      // Column order: the index's target order, each target followed by its own devices in
+      // first-seen order. A target with no device captures contributes exactly itself, so a
+      // project without device profiles gets the list it always got.
+      platforms: (index.platforms ?? []).flatMap((t) =>
+        columns.includes(t)
+          ? [t, ...columns.filter((c) => c.startsWith(`${t}/`))]
+          : columns.filter((c) => c === t || c.startsWith(`${t}/`)),
+      ),
       shots: shown
         .map((s) => ({
           id: s.id,
@@ -106,6 +120,30 @@ function fromIndex(index, shotsDir, outImages, log) {
         .filter((s) => Object.keys(s.byPlatform).length > 0),
     },
   };
+}
+
+/** Every `[columnId, dir, variantName]` under a target directory. A child holding only
+ *  directories is a DEVICE level (`ios-uikit/ipad/dark/`), giving column `ios-uikit/ipad`; one
+ *  holding files is a plain variant, giving column `ios-uikit`. */
+function variantDirs(tDir, target) {
+  const dirsIn = (p) =>
+    readdirSync(p)
+      .filter((n) => statSync(join(p, n)).isDirectory())
+      .sort();
+  const out = [];
+  for (const name of readdirSync(tDir).sort()) {
+    const child = join(tDir, name);
+    if (!statSync(child).isDirectory()) continue;
+    const entries = readdirSync(child);
+    const onlyDirs =
+      entries.length > 0 && entries.every((n) => statSync(join(child, n)).isDirectory());
+    if (onlyDirs) {
+      for (const v of dirsIn(child)) out.push([`${target}/${name}`, join(child, v), v]);
+    } else {
+      out.push([target, child, name]);
+    }
+  }
+  return out;
 }
 
 /** The no-index fallback (a local preview without the day CLI): scan the trees directly. */
@@ -121,20 +159,21 @@ function fromScan(shotsDir, outImages) {
   const shots = new Map();
   let copied = 0;
   for (const target of targets.sort()) {
-    const tDir = join(shotsDir, target);
-    for (const variant of readdirSync(tDir).sort()) {
-      const vDir = join(tDir, variant);
-      if (!statSync(vDir).isDirectory()) continue;
+    // A target's children are variant directories, or DEVICE directories that each hold
+    // variants. Told apart by CONTENT — a directory holding only directories is a device — for
+    // the same reason the day CLI's own scan does: a device slug and a variant name are both
+    // free-form, and `ipad` reads exactly like a variant.
+    for (const [column, vDir, variant] of variantDirs(join(shotsDir, target), target)) {
       const { theme, locale } = parseVariant(variant);
       for (const file of readdirSync(vDir).sort()) {
         if (!file.toLowerCase().endsWith('.png')) continue;
         const id = file.slice(0, -4);
-        const src = `gallery/${target}/${variant}/${file}`;
-        mkdirSync(join(outImages, target, variant), { recursive: true });
-        copyFileSync(join(vDir, file), join(outImages, target, variant, file));
+        const src = `gallery/${column}/${variant}/${file}`;
+        mkdirSync(join(outImages, ...column.split('/'), variant), { recursive: true });
+        copyFileSync(join(vDir, file), join(outImages, ...column.split('/'), variant, file));
         copied += 1;
         const entry = shots.get(id) ?? { byPlatform: {} };
-        const plat = (entry.byPlatform[target] ??= {});
+        const plat = (entry.byPlatform[column] ??= {});
         plat[variant] = { src, ...pngSize(join(vDir, file)) };
         shots.set(id, entry);
         themes.add(theme);

@@ -21,14 +21,19 @@ export interface GalleryShot {
   caption?: Record<string, string>;
   /** Path of the code the screen renders from, relative to the app repository. */
   source?: string;
-  /** Day target id → variant name → capture. */
+  /** Column id → variant name → capture.
+   *
+   *  A column id is a Day target id (`ios-uikit`), or a target and a DEVICE slug when the
+   *  captures came from more than one form factor (`ios-uikit/ipad`) — so one screenshot row can
+   *  show an iPhone and an iPad side by side. Split it with {@link columnParts}. */
   byPlatform: Record<string, Record<string, GalleryCapture>>;
 }
 
 export interface GalleryManifest {
   themes: string[];
   locales: string[];
-  /** Column order from the index (`day screenshot index`); absent, the page picks its own. */
+  /** Column order from the index (`day screenshot index`), as column ids; absent, the page
+   *  picks its own. */
   platforms?: string[];
   shots: GalleryShot[];
 }
@@ -60,4 +65,27 @@ export function localizedText(
   const en = Object.keys(text).find((k) => lang(k) === 'en');
   if (en) return text[en];
   return Object.values(text)[0];
+}
+
+/** Split a gallery column id into its target and its device slug: `ios-uikit/ipad` →
+ *  `['ios-uikit', 'ipad']`, `ios-uikit` → `['ios-uikit', undefined]`. */
+export function columnParts(id: string): [string, string | undefined] {
+  const i = id.indexOf('/');
+  return i < 0 ? [id, undefined] : [id.slice(0, i), id.slice(i + 1)];
+}
+
+/** A device slug as a label: `ipad` → `iPad`, `pixel-tablet` → `Pixel Tablet`. The common Apple
+ *  spellings are special-cased because title-casing turns them into "Ipad". */
+export function deviceLabel(slug: string): string {
+  const known: Record<string, string> = {
+    ipad: 'iPad',
+    iphone: 'iPhone',
+    ipod: 'iPod',
+    mac: 'Mac',
+    tv: 'TV',
+  };
+  return slug
+    .split(/[-_]+/)
+    .map((w) => known[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
