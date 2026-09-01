@@ -244,6 +244,30 @@
 .sh-dev[data-dev='android'] > * { border-radius: 23px; }
 .sh-dev[data-dev='harmony'] { border-radius: 26px; padding: 8px; }
 .sh-dev[data-dev='harmony'] > * { border-radius: 18px; }
+/* Landscape: the same slab, turned. The corner radii are symmetrical so they need no change;
+   the side buttons do, because they are pinned to the edges that just became the long ones. */
+.sh-dev[data-landscape]::before,
+.sh-dev[data-landscape]::after {
+  width: auto;
+  height: 3px;
+}
+.sh-dev[data-dev='iphone'][data-landscape]::before {
+  left: auto;
+  right: 21%;
+  top: -3px;
+  width: 34px;
+  height: 3px;
+  box-shadow: -46px 0 0 #212124;
+}
+.sh-dev[data-dev='iphone'][data-landscape]::after {
+  right: auto;
+  left: 27%;
+  bottom: -3px;
+  top: auto;
+  width: 56px;
+  height: 3px;
+}
+
 /* Side buttons. iPhone: volume rocker left (doubled by the shadow), power right. Android and
    Harmony: power + volume on the right, the common slab layout. */
 .sh-dev::before,
@@ -260,3 +284,18 @@
 .sh-dev[data-dev='harmony']::before { right: -3px; top: 18%; height: 30px; }
 .sh-dev[data-dev='android']::after,
 .sh-dev[data-dev='harmony']::after { right: -3px; top: 28%; height: 52px; }
+/* Turned: the right edge becomes the top one, so the buttons run along it. */
+.sh-dev[data-dev='android'][data-landscape]::before,
+.sh-dev[data-dev='harmony'][data-landscape]::before {
+  right: 18%;
+  top: -3px;
+  width: 30px;
+  height: 3px;
+}
+.sh-dev[data-dev='android'][data-landscape]::after,
+.sh-dev[data-dev='harmony'][data-landscape]::after {
+  right: 28%;
+  top: -3px;
+  width: 52px;
+  height: 3px;
+}

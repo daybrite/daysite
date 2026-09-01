@@ -22,6 +22,11 @@ interface Props {
 
 const { platform, title = 'Day Showcase', dark = false, w, h } = Astro.props;
 const ratio = w && h ? w / h : undefined;
+/** A tablet captured in landscape wears the same bezel turned on its side — without this the
+ *  hardware is drawn portrait around a wide screen, which is the one shape a real device never
+ *  takes. Derived from the capture rather than declared, so a profile that changes orientation
+ *  needs no second source of truth. */
+const landscape = !!ratio && ratio > 1;
 const chrome = chromeOf(platform);
 const bezel = chrome ? undefined : bezelOf(platform);
 ---
@@ -74,7 +79,7 @@ const bezel = chrome ? undefined : bezelOf(platform);
     <slot />
   </div>
 ) : bezel ? (
-  <div class="sh-dev" data-dev={bezel}><slot /></div>
+  <div class="sh-dev" data-dev={bezel} data-landscape={landscape ? '' : undefined}><slot /></div>
 ) : (
   <slot />
 )}

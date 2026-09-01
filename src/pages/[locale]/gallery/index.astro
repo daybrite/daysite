@@ -174,7 +174,14 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
               return (
                 <figure
                   class="w-[15rem] flex-none space-y-2"
-                  class:list={[{ 'w-[24rem]': !phoneTargets.has(column) }]}
+                  class:list={[
+                    {
+                      // A tablet in landscape is as wide as a desktop window and should be shown
+                      // that way; a 15rem phone lane shrinks it to a stripe. The capture decides,
+                      // so the column does not have to be classified twice.
+                      'w-[24rem]': !phoneTargets.has(column) || (cap.width ?? 0) > (cap.height ?? 0),
+                    },
+                  ]}
                   data-r={ri}
                   data-c={ci}
                   data-shot={titleOf(shot)}
@@ -255,6 +262,10 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
   }
   /* Phones: pin the bezel to the lane so the capture's max-height has a definite base. */
   .gal-frame .sh-dev { height: 100%; }
+  /* Turned on its side, that pin is what drew a PORTRAIT bezel around a landscape screen: the
+     shell took the whole lane height while the capture inside kept its own width. Give the width
+     the definite base instead and let the height follow the glass. */
+  .gal-frame .sh-dev[data-landscape] { height: auto; width: 100%; }
   .gal-img { border-radius: 6px; }
 
   /* The row's source chip: the file the screen is rendered from, monospace like a path. */
