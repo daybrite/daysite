@@ -52,28 +52,69 @@ function pngSize(path) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
+/** The index to serve at `<host>/gallery/gallery.json`, rebuilt from the captures actually
+ *  written under `public/gallery/`. Every list is the source index's, filtered to what survived —
+ *  so the order and the metadata are the CLI's, and every URL in it resolves.
+ *
+ *  This is the invariant that keeps the published index honest: it is derived from the copy loop
+ *  rather than copied alongside it, so no future change to what gets published can leave the two
+ *  describing different sets. */
+function republish(index, published) {
+  const shotIds = new Set(published.map((e) => e.shot));
+  const targets = new Set(published.map((e) => e.platform));
+  const keep = (list, has) => (list ?? []).filter(has);
+  return {
+    ...index,
+    // Themes and locales are re-derived rather than filtered by name: either may be null on a
+    // capture (an app that varies neither), and the index spells them as it resolved them.
+    themes: keep(index.themes, (t) => published.some((e) => e.theme === t)),
+    locales: keep(index.locales, (l) => published.some((e) => e.locale === l)),
+    platforms: keep(index.platforms, (p) => targets.has(p)),
+    shots: keep(index.shots, (s) => shotIds.has(s.id)),
+    screenshots: published,
+  };
+}
+
 /** Build the manifest from `day screenshot index`'s gallery.json: copy each described image
- *  and shape the page's shot-major view. Shots WITH a title are the curated set — when any
- *  exist, only they render (the untitled extras stay machine-readable in the index). */
+ *  and shape the page's shot-major view.
+ *
+ *  Two audiences, two rules, and they are deliberately not the same rule:
+ *
+ *  - The PAGE is curated. Shots WITH a title are the curated set; when any exist, only they get
+ *    a row (`title:` is how a dayscript says "this screen is worth showing").
+ *  - The SITE publishes every capture the index describes, curated or not, because the index is
+ *    what other sites read — daybrite.dev builds its Day Showcase gallery from this one — and an
+ *    entry naming bytes nobody uploaded is worse than no entry at all.
+ *
+ *  Publishing used to follow the page's rule, so 679 of the Showcase's 2,624 indexed URLs (every
+ *  untitled shot) 404'd on the sites that resolved them. Hence also the third rule below: the
+ *  republished index is REBUILT from the copy loop's own record rather than passed through, so it
+ *  cannot describe a file this run did not write — whatever the reason it went missing. */
 function fromIndex(index, shotsDir, outImages, log) {
   const curated = index.shots.some((s) => s.title);
   const shown = index.shots.filter((s) => !curated || s.title);
   const shownIds = new Set(shown.map((s) => s.id));
   const byShot = new Map(shown.map((s) => [s.id, {}]));
   const columns = [];
-  let copied = 0;
+  /** The entries whose bytes this run actually wrote — the republished index's only source. */
+  const published = [];
+  const missing = [];
   for (const e of index.screenshots) {
-    if (!shownIds.has(e.shot)) continue;
     // A capture taken on a named device carries an extra path level, and becomes its own
     // COLUMN — `ios-uikit/ipad` beside `ios-uikit/iphone` — so one screenshot row can show two
     // form factors side by side. Without a device the column id is the bare target, which is
     // what every project that does not use device profiles keeps producing.
     const rel = e.device ? `${e.platform}/${e.device}` : e.platform;
     const src = join(shotsDir, ...rel.split('/'), e.variant, e.file);
-    if (!existsSync(src)) continue;
+    if (!existsSync(src)) {
+      missing.push(`${rel}/${e.variant}/${e.file}`);
+      continue;
+    }
     mkdirSync(join(outImages, ...rel.split('/'), e.variant), { recursive: true });
     copyFileSync(src, join(outImages, ...rel.split('/'), e.variant, e.file));
-    copied += 1;
+    published.push(e);
+    // From here on it is the page's turn, and the page shows the curated set only.
+    if (!shownIds.has(e.shot)) continue;
     if (!columns.includes(rel)) columns.push(rel);
     const plat = (byShot.get(e.shot)[rel] ??= {});
     plat[e.variant] = {
@@ -81,6 +122,12 @@ function fromIndex(index, shotsDir, outImages, log) {
       width: e.width ?? undefined,
       height: e.height ?? undefined,
     };
+  }
+  // An index entry with no file behind it means a capture that never arrived — an artifact that
+  // failed to upload, a trimmed download. It is dropped from the published index rather than
+  // shipped as a dead URL, and named here so the run that lost it says so.
+  if (missing.length) {
+    log(`${missing.length} indexed capture(s) had no file and were left out: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ', …' : ''}`);
   }
   // Theme/locale vocabularies re-derived from the variants actually copied, in the same
   // spelling the switchers use ('default' included) rather than the index's resolved tags.
@@ -95,9 +142,15 @@ function fromIndex(index, shotsDir, outImages, log) {
       }
     }
   }
-  if (curated) log(`curated: ${shown.length} titled shot(s) of ${index.shots.length} in the index`);
+  if (curated) {
+    log(
+      `curated: ${shown.length} of ${index.shots.length} shot(s) are titled and get a row; ` +
+        `every capture is published and indexed either way`,
+    );
+  }
   return {
-    copied,
+    copied: published.length,
+    index: republish(index, published),
     manifest: {
       themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
       locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
@@ -193,9 +246,16 @@ function fromScan(shotsDir, outImages) {
   };
 }
 
+/**
+ * @param {string} shotsDir  the capture tree (or the CI artifacts directory)
+ * @param {string} siteDir   where `gallery-manifest.json` is written, beside site.toml
+ * @param {{ quiet?: boolean, outImages?: string }} [opts]  `outImages` overrides the published
+ *        image directory; the test suite points it at a temp dir so it does not clobber a
+ *        working preview.
+ */
 export function assembleGallery(shotsDir, siteDir, opts = {}) {
   const log = (m) => opts.quiet || console.log(`[gallery] ${m}`);
-  const outImages = join(TEMPLATE_ROOT, 'public', 'gallery');
+  const outImages = opts.outImages ?? join(TEMPLATE_ROOT, 'public', 'gallery');
   rmSync(outImages, { recursive: true, force: true });
 
   const indexPath = join(shotsDir, 'gallery.json');
@@ -209,15 +269,20 @@ export function assembleGallery(shotsDir, siteDir, opts = {}) {
     }
   }
 
-  const { copied, manifest } = index
+  const { copied, manifest, index: republished } = index
     ? fromIndex(index, shotsDir, outImages, log)
     : fromScan(shotsDir, outImages);
 
-  // Republish the machine-readable index beside the images it describes. Only the day CLI
-  // writes one (`day screenshot index`); a scanned preview publishes none.
-  if (index && copied > 0) {
+  // Publish the machine-readable index beside the images it describes — REBUILT from the copy
+  // loop (see `republish`), never copied through, so every URL it carries has bytes behind it.
+  // Only the day CLI writes a source index (`day screenshot index`); a scanned preview publishes
+  // none.
+  if (republished && copied > 0) {
     mkdirSync(outImages, { recursive: true });
-    copyFileSync(indexPath, join(outImages, 'gallery.json'));
+    writeFileSync(
+      join(outImages, 'gallery.json'),
+      JSON.stringify(republished, null, 2) + '\n',
+    );
   } else if (!index && copied > 0) {
     log('no gallery.json in the capture tree — run `day screenshot index` to publish the machine-readable index');
   }

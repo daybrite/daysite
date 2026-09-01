@@ -61,7 +61,7 @@ CI generates two data files next to `site.toml`; neither is committed:
 | --- | --- | --- |
 | `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
-| `public/gallery/gallery.json` | republished by `scripts/assemble-gallery.mjs` | `day screenshot index` — the published machine-readable index (see "What renders") |
+| `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
 ### The app icon
 
@@ -100,11 +100,20 @@ record.
   Clicking a screenshot opens a full-size viewer with two-axis navigation: ←/→ walk platforms
   across one screen, ↑/↓ walk screens on one platform. Generated only when captures exist.
 - `/gallery/gallery.json` — the machine-readable index of every published screenshot, written
-  by `day screenshot index` and republished verbatim: file name, absolute URL, shot id,
-  localized title and caption, platform-toolkit, theme, locale, pixel dimensions, byte size,
-  and sha-256. Other sites reference the gallery through it — daybrite.dev builds its showcase
-  gallery from the Day Showcase site's copy — and any tool can enumerate the screenshots
-  without scraping pages.
+  by `day screenshot index`: file name, absolute URL, shot id, localized title and caption,
+  platform-toolkit, theme, locale, pixel dimensions, byte size, and sha-256. Other sites
+  reference the gallery through it — daybrite.dev builds its Day Showcase gallery from this
+  site's copy — and any tool can enumerate the screenshots without scraping pages.
+
+  Two rules keep it honest, and they are deliberately different from the page's:
+
+  1. **Every capture is published**, curated or not. Curation (a `title:`) decides which shots get
+     a row on the gallery PAGE; it does not decide which bytes go on the site. An index entry
+     naming an image nobody uploaded is worse than no entry.
+  2. **The index is rebuilt from what was published**, not copied through. An entry whose file is
+     missing from the capture tree — an artifact that failed to upload, a trimmed download — is
+     dropped from the index (and named in the build log) rather than shipped as a dead URL. The
+     invariant is covered by `scripts/assemble-gallery.test.mjs` (`npm test`).
 - `/<webapp>/` — the web-dom build itself, staged by the deploy workflow next to the site.
 
 A repo with a `web-dom` target and **no** `website/` directory keeps the old behavior: the

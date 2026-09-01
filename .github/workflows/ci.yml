@@ -24,6 +24,11 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
+      - name: Unit tests
+        # The assembly scripts' own invariants, on Node's runner with no extra dependency. The
+        # gallery one guards a bug no build could notice: a published index describing images
+        # that were never published.
+        run: npm test
       - run: npx astro build
       - name: The sample rendered
         run: |
