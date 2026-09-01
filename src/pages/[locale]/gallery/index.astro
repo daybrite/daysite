@@ -33,6 +33,15 @@ const appView = data.apps[0]!;
 const hero = appView.hero(locale.code);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
+// The blurb names dayscript, and links it in the visible subtitle only: the page description
+// is a meta attribute, so it takes the bare word.
+const DAYSCRIPT_DOCS = 'https://daybrite.dev/docs/dayscript/';
+const blurbText = ui.galleryBlurb.replace('[DAYSCRIPT]', 'dayscript');
+const blurbHTML = ui.galleryBlurb.replace(
+  '[DAYSCRIPT]',
+  `<a href="${DAYSCRIPT_DOCS}" target="_blank" rel="noopener" class="text-[color:var(--color-accent)] underline underline-offset-[3px]">dayscript</a>`,
+);
+
 // Platform column order: the curation's when site.toml pinned one (assemble-gallery carries it
 // through the manifest), else the Day vocabulary's, for the targets that have captures.
 // Columns are COLUMN IDS, not target ids: `ios-uikit`, or `ios-uikit/ipad` when a target's
@@ -94,7 +103,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
   localeLinks={localeLinks}
   current={locale}
   pageTitle={`${ui.galleryHeading} – ${hero.title}`}
-  pageDescription={ui.galleryBlurb}
+  pageDescription={blurbText}
   socialImage={appView.socialImage ?? data.socialImage}
   favicons={data.favicons}
   vectorIcon={data.vectorIcon}
@@ -104,7 +113,7 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
   <div class="space-y-10">
     <header class="space-y-3 text-center">
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">{ui.galleryHeading}</h1>
-      <p class="text-[color:var(--color-text-soft)]">{ui.galleryBlurb}</p>
+      <p class="text-[color:var(--color-text-soft)]" set:html={blurbHTML}></p>
       {(showThemes.length > 1 || showLocales.length > 1) && (
         <div class="flex flex-wrap items-center justify-center gap-3" data-gallery-switchers data-pagefind-ignore>
           {showThemes.length > 1 && (

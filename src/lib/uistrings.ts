@@ -42,7 +42,8 @@ export interface UIStrings {
   galleryLink: string;
   /** Gallery page heading. */
   galleryHeading: string;
-  /** Gallery page subtitle. */
+  /** Gallery page subtitle; "[DAYSCRIPT]" is interpolated — the docs link in the visible
+      subtitle, the bare word in the page description. */
   galleryBlurb: string;
   /** Theme switcher labels. */
   themeLight: string;
@@ -74,7 +75,8 @@ const EN: UIStrings = {
   openWebApp: 'Open the web app',
   galleryLink: 'Gallery',
   galleryHeading: 'Screenshots',
-  galleryBlurb: 'The same app on every platform — captured by the release pipeline, not staged.',
+  galleryBlurb:
+    'These screenshots are taken automatically by the continuous-integration [DAYSCRIPT] walkthrough for each toolkit.',
   themeLight: 'Light',
   themeDark: 'Dark',
 };
@@ -103,7 +105,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'أُنشئ باستخدام Day',
     galleryLink: 'المعرض',
     galleryHeading: 'لقطات الشاشة',
-    galleryBlurb: 'التطبيق نفسه على كل منصة — مُلتقط من خط الإصدار، لا مُهيّأ للعرض.',
+    galleryBlurb:
+      'تُلتقط هذه اللقطات تلقائيًا عبر جولة [DAYSCRIPT] في التكامل المستمر لكل عدة أدوات.',
   },
   cs: {
     about: 'O aplikaci',
@@ -194,7 +197,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Créé avec Day',
     galleryLink: 'Galerie',
     galleryHeading: 'Captures d’écran',
-    galleryBlurb: 'La même application sur chaque plateforme — capturée par le pipeline de publication, pas mise en scène.',
+    galleryBlurb:
+      'Ces captures d’écran sont prises automatiquement par le parcours [DAYSCRIPT] d’intégration continue, pour chaque toolkit.',
   },
   hi: {
     about: 'ऐप के बारे में',
@@ -527,7 +531,7 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: '使用 Day 构建',
     galleryLink: '图库',
     galleryHeading: '截图',
-    galleryBlurb: '同一个应用在每个平台上的样子 —— 由发布流水线自动截取，而非摆拍。',
+    galleryBlurb: '这些截图由持续集成的 [DAYSCRIPT] 演练针对每个工具包自动截取。',
   },
   'zh-Hant': {
     about: '關於',
