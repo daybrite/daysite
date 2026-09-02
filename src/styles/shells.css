@@ -208,7 +208,17 @@
 /* The screen pixels are untouched — the shell only adds the hardware a screenshot cannot
    contain. Corner radii clip the rectangular capture the way the physical glass does; the nubs
    are the side buttons, drawn with pseudo-elements (box-shadow doubles the volume rocker) so
-   they poke out of the frame without any overflow clipping. */
+   they poke out of the frame without any overflow clipping.
+
+   The radii follow the SCREEN, not the page: a device's corner is a fixed fraction of its short
+   side (`--k`, per family below — an iPhone's is about a seventh of its width, an iPad's a
+   fiftieth), and the shell knows the capture's proportions through `--ar` (width / height, set
+   by DeviceShell.astro when the capture's size is known). A percentage border-radius is
+   elliptical — the horizontal radius resolves against the width, the vertical against the
+   height — so the vertical one is multiplied by `--ar` to land on the same length, which makes
+   the corner circular whatever the box's shape. The bezel's own corner is the glass corner plus
+   the bezel width, as on the hardware. Fixed pixel radii remain the fallback for a capture of
+   unknown size. */
 .sh-dev {
   position: relative;
   /* Centered, never stretched: a stretched flex item would take the frame's height while keeping
@@ -219,7 +229,8 @@
   max-width: 100%;
   max-height: 100%;
   min-height: 0;
-  padding: 9px;
+  --pad: 9px;
+  padding: var(--pad);
   background: linear-gradient(160deg, #1a1a1c, #060607);
   box-shadow:
     inset 0 0 0 1.5px rgba(255, 255, 255, 0.08),
@@ -238,12 +249,46 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 .sh-dev:has(.ph) { width: 100%; height: 100%; }
-.sh-dev[data-dev='iphone'] { border-radius: 42px; }
+/* Corner fractions per family (of the screen's short side), with the pixel fallbacks. */
+.sh-dev[data-dev='iphone'] { --k: 0.15; border-radius: 42px; }
 .sh-dev[data-dev='iphone'] > * { border-radius: 33px; }
-.sh-dev[data-dev='android'] { border-radius: 30px; padding: 7px; }
+.sh-dev[data-dev='android'] { --k: 0.12; --pad: 7px; border-radius: 30px; }
 .sh-dev[data-dev='android'] > * { border-radius: 23px; }
-.sh-dev[data-dev='harmony'] { border-radius: 26px; padding: 8px; }
+.sh-dev[data-dev='harmony'] { --k: 0.1; --pad: 8px; border-radius: 26px; }
 .sh-dev[data-dev='harmony'] > * { border-radius: 18px; }
+/* Tablets are the same slab with barely rounded glass: an iPad's corner radius is 18pt on an
+   834pt-wide screen, a Pixel Tablet's a little rounder. */
+.sh-dev[data-form='tablet'] { --k: 0.022; }
+.sh-dev[data-dev='android'][data-form='tablet'],
+.sh-dev[data-dev='harmony'][data-form='tablet'] { --k: 0.03; }
+/* The glass corner as a fraction of the box WIDTH: the short side is the width in portrait and
+   width / --ar in landscape. */
+.sh-dev[data-fit] {
+  --gr: calc(var(--k) / max(var(--ar), 1));
+  border-radius:
+    calc(var(--gr) * (100% - 2 * var(--pad)) + var(--pad))
+    / calc(var(--gr) * var(--ar) * (100% - 2 * var(--pad)) + var(--pad));
+}
+.sh-dev[data-fit] > * {
+  border-radius: calc(var(--gr) * 100%) / calc(var(--gr) * var(--ar) * 100%);
+}
+
+/* Side buttons. iPhone: volume rocker left (doubled by the shadow), power right. Android and
+   Harmony: power + volume on the right, the common slab layout. */
+.sh-dev::before,
+.sh-dev::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: #212124;
+}
+.sh-dev[data-dev='iphone']::before { left: -3px; top: 21%; height: 34px; box-shadow: 0 46px 0 #212124; }
+.sh-dev[data-dev='iphone']::after { right: -3px; top: 27%; height: 56px; }
+.sh-dev[data-dev='android']::before,
+.sh-dev[data-dev='harmony']::before { right: -3px; top: 18%; height: 30px; }
+.sh-dev[data-dev='android']::after,
+.sh-dev[data-dev='harmony']::after { right: -3px; top: 28%; height: 52px; }
 /* Landscape: the same slab, turned. The corner radii are symmetrical so they need no change;
    the side buttons do, because they are pinned to the edges that just became the long ones. */
 .sh-dev[data-landscape]::before,
@@ -267,23 +312,6 @@
   width: 56px;
   height: 3px;
 }
-
-/* Side buttons. iPhone: volume rocker left (doubled by the shadow), power right. Android and
-   Harmony: power + volume on the right, the common slab layout. */
-.sh-dev::before,
-.sh-dev::after {
-  content: '';
-  position: absolute;
-  width: 3px;
-  border-radius: 2px;
-  background: #212124;
-}
-.sh-dev[data-dev='iphone']::before { left: -3px; top: 21%; height: 34px; box-shadow: 0 46px 0 #212124; }
-.sh-dev[data-dev='iphone']::after { right: -3px; top: 27%; height: 56px; }
-.sh-dev[data-dev='android']::before,
-.sh-dev[data-dev='harmony']::before { right: -3px; top: 18%; height: 30px; }
-.sh-dev[data-dev='android']::after,
-.sh-dev[data-dev='harmony']::after { right: -3px; top: 28%; height: 52px; }
 /* Turned: the right edge becomes the top one, so the buttons run along it. */
 .sh-dev[data-dev='android'][data-landscape]::before,
 .sh-dev[data-dev='harmony'][data-landscape]::before {
@@ -298,4 +326,45 @@
   top: -3px;
   width: 52px;
   height: 3px;
+}
+/* Tablets, whatever the family: the top button at the end of the top edge and the volume rocker
+   just around the corner on the right edge (portrait), or both along the top edge with the
+   rocker at the far end (landscape) — the iPad and Pixel Tablet layout. Nothing on the bottom
+   edge, where the phone rules above would have left a power button. Every offset is restated
+   because the family rules set them all. */
+.sh-dev[data-form='tablet']::before {
+  left: auto;
+  right: -3px;
+  top: 6%;
+  bottom: auto;
+  width: 3px;
+  height: 24px;
+  box-shadow: 0 32px 0 #212124;
+}
+.sh-dev[data-form='tablet']::after {
+  left: auto;
+  right: 6%;
+  top: -3px;
+  bottom: auto;
+  width: 28px;
+  height: 3px;
+  box-shadow: none;
+}
+.sh-dev[data-form='tablet'][data-landscape]::before {
+  left: auto;
+  right: 6%;
+  top: -3px;
+  bottom: auto;
+  width: 24px;
+  height: 3px;
+  box-shadow: -32px 0 0 #212124;
+}
+.sh-dev[data-form='tablet'][data-landscape]::after {
+  left: 6%;
+  right: auto;
+  top: -3px;
+  bottom: auto;
+  width: 28px;
+  height: 3px;
+  box-shadow: none;
 }

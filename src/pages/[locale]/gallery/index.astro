@@ -8,6 +8,7 @@ import { localizedText, shotLabel, columnParts, deviceLabel } from '../../../lib
 import { dayTarget, DAY_TARGETS } from '../../../lib/day-targets.ts';
 import { uiStrings } from '../../../lib/uistrings.ts';
 import { galleryHref, localeLinksFor } from '../../../lib/routes.ts';
+import { isTabletCapture } from '../../../lib/shells.ts';
 import '../../../styles/shells.css';
 
 // One row per captured screen, every platform's capture side by side, dressed in its shell.
@@ -176,10 +177,15 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
                   class="w-[15rem] flex-none space-y-2"
                   class:list={[
                     {
-                      // A tablet in landscape is as wide as a desktop window and should be shown
-                      // that way; a 15rem phone lane shrinks it to a stripe. The capture decides,
-                      // so the column does not have to be classified twice.
-                      'w-[24rem]': !phoneTargets.has(column) || (cap.width ?? 0) > (cap.height ?? 0),
+                      // A tablet is as wide as a desktop window and should be shown that way; a
+                      // 15rem phone lane shrinks a landscape one to a stripe, and pins a portrait
+                      // one to the lane's height while its glass stays width-bound, which draws
+                      // the bezel letterboxed around it. The capture decides, so the column does
+                      // not have to be classified twice.
+                      'w-[24rem]':
+                        !phoneTargets.has(column) ||
+                        (cap.width ?? 0) > (cap.height ?? 0) ||
+                        isTabletCapture(cap.width, cap.height),
                     },
                   ]}
                   data-r={ri}

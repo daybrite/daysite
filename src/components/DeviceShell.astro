@@ -3,7 +3,7 @@
 // decoration, or a phone bezel. Targets with neither (none today, but the mapping is data)
 // render the screenshot bare. Styles live in ../styles/shells.css — global, because the
 // selectors have to reach slotted content; see that file and ../lib/shells.ts.
-import { bezelOf, chromeOf } from '../lib/shells';
+import { bezelOf, chromeOf, isTabletCapture } from '../lib/shells';
 import '../styles/shells.css';
 
 interface Props {
@@ -15,7 +15,8 @@ interface Props {
   dark?: boolean;
   /** Intrinsic pixel size of the capture being wrapped. Given both, a window shell sizes itself
    *  to the screenshot exactly (see `--ar` in shells.css) instead of letting the title bar span
-   *  a frame the letterboxed capture does not fill. */
+   *  a frame the letterboxed capture does not fill, and a bezel rounds its corners in proportion
+   *  to the screen (`--ar` again) and tells a tablet from a phone. */
   w?: number;
   h?: number;
 }
@@ -27,6 +28,11 @@ const ratio = w && h ? w / h : undefined;
  *  takes. Derived from the capture rather than declared, so a profile that changes orientation
  *  needs no second source of truth. */
 const landscape = !!ratio && ratio > 1;
+/** A tablet wears the same bezel family as its phone — data-dev — but with the corners and
+ *  buttons of a slab that size: a 4:3 iPad has hardware corners a fraction as round as an
+ *  iPhone's, and drawing the phone's radius around it clips the status bar the real glass never
+ *  touches. */
+const tablet = isTabletCapture(w, h);
 const chrome = chromeOf(platform);
 const bezel = chrome ? undefined : bezelOf(platform);
 ---
@@ -79,7 +85,14 @@ const bezel = chrome ? undefined : bezelOf(platform);
     <slot />
   </div>
 ) : bezel ? (
-  <div class="sh-dev" data-dev={bezel} data-landscape={landscape ? '' : undefined}><slot /></div>
+  <div
+    class="sh-dev"
+    data-dev={bezel}
+    data-form={tablet ? 'tablet' : 'phone'}
+    data-landscape={landscape ? '' : undefined}
+    data-fit={ratio ? '' : undefined}
+    style={ratio ? `--ar:${ratio.toFixed(6)}` : undefined}
+  ><slot /></div>
 ) : (
   <slot />
 )}

@@ -92,8 +92,8 @@ record.
   **Open the web app** button when a web build is hosted, the App Store or Google Play badge for a
   listed app, otherwise the lead package from the latest GitHub release — then permissions and
   release notes. One page per store locale, with the same locale-fallback ladder as appland.
-- `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones in
-  hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
+- `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones and
+  tablets in hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale
   switchers when the capture matrix has them. Row headings and captions come from the
   dayscript metadata, in the page's own locale (missing locales fall back to English).
