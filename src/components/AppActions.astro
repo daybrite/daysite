@@ -8,7 +8,7 @@
 // Per-view, not per-site: the About card already sits inside its platform's
 // `data-platform-section`, so the picker shows and hides these with everything else.
 import type { ArtifactEntry, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
-import { badgeLocale } from '../lib/i18n.ts';
+import StoreBadge from './StoreBadge.astro';
 import { dayTarget } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 
@@ -23,18 +23,27 @@ const ui = uiStrings(locale.code);
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const p = view.id;
 
-// Per-locale badge files live under public/badges/<code>/ — badgeLocale() resolves to a code we
-// actually shipped (final fallback en), and BASE keeps them working on project-page deploys.
+// The store's badge (StoreBadge.astro), for the two platforms that have a store listing.
 const badge =
   site.showStoreBadges !== false && view.storeURL
     ? p === 'ios'
-      ? { src: `${BASE}/badges/${badgeLocale(locale.code, 'apple')}/apple-app-store.svg`, alt: 'Download on the App Store' }
+      ? ('apple' as const)
       : p === 'android'
-        ? { src: `${BASE}/badges/${badgeLocale(locale.code, 'google')}/google-play-store.svg`, alt: 'Get it on Google Play' }
+        ? ('google' as const)
         : undefined
     : undefined;
 
 const webappHref = p === 'web' ? `${BASE}/${site.webapp ?? 'webapp'}/` : undefined;
+// The app's full address, printed under the button so it can be read, copied, or typed on
+// another device. Middle-truncated when the card is narrower than the URL: the head shrinks
+// behind an ellipsis, the tail — where the path, the part that tells sites apart, ends — stays.
+// `w-0 min-w-full` keeps the unbroken text out of the card's min-content width, so a narrow
+// phone gets the ellipsis rather than a page that scrolls sideways.
+const webappURL = webappHref ? new URL(webappHref, site.host).toString() : undefined;
+const WEBAPP_TAIL = 14;
+const webappParts = webappURL
+  ? [webappURL.slice(0, -WEBAPP_TAIL), webappURL.slice(-WEBAPP_TAIL)]
+  : undefined;
 
 /** The one package this platform leads with, by the target's preference order (.msix before
  *  -setup.exe, .apk before .aab), falling back to whatever the release shipped first. */
@@ -67,16 +76,19 @@ const BUTTON =
         <span aria-hidden="true">&rarr;</span>
       </a>
     )}
-    {badge && (
+    {webappHref && webappParts && (
       <a
-        href={view.storeURL}
-        class="inline-block rounded-xl transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)]"
-        target="_blank"
-        rel="noopener"
-        aria-label={badge.alt}
+        href={webappHref}
+        title={webappURL}
+        class="-mt-1 flex w-0 min-w-full justify-center font-mono text-xs text-[color:var(--color-text-soft)] transition hover:text-[color:var(--color-accent)]"
+        dir="ltr"
       >
-        <img src={badge.src} alt={badge.alt} width="120" height="40" class="h-12 sm:h-14 w-auto" loading="lazy" />
+        <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{webappParts[0]}</span>
+        <span class="shrink-0 whitespace-nowrap">{webappParts[1]}</span>
       </a>
+    )}
+    {badge && view.storeURL && (
+      <StoreBadge store={badge} href={view.storeURL} locale={locale.code} height="3rem" heightSm="3.5rem" />
     )}
     {dl && (
       <a href={dl.url} download class={BUTTON} aria-label={`${ui.downloadHeading}: ${dl.name}`}>

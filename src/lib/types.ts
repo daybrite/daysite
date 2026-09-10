@@ -27,10 +27,18 @@ export interface SiteInfo {
    * `day lint` can hold the website to the same locale set as the rest of the project.
    */
   locales?: string[];
+  /**
+   * Where the platform's screenshot carousel sits on the landing page: below the description
+   * and About card (the default), or above the platform picker, as the first thing after the
+   * hero. `screenshot-placement` in site.toml.
+   */
+  screenshotPlacement?: 'below-about' | 'above-about';
   /** Show the /gallery page (default true when gallery data is present). */
   showGallery?: boolean;
   showSourceLink?: boolean;
   showStoreBadges?: boolean;
+  /** Show the toolbar QR code of the landing page (default true). */
+  showQrCode?: boolean;
   showPermissions?: boolean;
   showDependencyCount?: boolean;
   /**
@@ -249,7 +257,7 @@ export interface PermissionView {
 
 export interface AppView {
   app: AppEntry;
-  /** URL-safe identifier (the appindex `name` field, e.g. "Net-Skip"). */
+  /** URL-safe identifier (the appindex `name` field, e.g. "Day-Showcase"). */
   slug: string;
   defaultLocale: string;
   locales: LocaleInfo[];
@@ -310,11 +318,4 @@ export interface HeroView {
   description: string;
   iconURL?: string;
   featureGraphicURL?: string;
-  /** The live store listings (appindex `channels`), for the badges under the title. */
-  stores: StoreLink[];
-}
-
-export interface StoreLink {
-  store: 'apple-app-store' | 'google-play-store';
-  url: string;
 }

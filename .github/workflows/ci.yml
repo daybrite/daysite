@@ -13,9 +13,10 @@ permissions:
   id-token: write
 
 jobs:
-  # Template self-test: build against the bundled NetSkip sample (samples/site.toml resolves
-  # when neither DAYSITE_CONFIG nor a conventional ../site.toml exists), which keeps the
-  # ios/android appindex-compatibility path honest. Cheap, so it runs on PRs too.
+  # Template self-test: build against the bundled sample (samples/, a Day project in miniature;
+  # samples/site.toml resolves when neither DAYSITE_CONFIG nor a conventional ../site.toml
+  # exists), through the same generators CI runs for a real repository. Cheap, so it runs on
+  # PRs too.
   sample:
     runs-on: ubuntu-latest
     steps:
@@ -29,12 +30,19 @@ jobs:
         # gallery one guards a bug no build could notice: a published index describing images
         # that were never published.
         run: npm test
+      - name: Generate the sample's data
+        run: npm run sample
       - run: npx astro build
       - name: The sample rendered
         run: |
           set -euo pipefail
           test -f dist/index.html
-          grep -q "Net Skip" dist/index.html
+          grep -q "Day Showcase" dist/index.html
+          # Both store badges, the favicon set from the icon family, and the gallery.
+          grep -q 'badges/en/apple-app-store.svg' dist/en/index.html
+          grep -q 'badges/en/google-play-store.svg' dist/en/index.html
+          test -f dist/app/apple-touch-icon.png
+          test -f dist/en/gallery/index.html
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run THIS checkout of the template over the

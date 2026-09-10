@@ -9,9 +9,12 @@ The files are copied unchanged from the App Fair's `appland` site template
 assembled them from the stores' own localized badge downloads. They ship with this
 repository so a site build reads nothing from the network for them.
 
-The locale directories are exactly the sets `badgeLocale()` in `src/lib/i18n.ts`
-knows: 39 App Store locales and 81 Google Play locales. Keep the two in step. A
-page locale with no directory of its own falls back to its language, then to `en`.
+A directory is named by the locale tag a page uses, which is a Day locale tag
+(`zh-CN`, `pt-BR`, `nb`), not the stores' own spelling: the upstream `zh-Hans` and
+`zh-Hant` are `zh-CN` and `zh-TW` here, with copies as `zh-SG` and `zh` (Simplified)
+and `zh-HK` and `zh-MO` (Traditional), and `no` is copied as `nb`. `badgeLocale()` in
+`src/lib/i18n.ts` reads this directory, so adding a locale is adding a folder; a page
+locale with no directory of its own falls back to its language, then to `en`.
 
 ## Trademarks
 

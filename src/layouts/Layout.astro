@@ -3,6 +3,8 @@ import '../styles/global.css';
 import type { FaviconPaths, LocaleInfo, LocaleLink, SiteInfo } from '../lib/types.ts';
 import { pickText } from '../lib/i18n.ts';
 import { localeIndexHref } from '../lib/routes.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import { svg as qrSvg } from '../lib/qr.mjs';
 import { loadSite } from '../lib/data.ts';
 import LanguagePicker from '../components/LanguagePicker.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
@@ -72,6 +74,19 @@ const { themeCss, hasWebApp } = await loadSite();
 // localized via pickText so siteinfo.yaml can carry either a plain string
 // or a locale-keyed map.
 const siteTitleText = pickText(site.title, current.code).value ?? '';
+
+// The landing page's QR code: a toolbar icon that opens full screen, so the app can be handed
+// to the phone next to you. The code carries the site's root URL, which sends a phone to its
+// own language; the caption shows that URL so it can be read as well. Both renderings are
+// inline SVG in `currentColor` with no plate of their own, so they follow the theme: dark
+// modules on the light theme, light ones on the dark, the overlay's plate being the surface.
+const ui = uiStrings(current.code);
+const qrTitle = ui.qrTitle.replace('[APP]', siteTitleText || 'Day');
+const qrURL = new URL(import.meta.env.BASE_URL, site.host).toString();
+const showQr = site.showQrCode !== false;
+const qrInline = { quiet: 0, color: 'currentColor', background: 'none' } as const;
+const qrIcon = showQr ? qrSvg(qrURL, '', qrInline) : '';
+const qrLarge = showQr ? qrSvg(qrURL, qrTitle, qrInline) : '';
 
 // hreflang alternates per locale, page-specific href
 const alternates = localeLinks.map((l) => ({
@@ -155,6 +170,45 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     <style is:global define:vars={{ accent }}>
       :root { --accent: var(--accent); }
     </style>
+    <style is:global>
+      /* The QR overlay: the gallery's viewer, reduced to one image and a caption. */
+      .qr-box { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; }
+      .qr-box[hidden] { display: none; }
+      .qr-box:not([hidden]) { animation: qr-fade 0.18s ease; }
+      @keyframes qr-fade { from { opacity: 0; } to { opacity: 1; } }
+      .qr-backdrop { position: absolute; inset: 0; background: rgba(3, 6, 14, 0.86); backdrop-filter: blur(6px); }
+      .qr-stage {
+        position: relative; z-index: 1; margin: 0; padding: 0 16px;
+        display: flex; flex-direction: column; align-items: center; gap: 18px;
+        pointer-events: none;
+      }
+      /* The icon: the code alone, no quiet zone, sized to sit inside the round button with a
+         ring of the button's own color around it. */
+      .qr-icon svg { width: 1.2rem; height: 1.2rem; display: block; }
+      /* The full-size code: the surface is the plate (white in light, near-black in dark, with
+         the modules in the text color — an inverted code, which phone cameras read), and the
+         padding is its quiet zone, four modules of a code this size. */
+      .qr-img {
+        width: min(78vw, 60vh, 480px); aspect-ratio: 1; box-sizing: border-box; padding: 6%;
+        border-radius: 16px; background: var(--color-surface); color: var(--color-text);
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+      }
+      .qr-img svg { width: 100%; height: 100%; display: block; }
+      .qr-cap {
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        text-align: center; color: #fff; max-width: min(92vw, 40rem);
+      }
+      .qr-cap b { font-weight: 600; }
+      .qr-cap span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; opacity: 0.85; overflow-wrap: anywhere; }
+      .qr-cap small { font-size: 0.8rem; opacity: 0.7; }
+      .qr-close {
+        position: absolute; z-index: 2; top: 18px; right: 18px; width: 42px; height: 42px;
+        appearance: none; cursor: pointer; border: 1px solid var(--color-border); border-radius: 999px;
+        background: color-mix(in srgb, var(--color-surface) 88%, transparent); color: var(--color-text);
+        backdrop-filter: blur(8px); display: grid; place-items: center; font-size: 1.05rem;
+      }
+      .qr-close:hover { color: var(--color-accent); }
+    </style>
     {themeCss && <style is:global set:html={themeCss}></style>}
 
     {site.analyticsScript && (
@@ -232,6 +286,17 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
         >{siteTitleText}</a>
         <div class="flex-1"></div>
         {site.pagefind && <SearchBar locale={current} />}
+        {showQr && (
+          <button
+            type="button"
+            data-qr-open
+            aria-label={qrTitle}
+            title={qrTitle}
+            aria-haspopup="dialog"
+            class="qr-icon inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+            set:html={qrIcon}
+          />
+        )}
         <LanguagePicker locales={localeLinks} current={current} />
         <ThemeToggle />
       </div>
@@ -241,11 +306,49 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
       <slot />
     </main>
 
+    {showQr && (
+      <div class="qr-box" data-qr-box hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label={qrTitle}>
+        <div class="qr-backdrop" data-qr-close></div>
+        <button class="qr-close" data-qr-close type="button" aria-label="Close (Esc)">✕</button>
+        <figure class="qr-stage">
+          <div class="qr-img" set:html={qrLarge}></div>
+          <figcaption class="qr-cap">
+            <b>{qrTitle}</b>
+            <span dir="ltr">{qrURL}</span>
+            <small>{ui.qrHint}</small>
+          </figcaption>
+        </figure>
+      </div>
+    )}
     <Footer
       site={site}
       locale={current}
       sourceURL={sourceURL}
       releaseURL={releaseURL}
     />
+    <script>
+      // The QR overlay: open from the toolbar icon, close from the ✕, the backdrop, or Esc;
+      // focus goes to the ✕ while it is up and back to the icon after.
+      const qrBox = document.querySelector<HTMLElement>('[data-qr-box]');
+      const qrOpen = document.querySelector<HTMLElement>('[data-qr-open]');
+      if (qrBox && qrOpen) {
+        const close = () => {
+          qrBox.hidden = true;
+          qrBox.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          qrOpen.focus();
+        };
+        qrOpen.addEventListener('click', () => {
+          qrBox.hidden = false;
+          qrBox.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          qrBox.querySelector<HTMLElement>('.qr-close')?.focus();
+        });
+        for (const el of qrBox.querySelectorAll<HTMLElement>('[data-qr-close]')) el.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !qrBox.hidden) close();
+        });
+      }
+    </script>
   </body>
 </html>

@@ -1,5 +1,72 @@
 {
-  "themes": [],
-  "locales": [],
-  "shots": []
+  "themes": [
+    "default"
+  ],
+  "locales": [
+    "default"
+  ],
+  "shots": [
+    {
+      "id": "anchors",
+      "byPlatform": {
+        "web-dom": {
+          "default": {
+            "src": "gallery/web-dom/default/anchors.png",
+            "width": 900,
+            "height": 648
+          }
+        }
+      }
+    },
+    {
+      "id": "controls",
+      "byPlatform": {
+        "android-mdc": {
+          "default": {
+            "src": "gallery/android-mdc/default/controls.png",
+            "width": 506,
+            "height": 900
+          }
+        },
+        "ios-uikit": {
+          "default": {
+            "src": "gallery/ios-uikit/default/controls.png",
+            "width": 414,
+            "height": 900
+          }
+        }
+      }
+    },
+    {
+      "id": "home",
+      "byPlatform": {
+        "android-mdc": {
+          "default": {
+            "src": "gallery/android-mdc/default/home.png",
+            "width": 506,
+            "height": 900
+          }
+        },
+        "ios-uikit": {
+          "default": {
+            "src": "gallery/ios-uikit/default/home.png",
+            "width": 414,
+            "height": 900
+          }
+        }
+      }
+    },
+    {
+      "id": "interaction",
+      "byPlatform": {
+        "web-dom": {
+          "default": {
+            "src": "gallery/web-dom/default/interaction.png",
+            "width": 900,
+            "height": 648
+          }
+        }
+      }
+    }
+  ]
 }

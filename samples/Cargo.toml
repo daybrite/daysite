@@ -1,0 +1,4 @@
+# Only the version is read (the site's "Version" row); the sample builds nothing.
+[package]
+name = "showcase"
+version = "0.4.1"

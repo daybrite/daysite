@@ -25,6 +25,7 @@
 //            [--repo owner/name] [--release-assets FILE]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -194,6 +195,27 @@ export function readReleaseAssets(path, log = () => {}) {
     .map((a) => ({ name: a.name, size: Number(a.size) || 0 }));
 }
 
+/** `owner/name` from a GitHub remote URL in any of git's spellings, or undefined. */
+export function parseGithubRepo(url) {
+  const m = /github\.com[:/]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/i.exec(String(url ?? '').trim());
+  return m ? `${m[1]}/${m[2]}` : undefined;
+}
+
+/** The project's GitHub repository from its `origin` remote — what a local preview has where
+ *  CI has `--repo`; without it the site has no source or release links. Undefined when the
+ *  tree is not a checkout or the remote is elsewhere. */
+function repoFromGit(projectRoot, log) {
+  let url;
+  try {
+    url = execFileSync('git', ['-C', projectRoot, 'remote', 'get-url', 'origin'], { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+  } catch {
+    return undefined;
+  }
+  const repo = parseGithubRepo(url);
+  if (repo) log(`repository: ${repo} (from the git remote)`);
+  return repo;
+}
+
 /** The listings Day.toml's `[store]` table says are live, as `{ id, url }` per store. A key is
  *  the store's own identifier for the listing (the App Store's numeric app id, Play's
  *  application id), never a URL, so the URL shape stays here in one place. */
@@ -325,7 +347,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     break;
   }
 
-  const repo = opts.repo ?? process.env.GITHUB_REPOSITORY;
+  const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? repoFromGit(projectRoot, log);
   const assets = readReleaseAssets(opts.releaseAssets ?? process.env.DAYSITE_RELEASE_ASSETS, log);
   const assetsByTarget = new Map();
   for (const a of assets) {

@@ -1,12 +1,11 @@
 # Configuration for a Day project website (website/site.toml).
-# This sample drives the bundled NetSkip fixture so a bare template checkout can build.
+# This sample drives the bundled Day Showcase fixture (the app's own Day.toml, store/ texts,
+# icon master, and a few screenshots under samples/) so a bare template checkout can build:
+# `npm run sample` generates its data the way CI does for a real repository.
 # In an app repository, only `host` is required — everything else has a sensible default.
 
-title = "Net Skip"
-host = "https://netskip.app"
-appindex = "appindex.json"
-tagline = "A simple web browser"
-accent-color = "#3B82F6"
+host = "https://showcase.daybrite.dev"
+accent-color = "#ff9500"
 default-theme = "system"
 default-platform = "ios"
-footer = "© {year} App Fair Project. Open source software."
+footer = "© {year} Daybrite"

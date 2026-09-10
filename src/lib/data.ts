@@ -11,7 +11,6 @@ import type {
   AssetView,
   FaviconPaths,
   HeroView,
-  StoreLink,
   LocaleInfo,
   PermissionView,
   PlatformEntry,
@@ -319,13 +318,7 @@ async function buildAppView(
     );
     const fg = pickAsset(primary.assets?.featureGraphic, locale);
     const featureGraphicURL = resolveAssetURL(fg.value?.location, app);
-    // The stores the app is listed on, in the order the badges are conventionally shown.
-    const stores: StoreLink[] = [];
-    const apple = app.platforms['ios']?.channels?.['appleappstore']?.url;
-    const google = app.platforms['android']?.channels?.['googleplaystore']?.url;
-    if (apple) stores.push({ store: 'apple-app-store', url: apple });
-    if (google) stores.push({ store: 'google-play-store', url: google });
-    return { title, subtitle, description, iconURL, featureGraphicURL, stores };
+    return { title, subtitle, description, iconURL, featureGraphicURL };
   };
 
   // Social card image: explicit override (site-level) is handled outside.

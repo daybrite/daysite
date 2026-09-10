@@ -53,15 +53,30 @@ function pagefindIntegration(enabled) {
  * fine — they go somewhere, they load nothing. The hosted web app (site.toml `webapp`) is the
  * app's own build, not the template's, and is left out of the walk.
  *
+ * One kind of off-site load is the data's own choice, not the template's: an app index that
+ * keeps its icon and screenshots on the app's repository (`source.assets`, which an
+ * appindex-driven site may declare). Those origins are allowed, and named in the log so the
+ * choice stays visible; a Day project's own site declares none.
+ *
  * @param {string} webappDir
+ * @param {string[]} assetOrigins origins the app index declares its assets on
  * @returns {import('astro').AstroIntegration}
  */
-function selfContainedIntegration(webappDir) {
+function selfContainedIntegration(webappDir, assetOrigins) {
   const LOADING_LINK_RELS = new Set([
     'stylesheet', 'preload', 'modulepreload', 'prefetch', 'icon', 'apple-touch-icon', 'manifest',
   ]);
+  const allowed = new Set(assetOrigins);
   /** @param {string} value */
-  const external = (value) => /^(https?:)?\/\//i.test(value.trim());
+  const external = (value) => {
+    const v = value.trim();
+    if (!/^(https?:)?\/\//i.test(v)) return false;
+    try {
+      return !allowed.has(new URL(v.startsWith('//') ? `https:${v}` : v).origin);
+    } catch {
+      return true;
+    }
+  };
   /** @param {string} html */
   function offendersInHTML(html) {
     const out = [];
@@ -107,7 +122,10 @@ function selfContainedIntegration(webappDir) {
               found.slice(0, 20).join('\n  '),
           );
         }
-        logger.info(`self-contained: ${files} file(s) load nothing from another origin`);
+        logger.info(
+          `self-contained: ${files} file(s) load nothing from another origin` +
+            (allowed.size ? ` (the app index keeps its assets on ${Array.from(allowed).join(', ')})` : ''),
+        );
       },
     },
   };
@@ -153,7 +171,16 @@ export default defineConfig({
       },
     }),
     pagefindIntegration(data.site.pagefind === true),
-    selfContainedIntegration(data.site.webapp ?? 'webapp'),
+    selfContainedIntegration(
+      data.site.webapp ?? 'webapp',
+      data.apps.flatMap((a) => {
+        try {
+          return a.app.source?.assets ? [new URL(a.app.source.assets).origin] : [];
+        } catch {
+          return [];
+        }
+      }),
+    ),
     cnameIntegration(),
   ],
   vite: {

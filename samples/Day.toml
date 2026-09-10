@@ -1,0 +1,19 @@
+# The sample project's manifest: Day Showcase's own identity (the real app at
+# https://showcase.daybrite.dev), trimmed to what the site reads. A bare checkout of the
+# template builds against this tree the way CI builds against a real repository.
+schema = 1
+
+[app]
+id = "dev.daybrite.showcase"
+title = "Day Showcase"
+build = 2
+targets = ["ios-uikit", "android-mdc", "web-dom"]
+
+# The live listings (day docs/store.md "Listed apps"): the site shows both store badges.
+[store]
+apple-app-id = "6802801331"
+google-play-id = "dev.daybrite.showcase"
+
+# The web build on a home screen (day docs/web.md "Home screen and offline").
+[web]
+background-color = "#123246"

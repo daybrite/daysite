@@ -32,7 +32,9 @@ served from the site itself (system fonts; the store badges, platform icons, and
 icons are vendored under `public/` with their provenance beside them). The build enforces this:
 an `astro:build:done` hook scans the output for a resource loaded from another origin and fails
 the build on the first one. Plain links out, such as the store listings and the privacy page,
-are fine. Build time still needs the npm registry for the packages in `package-lock.json`, and
+are fine, and so are images an app index keeps on the app's own repository (`source.assets`,
+which an appindex-driven site may declare): that is the data's choice, named in the build log,
+not something the template loads. Build time still needs the npm registry for the packages in `package-lock.json`, and
 the workflow hands the generator the latest release's asset list as a file, so the generator
 itself never touches the network.
 
@@ -50,9 +52,11 @@ accent-color = "#4A90D9"
 default-theme = "system"       # light | dark | system
 default-platform = "web"       # platforms key preselected in the picker
 webapp = "webapp"              # subdirectory hosting the web-dom build (default "webapp")
+screenshot-placement = "below-about"  # below-about (default) | above-about: the carousel under the description, or first after the hero
 show-gallery = true
 show-permissions = true
 show-store-badges = true
+show-qr-code = true            # the toolbar QR code of the landing page, full screen when tapped
 show-source-link = true
 footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
@@ -167,6 +171,7 @@ what the CLI generates, and the deployed artifact is browsable at
 
 ## Template development
 
-`npm install && npm run dev` in a bare checkout serves the bundled NetSkip sample
-(`samples/site.toml`), which exercises the ios/android schema-compatibility path. Point
+`npm install && npm run sample && npm run dev` in a bare checkout serves the bundled sample
+(`samples/`, a trimmed copy of Day Showcase: `Day.toml`, `store/`, the icon master, a few
+screenshots; `npm run sample` generates its data the way CI does for a real repository). Point
 `DAYSITE_CONFIG` at any `site.toml` to build against real app data.

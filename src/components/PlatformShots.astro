@@ -1,0 +1,56 @@
+---
+// One platform's screenshot carousel with the "see every platform" gallery link under it. A
+// component of its own only because LandingPage renders it in one of two places
+// (`screenshot-placement`); it takes the landing page's already-resolved pieces.
+import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import { galleryHref } from '../lib/routes.ts';
+import ScreenshotCarousel from './ScreenshotCarousel.astro';
+
+interface Props {
+  view: PlatformView;
+  site: SiteInfo;
+  locale: LocaleInfo;
+  hasGallery?: boolean;
+}
+
+const { view, site, locale, hasGallery } = Astro.props;
+const ui = uiStrings(locale.code);
+---
+
+<div class="space-y-12 sm:space-y-16">
+    <ScreenshotCarousel view={view} />
+    {/* A compact link, not a card: the label alone carries it, and a full-width panel
+        after the screenshots separated them from whatever follows. */}
+    {hasGallery && site.showGallery !== false && (
+      <div class="-mt-6 flex justify-center">
+        <a
+          href={galleryHref(locale.code)}
+          class="group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-[color:var(--color-accent)] no-underline transition hover:bg-[color:var(--color-accent-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-accent)]"
+        >
+          {/* Overlapping frames: the one shape that says "more screenshots" without a word
+              of copy, so it carries the meaning in every locale. */}
+          <svg
+            class="h-4 w-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="7.5" y="3.5" width="13" height="13" rx="2.5" />
+            <path d="M16.5 20.5H6a2.5 2.5 0 0 1-2.5-2.5V7.5" />
+            <path d="m10.5 12.5 2.5-2.5 3 3 1.5-1.5 3 3" />
+          </svg>
+          {ui.galleryLink}
+          {/* rtl:-scale-x-100 so the arrow points AWAY from the text in Arabic too. */}
+          <span
+            class="shrink-0 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
+            aria-hidden="true"
+          >&rarr;</span>
+        </a>
+      </div>
+    )}
+</div>

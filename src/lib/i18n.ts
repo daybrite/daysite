@@ -1,3 +1,6 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   AssetFile,
   LocaleInfo,
@@ -200,40 +203,32 @@ export function localeInfo(code: string, _defaultLocale: string): LocaleInfo {
 }
 
 /**
- * Locale codes the template ships a store badge for, mirroring the
- * canonical destinations of skipstone's normalizeLocaleApple() and
- * normalizeLocaleGoogle() (Sources/SkipBuild/Commands/MetaCommand.swift).
- * Keep these sets in lockstep with scripts/download-badges.mjs.
+ * The locales `public/badges/<code>/` carries a badge for, per store, read from the directory
+ * itself: a folder is named by the locale tag a page uses (`zh-CN`, not the stores' own
+ * `zh-Hans`), so a lookup is the tag as-is, then its language, then `en`. Adding a locale is
+ * adding a folder; the copies for regional variants (`zh-SG` beside `zh-CN`) are folders too.
  */
-const APPLE_BADGE_LOCALES = new Set([
-  'ar', 'ca', 'cs', 'da', 'de', 'el',
-  'en', 'en-AU', 'en-CA', 'en-GB',
-  'es', 'es-MX', 'fi', 'fr', 'fr-CA',
-  'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'ko', 'ms', 'nl', 'no',
-  'pl', 'pt', 'pt-BR', 'ro', 'ru', 'sk', 'sv', 'th', 'tr', 'uk', 'vi',
-  'zh-Hans', 'zh-Hant',
-]);
-
-const GOOGLE_BADGE_LOCALES = new Set([
-  'af', 'am', 'ar', 'az', 'be', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 'el',
-  'en', 'en-AU', 'en-CA', 'en-GB', 'en-IN', 'en-SG', 'en-ZA',
-  'es', 'es-419', 'es-US', 'et', 'eu', 'fa', 'fi', 'fil',
-  'fr', 'fr-CA', 'gl', 'gu', 'he', 'hi', 'hr', 'hu', 'hy',
-  'id', 'is', 'it', 'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ky',
-  'lo', 'lt', 'lv', 'mk', 'ml', 'mn', 'mr', 'ms', 'my', 'ne', 'nl', 'no',
-  'pa', 'pl', 'pt', 'pt-BR', 'rm', 'ro', 'ru',
-  'si', 'sk', 'sl', 'sq', 'sr', 'sv', 'sw',
-  'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi',
-  'zh-Hans', 'zh-Hant',
-]);
+const badgeSets = new Map<'apple' | 'google', Set<string>>();
+function badgeLocales(store: 'apple' | 'google'): Set<string> {
+  let set = badgeSets.get(store);
+  if (!set) {
+    set = new Set();
+    const dir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'badges');
+    const file = store === 'apple' ? 'apple-app-store.svg' : 'google-play-store.svg';
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && existsSync(resolve(dir, entry.name, file))) set.add(entry.name);
+    }
+    badgeSets.set(store, set);
+  }
+  return set;
+}
 
 /**
- * Resolve a locale to one for which `<store>` has a localized badge.
- * Walks exact → language-only → "en", so per-locale
- * /badges/<code>/<store>.svg URLs never 404.
+ * Resolve a locale to one for which `<store>` has a localized badge: the tag as-is, then its
+ * language, then `en`, so per-locale /badges/<code>/<store>.svg URLs never 404.
  */
 export function badgeLocale(code: string, store: 'apple' | 'google'): string {
-  const set = store === 'apple' ? APPLE_BADGE_LOCALES : GOOGLE_BADGE_LOCALES;
+  const set = badgeLocales(store);
   if (set.has(code)) return code;
   const lang = languageOf(code);
   if (set.has(lang)) return lang;

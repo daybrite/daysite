@@ -11,12 +11,14 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "test": "node --test 'scripts/*.test.mjs'"
+    "test": "node --test 'scripts/*.test.mjs'",
+    "sample": "node scripts/generate-appindex.mjs samples samples && node scripts/assemble-gallery.mjs samples/screenshots samples"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",
     "@tailwindcss/vite": "^4.1.17",
     "astro": "^5.16.4",
+    "qrcode-generator": "^2.0.4",
     "smol-toml": "^1.4.2",
     "tailwindcss": "^4.1.17"
   },

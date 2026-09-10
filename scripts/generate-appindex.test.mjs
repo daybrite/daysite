@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { readReleaseAssets, storeListing } from './generate-appindex.mjs';
+import { parseGithubRepo, readReleaseAssets, storeListing } from './generate-appindex.mjs';
 
 test('an unlisted app has no store links', () => {
   assert.deepEqual(storeListing(undefined), {});
@@ -52,4 +52,15 @@ test('no file, a missing file, or a non-JSON file means no release data, never a
   assert.deepEqual(readReleaseAssets(join(dir, 'absent.json'), (m) => notes.push(m)), []);
   assert.deepEqual(readReleaseAssets(empty, (m) => notes.push(m)), []);
   assert.equal(notes.length, 2);
+});
+
+test('a GitHub remote in any spelling names the repository', () => {
+  for (const url of [
+    'https://github.com/daybrite/Day-Showcase.git\n',
+    'git@github.com:daybrite/Day-Showcase.git',
+    'ssh://git@github.com/daybrite/Day-Showcase',
+    'https://github.com/daybrite/Day-Showcase/',
+  ]) assert.equal(parseGithubRepo(url), 'daybrite/Day-Showcase', url);
+  assert.equal(parseGithubRepo('https://gitlab.com/x/y.git'), undefined);
+  assert.equal(parseGithubRepo(''), undefined);
 });

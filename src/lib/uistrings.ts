@@ -48,6 +48,10 @@ export interface UIStrings {
   /** Theme switcher labels. */
   themeLight: string;
   themeDark: string;
+  /** The toolbar QR code's accessible name and overlay title; "[APP]" is the app's name. */
+  qrTitle: string;
+  /** Under the full-screen QR code: what scanning it does. */
+  qrHint: string;
 }
 
 const EN: UIStrings = {
@@ -79,10 +83,14 @@ const EN: UIStrings = {
     'These screenshots are taken automatically by the continuous-integration [DAYSCRIPT] walkthrough for each toolkit.',
   themeLight: 'Light',
   themeDark: 'Dark',
+  qrTitle: 'Landing page for the [APP] app',
+  qrHint: 'Scan with a phone to open this page.',
 };
 
 const TABLES: Record<string, Partial<UIStrings>> = {
   ar: {
+    qrTitle: 'الصفحة الرئيسية لتطبيق [APP]',
+    qrHint: 'امسح الرمز بالهاتف لفتح هذه الصفحة.',
     about: 'حول التطبيق',
     permissions: 'الأذونات',
     releaseNotes: 'ملاحظات الإصدار',
@@ -131,6 +139,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Vytvořeno pomocí Day',
   },
   de: {
+    qrTitle: 'Startseite der App [APP]',
+    qrHint: 'Mit dem Telefon scannen, um diese Seite zu öffnen.',
     about: 'Über die App',
     permissions: 'Berechtigungen',
     releaseNotes: 'Versionshinweise',
@@ -153,6 +163,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Erstellt mit Day',
   },
   es: {
+    qrTitle: 'Página de inicio de la app [APP]',
+    qrHint: 'Escanea con el teléfono para abrir esta página.',
     about: 'Acerca de',
     permissions: 'Permisos',
     releaseNotes: 'Novedades',
@@ -175,6 +187,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Creado con Day',
   },
   fr: {
+    qrTitle: 'Page d’accueil de l’app [APP]',
+    qrHint: 'Scannez avec un téléphone pour ouvrir cette page.',
     about: 'À propos',
     permissions: 'Autorisations',
     releaseNotes: 'Notes de version',
@@ -245,6 +259,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Dibuat dengan Day',
   },
   it: {
+    qrTitle: 'Pagina iniziale dell’app [APP]',
+    qrHint: 'Inquadra con il telefono per aprire questa pagina.',
     about: 'Informazioni',
     permissions: 'Autorizzazioni',
     releaseNotes: 'Note di versione',
@@ -267,6 +283,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Creato con Day',
   },
   ja: {
+    qrTitle: '[APP] アプリのランディングページ',
+    qrHint: 'スマートフォンで読み取るとこのページが開きます。',
     about: 'アプリについて',
     permissions: '権限',
     releaseNotes: 'リリースノート',
@@ -289,6 +307,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Day で作成',
   },
   ko: {
+    qrTitle: '[APP] 앱 랜딩 페이지',
+    qrHint: '휴대폰으로 스캔하면 이 페이지가 열립니다.',
     about: '앱 정보',
     permissions: '권한',
     releaseNotes: '릴리스 노트',
@@ -509,6 +529,8 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     builtWith: 'Được tạo bằng Day',
   },
   zh: {
+    qrTitle: '[APP] 应用的主页',
+    qrHint: '用手机扫描即可打开此页面。',
     about: '关于',
     permissions: '权限',
     releaseNotes: '版本说明',

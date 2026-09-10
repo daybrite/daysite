@@ -9,3 +9,6 @@ public/gallery/
 public/app/
 public/_generated/
 public/webapp/
+# The sample's generated data (`npm run sample`), like an app repository's website/ pair.
+samples/appindex.json
+samples/gallery-manifest.json

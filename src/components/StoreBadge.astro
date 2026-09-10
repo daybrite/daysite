@@ -1,0 +1,62 @@
+---
+// A store badge at a given PLATE height. The stores' artwork is not cut alike: Apple's SVG is
+// its plate edge to edge (border stroke included); Google's plate is a 135x40 rect at (10, 10)
+// inside a 155x60 box, a transparent margin of a sixth of the box's height above and below and
+// 10/155 of its width at each side, the same in every shipped locale. Two badges set to one
+// CSS height therefore show plates of different sizes. Here the image is scaled so the PLATE
+// is `height` tall (by 60/40 = 1.5) and its margin (10/40 = a quarter of the plate height, on
+// every side) is pulled back out of the layout with negative margins. Nothing is clipped: the
+// margin is transparent and overlaps the gap beside the badge, so a wrong constant could only
+// shift spacing, never cut a border. An earlier pass clipped to the dark plate and cut the
+// light border stroke off both badges.
+import { badgeLocale } from '../lib/i18n.ts';
+
+interface Props {
+  store: 'apple' | 'google';
+  href: string;
+  /** The page locale; the badge file is the closest one shipped (public/badges/<code>/). */
+  locale: string;
+  /** Plate height as a CSS length, e.g. "2.5rem"; the sm breakpoint may raise it. */
+  height: string;
+  heightSm?: string;
+  class?: string;
+}
+
+const { store, href, locale, height, heightSm = height, class: extra = '' } = Astro.props;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const src = `${BASE}/badges/${badgeLocale(locale, store)}/${store === 'apple' ? 'apple-app-store' : 'google-play-store'}.svg`;
+const alt = store === 'apple' ? 'Download on the App Store' : 'Get it on Google Play';
+---
+
+<a
+  href={href}
+  class:list={['store-badge', `store-badge-${store}`, extra]}
+  style={`--plate: ${height}; --plate-sm: ${heightSm}`}
+  target="_blank"
+  rel="noopener"
+  aria-label={alt}
+>
+  <img src={src} alt={alt} decoding="async" loading="lazy" />
+</a>
+
+<style>
+  .store-badge {
+    --h: var(--plate);
+    display: inline-block; height: var(--h);
+    transition: transform 0.15s ease;
+  }
+  @media (min-width: 640px) { .store-badge { --h: var(--plate-sm); } }
+  .store-badge:hover { transform: scale(1.03); }
+  .store-badge:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; border-radius: 8px; }
+  /* Explicit sizes, and no max-width: the preflight's `img { max-width: 100% }` capped the
+     Google image at the anchor's width (its plate's), the SVG letterboxed to fit, and the
+     plate came out a tenth short — in every engine, and only visible side by side. */
+  .store-badge img { display: block; max-width: none; height: var(--h); width: auto; }
+  /* Google: the plate is 40 of the box's 60 units tall with 10 units of margin on every side,
+     a quarter of the plate's height, which is what the negative margin pulls out. */
+  .store-badge-google img {
+    height: calc(var(--h) * 1.5);
+    width: calc(var(--h) * 1.5 * 155 / 60);
+    margin: calc(var(--h) * -0.25);
+  }
+</style>
