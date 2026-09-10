@@ -158,7 +158,8 @@ jobs:
           grep -q 'rel="icon" type="image/svg+xml"' dist/en/index.html
           grep -q 'app/icon.svg' dist/en/index.html
           test -f dist/app/apple-touch-icon.png
-          grep -q 'rel="apple-touch-icon" href="/app/apple-touch-icon.png"' dist/en/index.html
+          # Under the deploy's base path (/daysite/), so the href is matched past it.
+          grep -q 'rel="apple-touch-icon" href="[^"]*/app/apple-touch-icon.png"' dist/en/index.html
       - name: The picker offers every scaffolded locale
         run: |
           set -euo pipefail
