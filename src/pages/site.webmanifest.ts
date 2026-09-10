@@ -28,7 +28,10 @@ export const GET: APIRoute = async () => {
   const icons: Array<Record<string, string>> = [];
   const favicons = data.favicons;
   if (favicons) {
-    icons.push({ src: rebase(favicons.pwaIcon192), sizes: '192x192', type: 'image/png', purpose: 'any' });
+    if (favicons.pwaIcon192) {
+      icons.push({ src: rebase(favicons.pwaIcon192), sizes: '192x192', type: 'image/png', purpose: 'any' });
+    }
+    icons.push({ src: rebase(favicons.appleTouchIcon), sizes: '256x256', type: 'image/png', purpose: 'any' });
     icons.push({ src: rebase(favicons.pwaIcon512), sizes: '512x512', type: 'image/png', purpose: 'any' });
     icons.push({ src: rebase(favicons.pwaIcon512), sizes: '512x512', type: 'image/png', purpose: 'maskable' });
   }

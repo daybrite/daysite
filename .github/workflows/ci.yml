@@ -144,11 +144,13 @@ jobs:
           # The scaffold's generated SVG master is served as-is and preferred everywhere a
           # browser renders the mark: the favicon <link> and the hero app mark. The PNG set
           # must still be there — apple-touch/PWA slots take no SVG, and it is the fallback
-          # for projects with no master.
+          # for projects with no master. It is copied, size for size, from the png family
+          # `day build` rendered under the scaffold's build/day/host/ (README, "The app icon").
           test -f dist/app/icon.svg
           grep -q 'rel="icon" type="image/svg+xml"' dist/en/index.html
           grep -q 'app/icon.svg' dist/en/index.html
-          test -f dist/_generated/favicons/apple-touch-icon.png
+          test -f dist/app/apple-touch-icon.png
+          grep -q 'rel="apple-touch-icon" href="/app/apple-touch-icon.png"' dist/en/index.html
       - name: The picker offers every scaffolded locale
         run: |
           set -euo pipefail

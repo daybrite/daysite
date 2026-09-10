@@ -92,6 +92,9 @@ const FAVICON_SIZES = {
   256: 'apple-touch-icon.png',
   512: 'icon-512.png',
 };
+// 192 joined the family late (day-cli 2026-09); a family rendered by an older CLI has the rest
+// and still makes a favicon set, minus that one slot (the manifest then offers 256 and 512).
+const FAVICON_OPTIONAL = new Set([192]);
 
 // Where the size-exact `day-icon-<N>.png` family lives, freshest first: `day icon` renders it
 // under build/day/host/png/ (the CI website job runs `day icon -p web-dom` for exactly this),
@@ -116,7 +119,8 @@ function findIconFamily(projectRoot) {
       const m = /-(\d+)\.png$/i.exec(name);
       if (m) bySize.set(Number(m[1]), join(dir, name));
     }
-    if (!Object.keys(FAVICON_SIZES).every((size) => bySize.has(Number(size)))) continue;
+    const required = Object.keys(FAVICON_SIZES).map(Number).filter((n) => !FAVICON_OPTIONAL.has(n));
+    if (!required.every((size) => bySize.has(size))) continue;
     const largest = bySize.get(Math.max(...bySize.keys()));
     return { dir, bySize, largest };
   }
@@ -275,10 +279,16 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     log('no PNG under build/day/host/png/ or resource/icons/ — the site gets no app mark');
   }
   if (family) {
+    const missing = [];
     for (const [size, name] of Object.entries(FAVICON_SIZES)) {
-      copyFileSync(family.bySize.get(Number(size)), join(pub, name));
+      const src = family.bySize.get(Number(size));
+      if (src) copyFileSync(src, join(pub, name));
+      else {
+        rmSync(join(pub, name), { force: true });
+        missing.push(size);
+      }
     }
-    log(`favicon set: ${family.dir.slice(projectRoot.length + 1)}/`);
+    log(`favicon set: ${family.dir.slice(projectRoot.length + 1)}/${missing.length ? ` (no ${missing.join(', ')} px render; an older day-cli)` : ''}`);
   } else {
     for (const name of Object.values(FAVICON_SIZES)) rmSync(join(pub, name), { force: true });
     log('no size-exact icon family (`day icon -p web-dom` renders one) — no raster favicon set');

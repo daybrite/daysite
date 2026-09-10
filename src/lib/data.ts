@@ -122,12 +122,11 @@ function resolveAssetURL(
 function rasterFavicons(): FaviconPaths | undefined {
   const pub = resolve(projectRoot(), 'public', 'app');
   const has = (name: string) => existsSync(resolve(pub, name));
-  const set = ['favicon-64.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
-  if (set.every(has)) {
+  if (['favicon-64.png', 'apple-touch-icon.png', 'icon-512.png'].every(has)) {
     return {
       icon: '/app/favicon-64.png',
       appleTouchIcon: '/app/apple-touch-icon.png',
-      pwaIcon192: '/app/icon-192.png',
+      ...(has('icon-192.png') ? { pwaIcon192: '/app/icon-192.png' } : {}),
       pwaIcon512: '/app/icon-512.png',
     };
   }

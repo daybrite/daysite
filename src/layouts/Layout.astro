@@ -122,7 +122,9 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
       <>
         <link rel="icon" type="image/png" href={faviconHref(favicons.icon)} />
         <link rel="apple-touch-icon" href={faviconHref(favicons.appleTouchIcon)} />
-        <link rel="icon" sizes="192x192" href={faviconHref(favicons.pwaIcon192)} />
+        {favicons.pwaIcon192 && (
+          <link rel="icon" sizes="192x192" href={faviconHref(favicons.pwaIcon192)} />
+        )}
         <link rel="icon" sizes="512x512" href={faviconHref(favicons.pwaIcon512)} />
       </>
     )}

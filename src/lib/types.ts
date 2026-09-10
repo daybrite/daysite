@@ -298,8 +298,8 @@ export interface FaviconPaths {
   icon: string;
   /** The apple-touch-icon (256 px; iOS scales it). */
   appleTouchIcon: string;
-  /** The 192 px manifest icon. */
-  pwaIcon192: string;
+  /** The 192 px manifest icon, when the icon family had that size (day-cli 2026-09+). */
+  pwaIcon192?: string;
   /** The 512 px manifest icon, maskable too. */
   pwaIcon512: string;
 }

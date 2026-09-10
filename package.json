@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "test": "node --test scripts/"
+    "test": "node --test 'scripts/*.test.mjs'"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",
