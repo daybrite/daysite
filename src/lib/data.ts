@@ -30,7 +30,6 @@ import {
 import { DAY_TARGETS, dayTarget, orderKeys } from './day-targets.ts';
 import { describePermission, shouldHideAndroidPermission, sortPermissions } from './permissions.ts';
 import { lookupAndroidDescription, lookupPermissionLabel } from './permission-descriptions.ts';
-import { generateFavicons } from './favicon.ts';
 import { loadGallery, type GalleryManifest } from './gallery.ts';
 
 const FALLBACK_DEFAULT_LOCALE = 'en-US';
@@ -114,22 +113,29 @@ function resolveAssetURL(
 }
 
 /**
- * The icon as something the favicon generator can READ, which is not the same thing as the URL a
- * page links to.
- *
- * `resolveAssetURL` returns a browser path for a site-relative asset (`/<base>/app/icon.png`).
- * That looks like an absolute filesystem path and is not one, so handing it to the generator ends
- * in ENOENT — swallowed as "could not fetch the icon", leaving the site with no favicon and no
- * error. A site-relative location is a file under `public/`, so resolve it there.
+ * The raster favicon set, when the generator copied one into `public/app/` from the size-exact
+ * icon family `day icon` renders (see generate-appindex.mjs). Without the family, the app mark
+ * itself fills every slot — larger than needed, and still the app's own icon. The SVG master,
+ * when there is one, is what browsers actually prefer; these cover the apple-touch and PWA
+ * slots, which take no SVG. Nothing here rasterizes: the site build carries no image library.
  */
-function resolveIconSource(
-  location: string | undefined,
-  app: AppEntry,
-): string | undefined {
-  if (!location) return undefined;
-  if (/^https?:\/\//i.test(location)) return location;
-  if (app.source?.assets) return resolveAssetURL(location, app);
-  return resolve(projectRoot(), 'public', location.replace(/^\/+/, ''));
+function rasterFavicons(): FaviconPaths | undefined {
+  const pub = resolve(projectRoot(), 'public', 'app');
+  const has = (name: string) => existsSync(resolve(pub, name));
+  const set = ['favicon-64.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
+  if (set.every(has)) {
+    return {
+      icon: '/app/favicon-64.png',
+      appleTouchIcon: '/app/apple-touch-icon.png',
+      pwaIcon192: '/app/icon-192.png',
+      pwaIcon512: '/app/icon-512.png',
+    };
+  }
+  if (has('icon.png')) {
+    const one = '/app/icon.png';
+    return { icon: one, appleTouchIcon: one, pwaIcon192: one, pwaIcon512: one };
+  }
+  return undefined;
 }
 
 // Locale collection ──────────────────────────────────────────────────────────
@@ -280,7 +286,7 @@ interface BuildAppViewOpts {
   /** Locale list shared across the whole site (union over apps in multi-app mode). */
   locales: LocaleInfo[];
   defaultLocale: string;
-  /** True when generating favicons for this app (skipped for non-primary apps in multi-app mode). */
+  /** True when this app's favicon set is the site's (false for every app in multi-app mode). */
   generateAppFavicons: boolean;
 }
 
@@ -339,26 +345,8 @@ async function buildAppView(
     }
   }
 
-  let favicons: AppView['favicons'];
-  if (opts.generateAppFavicons) {
-    let iconSource: string | undefined;
-    for (const k of platformIds) {
-      iconSource = resolveIconSource(app.platforms[k]?.assets?.icon?.location, app);
-      if (iconSource) break;
-    }
-    if (iconSource) {
-      try {
-        favicons = await generateFavicons({
-          iconSource,
-          projectRoot: projectRoot(),
-        });
-      } catch (err) {
-        console.warn(
-          `[appland] favicon generation failed for ${app.name} (${(err as Error).message})`,
-        );
-      }
-    }
-  }
+  // Single-app: the favicon set is this app's. Multi-app: the site's, taken once below.
+  const favicons = opts.generateAppFavicons ? rasterFavicons() : undefined;
 
   // The SVG master, served raw: the preferred favicon and mark wherever a browser renders
   // it. The raster set above still covers apple-touch / PWA slots (no SVG there) and doubles
@@ -392,6 +380,12 @@ export interface LoadedSite extends SiteData {
   gallery?: GalleryManifest;
   /** The app's own CSS overrides (website/theme.css beside site.toml), inlined into every page. */
   themeCss?: string;
+  /**
+   * True when the web-dom build is staged under `public/<webapp>/` (the workflow unzips it
+   * there). The landing page then links `site.webmanifest`, whose start URL is that app, so
+   * "Add to Home Screen" from the site installs the app itself.
+   */
+  hasWebApp: boolean;
   /**
    * Convenience accessor that returns the first (and, in single-app mode,
    * only) AppView. Existing single-app callers use this in place of the old
@@ -430,8 +424,6 @@ export async function loadSite(): Promise<LoadedSite> {
       await buildAppView(app, {
         locales,
         defaultLocale,
-        // Single-app: generate favicons from the app's icon (existing behaviour).
-        // Multi-app: site-level favicons are produced separately below.
         generateAppFavicons: !multiApp,
       }),
     );
@@ -443,33 +435,12 @@ export async function loadSite(): Promise<LoadedSite> {
     siteSocialImage = apps[0]?.socialImage;
   }
 
-  let siteFavicons: FaviconPaths | undefined;
-  if (multiApp) {
-    // Use the first app's icon as the site favicon source for now. The
-    // aggregate site can override by placing files under public/.
-    const firstApp = apps[0];
-    const iconSource = firstApp
-      ? firstApp.platforms
-          .map((k) =>
-            resolveAssetURL(firstApp.app.platforms[k]?.assets?.icon?.location, firstApp.app),
-          )
-          .find((u) => !!u)
-      : undefined;
-    if (iconSource) {
-      try {
-        siteFavicons = await generateFavicons({
-          iconSource,
-          projectRoot: projectRoot(),
-        });
-      } catch (err) {
-        console.warn(
-          `[appland] site favicon generation failed (${(err as Error).message})`,
-        );
-      }
-    }
-  } else {
-    siteFavicons = apps[0]?.favicons;
-  }
+  // The favicon set the generator copied into public/app/ is the primary app's either way.
+  const siteFavicons: FaviconPaths | undefined = multiApp ? rasterFavicons() : apps[0]?.favicons;
+
+  const hasWebApp = existsSync(
+    resolve(projectRoot(), 'public', site.webapp ?? 'webapp', 'index.html'),
+  );
 
   // site.toml's `title` is optional for a Day app: the store listing already names the app in
   // every locale, so an absent value inherits from the (first) app.
@@ -488,6 +459,7 @@ export async function loadSite(): Promise<LoadedSite> {
   if (existsSync(themePath)) themeCss = await readFile(themePath, 'utf8');
 
   cached = {
+    hasWebApp,
     site,
     gallery,
     themeCss,

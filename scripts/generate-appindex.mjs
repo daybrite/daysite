@@ -9,20 +9,23 @@
 //   store/app.toml          → bundle id, copyright, contact
 //   store/<locale>/*.txt    → localized name, subtitle, description, keywords, release notes,
 //                             privacy/support/marketing URLs (the store-submission texts)
-//   releases/latest (API)   → per-target download artifacts at their stable
-//                             /releases/latest/download/ URLs (absent offline — the site then
-//                             renders without download cards, the same degradation the
-//                             daybrite.dev showcase page uses)
-//   resource/icons/         → app icon, copied into the site's public/ tree
+//   --release-assets FILE   → the latest release's assets ([{name, size}], as the CI workflow
+//                             writes them from `gh api …/releases/latest`), each mapped to its
+//                             target and its stable /releases/latest/download/ URL. The script
+//                             itself never touches the network: no file, no download cards —
+//                             the same degradation the daybrite.dev showcase page uses.
+//   build/day/host/png/     → the size-exact icon family `day icon` renders (favicons); else
+//   resource/icons/         → the largest PNG there is the app mark, copied into public/
 //
 // `platforms` uses the schema's conventional `ios`/`android` keys for those two targets and
 // Day's additive keys (macos, windows, linux-gtk, linux-qt, harmony, web) for the rest — an
 // App Fair consumer reads the subset it understands, daysite reads all of it.
 //
-// Usage: node scripts/generate-appindex.mjs <project-root> <out-dir> [--repo owner/name]
+// Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
+//            [--repo owner/name] [--release-assets FILE]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseTOML } from 'smol-toml';
@@ -79,6 +82,47 @@ function assetTarget(name) {
 // macOS is therefore last, used only when a project ships nothing else.
 const ICON_DIRS = ['png', 'ios', 'linux', 'windows', 'android', '', 'macos'];
 
+// The raster favicon slots and the size that fills each, copied straight from the icon family.
+// 192 and 512 are what a web app manifest needs (site.webmanifest); 256 serves the apple-touch
+// slot: iOS scales any square, and it is the family's nearest size above the 180 the guidelines
+// name.
+const FAVICON_SIZES = {
+  64: 'favicon-64.png',
+  192: 'icon-192.png',
+  256: 'apple-touch-icon.png',
+  512: 'icon-512.png',
+};
+
+// Where the size-exact `day-icon-<N>.png` family lives, freshest first: `day icon` renders it
+// under build/day/host/png/ (the CI website job runs `day icon -p web-dom` for exactly this),
+// and `day new` scaffolds a copy under resource/icons/png/.
+const ICON_FAMILY_DIRS = [join('build', 'day', 'host', 'png'), join('resource', 'icons', 'png')];
+
+/**
+ * The first directory holding every size FAVICON_SIZES needs, as
+ * `{ dir, bySize: Map<size, path>, largest }`, or undefined.
+ */
+function findIconFamily(projectRoot) {
+  for (const sub of ICON_FAMILY_DIRS) {
+    const dir = join(projectRoot, sub);
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    const bySize = new Map();
+    for (const name of entries) {
+      const m = /-(\d+)\.png$/i.exec(name);
+      if (m) bySize.set(Number(m[1]), join(dir, name));
+    }
+    if (!Object.keys(FAVICON_SIZES).every((size) => bySize.has(Number(size)))) continue;
+    const largest = bySize.get(Math.max(...bySize.keys()));
+    return { dir, bySize, largest };
+  }
+  return undefined;
+}
+
 /**
  * The largest PNG under `resource/icons/`, as an absolute path, or undefined.
  *
@@ -125,20 +169,25 @@ function readText(path) {
   }
 }
 
-async function latestReleaseAssets(repo, log) {
-  if (!repo) return [];
+/**
+ * The latest release's assets as `[{ name, size }]`, read from the file the CI workflow writes
+ * (`gh api repos/<owner>/<name>/releases/latest --jq '[.assets[] | {name, size}]'`). A whole
+ * release object (`{ assets: [...] }`) is accepted too. No path, or a file that is missing or
+ * not JSON, means no release data: the site renders without download cards.
+ */
+export function readReleaseAssets(path, log = () => {}) {
+  if (!path) return [];
+  let parsed;
   try {
-    const headers = { accept: 'application/vnd.github+json' };
-    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-    if (token) headers.authorization = `Bearer ${token}`;
-    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { headers });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const release = await res.json();
-    return (release.assets ?? []).map((a) => ({ name: a.name, size: a.size }));
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch (e) {
-    log(`no release data for ${repo} (${e.message}) — download cards will be absent`);
+    log(`no release data (${path}: ${e.message}) — download cards will be absent`);
     return [];
   }
+  const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.assets) ? parsed.assets : [];
+  return list
+    .filter((a) => a && typeof a.name === 'string')
+    .map((a) => ({ name: a.name, size: Number(a.size) || 0 }));
 }
 
 /** The listings Day.toml's `[store]` table says are live, as `{ id, url }` per store. A key is
@@ -210,17 +259,29 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   for (const k of Object.keys(links)) if (!Object.keys(links[k]).length) delete links[k];
 
   // App icon → served from the site, so the appindex needs no external asset host. It becomes the
-  // favicon set and the landing page's app mark, both of which want the biggest source available.
+  // landing page's app mark and the social image, both of which want the biggest source
+  // available — and, when the size-exact family is there, the raster favicon set, copied as-is
+  // (docs: "The app icon" in the README). The site build rasterizes nothing itself.
   let iconLocation;
-  const icon = findAppIcon(projectRoot);
+  const pub = join(TEMPLATE_ROOT, 'public', 'app');
+  const family = findIconFamily(projectRoot);
+  const icon = family?.largest ?? findAppIcon(projectRoot);
   if (icon) {
-    const pub = join(TEMPLATE_ROOT, 'public', 'app');
     mkdirSync(pub, { recursive: true });
     copyFileSync(icon, join(pub, 'icon.png'));
     iconLocation = 'app/icon.png';
     log(`app icon: ${icon.slice(projectRoot.length + 1)}`);
   } else {
-    log('no PNG under resource/icons/ — the site gets no favicon and no app mark');
+    log('no PNG under build/day/host/png/ or resource/icons/ — the site gets no app mark');
+  }
+  if (family) {
+    for (const [size, name] of Object.entries(FAVICON_SIZES)) {
+      copyFileSync(family.bySize.get(Number(size)), join(pub, name));
+    }
+    log(`favicon set: ${family.dir.slice(projectRoot.length + 1)}/`);
+  } else {
+    for (const name of Object.values(FAVICON_SIZES)) rmSync(join(pub, name), { force: true });
+    log('no size-exact icon family (`day icon -p web-dom` renders one) — no raster favicon set');
   }
 
   // The VECTOR master itself (the day icon pipeline's source, docs/icons.md in the day repo):
@@ -255,7 +316,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   }
 
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY;
-  const assets = await latestReleaseAssets(repo, log);
+  const assets = readReleaseAssets(opts.releaseAssets ?? process.env.DAYSITE_RELEASE_ASSETS, log);
   const assetsByTarget = new Map();
   for (const a of assets) {
     const t = assetTarget(a.name);
@@ -380,14 +441,22 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
 
 // Standalone entry point.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
-  const repoFlag = process.argv.indexOf('--repo');
-  const [projectRoot, outDir] = args;
+  const positional = [];
+  const flags = {};
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].startsWith('--')) flags[argv[i].slice(2)] = argv[++i];
+    else positional.push(argv[i]);
+  }
+  const [projectRoot, outDir] = positional;
   if (!projectRoot || !outDir) {
-    console.error('usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name]');
+    console.error(
+      'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] [--release-assets FILE]',
+    );
     process.exit(2);
   }
   await generateAppIndex(resolve(projectRoot), resolve(outDir), {
-    repo: repoFlag > 0 ? process.argv[repoFlag + 1] : undefined,
+    repo: flags.repo,
+    releaseAssets: flags['release-assets'],
   });
 }

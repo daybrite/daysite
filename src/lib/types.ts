@@ -263,7 +263,7 @@ export interface AppView {
   releaseURL?: string;
   /** A reasonable social-card image URL (feature graphic, or icon). */
   socialImage?: string;
-  /** Site-root-relative URLs for the auto-generated favicon set. */
+  /** Site-root-relative URLs for the raster favicon set (`/app/…`, copied by the generator). */
   favicons?: FaviconPaths;
   /**
    * URL of the app's SVG icon master (`assets.iconVector`), when the project ships one.
@@ -294,9 +294,13 @@ export interface SiteData {
 }
 
 export interface FaviconPaths {
+  /** The PNG favicon (64 px; the SVG master outranks it where a browser takes one). */
   icon: string;
+  /** The apple-touch-icon (256 px; iOS scales it). */
   appleTouchIcon: string;
+  /** The 192 px manifest icon. */
   pwaIcon192: string;
+  /** The 512 px manifest icon, maskable too. */
   pwaIcon512: string;
 }
 

@@ -22,9 +22,19 @@ your-app/
 
 The template is **fetched, not vendored**: the shared
 [`daybrite/actions`](https://github.com/daybrite/actions) `dayapp.yml` workflow checks out
-this repository at build time (pin with its `daysite-version` input), synthesizes the site data,
-builds, and deploys to the repository's GitHub Pages. Template fixes reach every site on its next
-build; nothing but the two files above lives in the app repo.
+this repository at build time, synthesizes the site data, builds, and deploys to the repository's
+GitHub Pages. Nothing but the two files above lives in the app repo. Template fixes reach every
+site on its next build (the workflow's `daysite-version` input, default `main`, selects the
+revision; the Day apps build against `main` on purpose).
+
+The published site is self-contained: every script, stylesheet, image, and font it loads is
+served from the site itself (system fonts; the store badges, platform icons, and permission
+icons are vendored under `public/` with their provenance beside them). The build enforces this:
+an `astro:build:done` hook scans the output for a resource loaded from another origin and fails
+the build on the first one. Plain links out, such as the store listings and the privacy page,
+are fine. Build time still needs the npm registry for the packages in `package-lock.json`, and
+the workflow hands the generator the latest release's asset list as a file, so the generator
+itself never touches the network.
 
 ## site.toml
 
@@ -59,23 +69,37 @@ CI generates two data files next to `site.toml`; neither is committed:
 
 | File | Written by | From |
 | --- | --- | --- |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`), the icon family under `build/day/host/png/` or `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
 ### The app icon
 
-The largest PNG under the project's `resource/icons/` becomes the site's identity. The generator
-copies it to `public/app/icon.png` and records it in `appindex.json`; the build then masks it into
-the favicon set (`/_generated/favicons/`, regenerated only when the source bytes change), links it
-from every page's `<head>`, uses it as the Open Graph image, and renders it large at the leading
-edge of the landing page beside the title.
+The site's identity is the project's own icon, copied rather than rendered. The generator looks
+first for the size-exact `day-icon-<N>.png` family that `day icon` writes under
+`build/day/host/png/` (the workflow runs `day icon -p web-dom` for exactly this; a `day new`
+scaffold also ships a copy under `resource/icons/png/`), copies its largest size to
+`public/app/icon.png` for the landing page's app mark and the Open Graph image, and its 64, 256,
+and 512 px sizes to `public/app/` as the favicon, apple-touch-icon, and PWA tile. The build then
+links them from every page's `<head>`; no image library is involved, and the SVG master, when
+the project ships one, is served raw beside them and is what browsers prefer.
 
-Directory preference is `png/`, then `ios/`, `linux/`, `windows/`, `android/`, the `icons/` root,
-and `macos/` last — macOS art is drawn pre-rounded with transparent padding, so masking it again
-rounds it twice. Within a directory the largest wins, read from the trailing `-<size>` every Day
-icon name carries. A project with no PNG there simply gets no favicon and no app mark; the
-generator says so.
+Without the family, the largest PNG under `resource/icons/` (directory preference `png/`, then
+`ios/`, `linux/`, `windows/`, `android/`, the `icons/` root, and `macos/` last, whose art is
+pre-rounded) is the app mark and fills every favicon slot at its own size. A project with no
+PNG at all gets the SVG master alone, or no app mark; the generator says so.
+
+### Home screen
+
+A site that hosts the web build (`public/<webapp>/`, staged by the workflow) is installable from
+its landing page: `src/pages/site.webmanifest.ts` emits a web app manifest whose `start_url` and
+`id` are the hosted app, whose scope is the whole site, whose icons are the favicon set above,
+and whose screenshots are the gallery's phone captures (narrow) and desktop captures (wide), and
+`Layout.astro` links it from every page. "Add to Home Screen" from the site then installs the
+app itself, with the same name and icon the app's own manifest declares (`day build -p web-dom`
+writes that one, plus the offline service worker; see the day repository's docs/web.md, "Home
+screen and offline"). Without a staged web build the manifest is still emitted but not linked,
+so the site never installs as an app of its own.
 
 `appindex.json` conforms to the appindex schema — `platforms.ios` / `platforms.android` mean what
 they mean there — plus Day's additive extension: entries under `macos`, `windows`, `linux-gtk`,
@@ -128,7 +152,7 @@ npm --prefix .daysite install
 node .daysite/scripts/preview.mjs
 ```
 
-The preview generates the same data CI does — minus release downloads when offline — and picks up
+The preview generates the same data CI does — minus the release downloads, which only the workflow looks up — and picks up
 `build/day/screenshots/` from your last local `day launch --script` run for the gallery.
 
 ## Continuous integration

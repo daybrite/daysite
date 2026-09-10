@@ -64,8 +64,9 @@ const localeHomeHref = localeIndexHref(current.code);
 const path = pagePath ?? localeHomeHref;
 const canonical = new URL(path, site.host).toString();
 const accent = site.accentColor ?? '#3B82F6';
-// The app's own overrides (website/theme.css), inlined last so they win over the template.
-const { themeCss } = await loadSite();
+// The app's own overrides (website/theme.css), inlined last so they win over the template —
+// and whether a web build is hosted, which decides if the page carries the site manifest.
+const { themeCss, hasWebApp } = await loadSite();
 
 // Site title appears in the sticky top-bar and as a hreflang anchor; it's
 // localized via pickText so siteinfo.yaml can carry either a plain string
@@ -92,8 +93,7 @@ const redirectPayload = JSON.stringify({
   base: baseURL,
 });
 
-// Favicons come back from favicon.ts as root-relative paths
-// (`/_generated/favicons/…`); rebase them onto the deployed base so they
+// Favicon paths are root-relative (`/app/…`); rebase them onto the deployed base so they
 // resolve under subpath deployments too.
 const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
 ---
@@ -126,6 +126,12 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
         <link rel="icon" sizes="512x512" href={faviconHref(favicons.pwaIcon512)} />
       </>
     )}
+
+    {/* The site manifest (src/pages/site.webmanifest.ts): its start URL is the hosted web
+        app, so adding THIS page to a home screen installs the app, icon and all. Only when a
+        web build is staged — a manifest that starts nowhere would make the site itself the
+        app. */}
+    {hasWebApp && <link rel="manifest" href={`${baseURL}site.webmanifest`} />}
 
     {alternates.map((a) => (
       <link rel="alternate" hreflang={a.hrefLang} href={a.href} />

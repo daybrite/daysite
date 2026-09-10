@@ -1,9 +1,9 @@
 node_modules/
 dist/
 .astro/
-# Generated at build time, never committed: the gallery images and appindex icon come from
-# scripts/assemble-gallery.mjs and generate-appindex.mjs, the favicons from src/lib/favicon.ts,
-# and webapp/ is the app's own web-dom build that CI unzips in. A committed webapp/ makes the
+# Generated at build time, never committed: the gallery images, the app icon, and the favicon
+# set come from scripts/assemble-gallery.mjs and generate-appindex.mjs, and webapp/ is the
+# app's own web-dom build that CI unzips in. A committed webapp/ makes the
 # deploy job's `unzip` prompt to overwrite and hang on EOF, which is how this rule got written.
 public/gallery/
 public/app/
