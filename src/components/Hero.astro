@@ -1,14 +1,39 @@
 ---
-import type { HeroView } from '../lib/types.ts';
+import type { HeroView, LocaleInfo, SiteInfo } from '../lib/types.ts';
+import { badgeLocale } from '../lib/i18n.ts';
 
 interface Props {
   hero: HeroView;
+  site: SiteInfo;
+  locale: LocaleInfo;
 }
 
 // The install actions live in the About card (AppActions), one platform at a time, so the hero is
-// the app's identity and nothing else.
-const { hero } = Astro.props;
-
+// the app's identity — plus the store badges once the app is LISTED (Day.toml `[store]`): a live
+// listing is the one fact about getting the app that belongs beside its name, whichever platform
+// the picker shows. The badges are the stores' own localized artwork (public/badges/<locale>/).
+const { hero, site, locale } = Astro.props;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const badges =
+  site.showStoreBadges === false
+    ? []
+    : hero.stores.map((s) =>
+        s.store === 'apple-app-store'
+          ? {
+              url: s.url,
+              src: `${BASE}/badges/${badgeLocale(locale.code, 'apple')}/apple-app-store.svg`,
+              alt: 'Download on the App Store',
+              // The App Store badge is drawn edge to edge; Google's carries its own margin, so
+              // it takes a little more height for the two to read the same size side by side.
+              size: 'h-10 sm:h-12',
+            }
+          : {
+              url: s.url,
+              src: `${BASE}/badges/${badgeLocale(locale.code, 'google')}/google-play-store.svg`,
+              alt: 'Get it on Google Play',
+              size: 'h-[3.1rem] sm:h-[3.6rem]',
+            },
+      );
 ---
 
 <section class="relative">
@@ -44,6 +69,21 @@ const { hero } = Astro.props;
       <h1 class="text-4xl font-bold tracking-tight text-balance sm:text-5xl">{hero.title}</h1>
       {hero.subtitle && (
         <p class="max-w-2xl text-lg text-[color:var(--color-text-soft)] text-pretty sm:text-xl">{hero.subtitle}</p>
+      )}
+      {badges.length > 0 && (
+        <div class="flex flex-wrap items-center gap-3 pt-1" data-store-badges data-pagefind-ignore>
+          {badges.map((b) => (
+            <a
+              href={b.url}
+              class="inline-block rounded-lg transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-bg)]"
+              target="_blank"
+              rel="noopener"
+              aria-label={b.alt}
+            >
+              <img src={b.src} alt={b.alt} class={`w-auto ${b.size}`} loading="eager" decoding="async" />
+            </a>
+          ))}
+        </div>
       )}
     </div>
   </div>

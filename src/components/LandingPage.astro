@@ -29,7 +29,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  <Hero hero={hero} />
+  <Hero hero={hero} site={site} locale={locale} />
 
   {/* The per-platform content is split around the picker: screenshots above it, everything that
       describes the app below. The picker hides and shows by `data-platform-section` across the

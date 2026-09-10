@@ -306,4 +306,11 @@ export interface HeroView {
   description: string;
   iconURL?: string;
   featureGraphicURL?: string;
+  /** The live store listings (appindex `channels`), for the badges under the title. */
+  stores: StoreLink[];
+}
+
+export interface StoreLink {
+  store: 'apple-app-store' | 'google-play-store';
+  url: string;
 }

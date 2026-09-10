@@ -21,7 +21,7 @@ your-app/
 ```
 
 The template is **fetched, not vendored**: the shared
-[`daybrite/actions`](https://github.com/daybrite/actions) `build-day-app.yml` workflow checks out
+[`daybrite/actions`](https://github.com/daybrite/actions) `dayapp.yml` workflow checks out
 this repository at build time (pin with its `daysite-version` input), synthesizes the site data,
 builds, and deploys to the repository's GitHub Pages. Template fixes reach every site on its next
 build; nothing but the two files above lives in the app repo.
@@ -59,7 +59,7 @@ CI generates two data files next to `site.toml`; neither is committed:
 
 | File | Written by | From |
 | --- | --- | --- |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml`, `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the repo's `releases/latest` assets, `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
@@ -90,8 +90,8 @@ record.
   selects what everything below shows), hero, screenshot carousel, localized store description,
   per-platform download card, and an About card carrying that platform's way to get the app — the
   **Open the web app** button when a web build is hosted, the App Store or Google Play badge for a
-  listed app, otherwise the lead package from the latest GitHub release — then permissions and
-  release notes. One page per store locale, with the same locale-fallback ladder as appland.
+  listed app (badges vendored under `public/badges/<locale>/`, see the README there), otherwise
+  the lead package from the latest GitHub release — then permissions and release notes. One page per store locale, with the same locale-fallback ladder as appland.
 - `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones and
   tablets in hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale

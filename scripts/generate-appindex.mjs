@@ -5,6 +5,7 @@
 // script derives it instead of asking anyone to maintain a second copy:
 //
 //   Day.toml                → app id, title, target list
+//   Day.toml [store]        → the live App Store / Google Play listings (badge + link)
 //   store/app.toml          → bundle id, copyright, contact
 //   store/<locale>/*.txt    → localized name, subtitle, description, keywords, release notes,
 //                             privacy/support/marketing URLs (the store-submission texts)
@@ -138,6 +139,23 @@ async function latestReleaseAssets(repo, log) {
     log(`no release data for ${repo} (${e.message}) — download cards will be absent`);
     return [];
   }
+}
+
+/** The listings Day.toml's `[store]` table says are live, as `{ id, url }` per store. A key is
+ *  the store's own identifier for the listing (the App Store's numeric app id, Play's
+ *  application id), never a URL, so the URL shape stays here in one place. */
+export function storeListing(table) {
+  const out = {};
+  const apple = String(table?.['apple-app-id'] ?? '').trim();
+  const google = String(table?.['google-play-id'] ?? '').trim();
+  if (apple) out.apple = { id: apple, url: `https://apps.apple.com/app/id${apple}` };
+  if (google) {
+    out.google = {
+      id: google,
+      url: `https://play.google.com/store/apps/details?id=${encodeURIComponent(google)}`,
+    };
+  }
+  return out;
 }
 
 export async function generateAppIndex(projectRoot, outDir, opts = {}) {
@@ -290,6 +308,10 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     return Object.keys(byLocale).length ? byLocale : undefined;
   }
 
+  const listing = storeListing(dayToml.store);
+  if (listing.apple) log(`listed on the App Store: ${listing.apple.url}`);
+  if (listing.google) log(`listed on Google Play: ${listing.google.url}`);
+
   const targets = (app.targets ?? []).filter((t) => TARGET_KEYS[t]);
   const platforms = {};
   for (const target of targets) {
@@ -299,6 +321,14 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     if (app.build != null) entry.buildNumber = String(app.build);
     if (key === 'ios' && (storeApp['bundle-id'] ?? app.id)) entry.bundleIdentifier = storeApp['bundle-id'] ?? app.id;
     if (key === 'android' && app.id) entry.applicationId = app.id;
+    // Live store listings (Day.toml `[store]`, docs/store.md "Listed apps"): the conventional
+    // appindex channel keys, which the site turns into the store's localized badge.
+    if (key === 'ios' && listing.apple) {
+      entry.channels = { appleappstore: { id: listing.apple.id, url: listing.apple.url } };
+    }
+    if (key === 'android' && listing.google) {
+      entry.channels = { googleplaystore: { id: listing.google.id, url: listing.google.url } };
+    }
     const shots = screenshotsFor(target);
     if (iconLocation || iconVectorLocation || shots) {
       entry.assets = {
