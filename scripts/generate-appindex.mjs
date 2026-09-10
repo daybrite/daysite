@@ -9,6 +9,11 @@
 //   store/app.toml          → bundle id, copyright, contact
 //   store/<locale>/*.txt    → localized name, subtitle, description, keywords, release notes,
 //                             privacy/support/marketing URLs (the store-submission texts)
+//   --metadata FILE         → `day metadata --json` (the CLI's own view of the project: the
+//                             declared permissions with their native keys per platform and their
+//                             reasons per locale, docs/permissions.md). Read from the file when
+//                             the workflow wrote one, else from `${DAY_BIN:-day} metadata --json`
+//                             run here, else the site shows no permissions.
 //   --release-assets FILE   → the latest release's assets ([{name, size}], as the CI workflow
 //                             writes them from `gh api …/releases/latest`), each mapped to its
 //                             target and its stable /releases/latest/download/ URL. The script
@@ -22,7 +27,7 @@
 // App Fair consumer reads the subset it understands, daysite reads all of it.
 //
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
-//            [--repo owner/name] [--release-assets FILE]
+//            [--repo owner/name] [--release-assets FILE] [--metadata FILE]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
 import { execFileSync } from 'node:child_process';
@@ -193,6 +198,69 @@ export function readReleaseAssets(path, log = () => {}) {
   return list
     .filter((a) => a && typeof a.name === 'string')
     .map((a) => ({ name: a.name, size: Number(a.size) || 0 }));
+}
+
+/**
+ * The project's `day metadata --json` document: from `path` when given (the workflow writes one
+ * right after installing the CLI), else by running `${DAY_BIN:-day} metadata --json` in the
+ * project, so a local preview shows what CI shows. Undefined when neither is available — the
+ * site then lists no permissions, and says so in the log.
+ */
+export function readDayMetadata(projectRoot, path, log = () => {}) {
+  if (path) {
+    try {
+      return JSON.parse(readFileSync(path, 'utf8'));
+    } catch (e) {
+      log(`no day metadata (${path}: ${e.message}) — the site lists no permissions`);
+      return undefined;
+    }
+  }
+  const bin = process.env.DAY_BIN || 'day';
+  try {
+    const out = execFileSync(bin, ['--project', projectRoot, 'metadata', '--json'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    log(`day metadata: from \`${bin} metadata --json\``);
+    return JSON.parse(out.toString());
+  } catch (e) {
+    log(`no day metadata (\`${bin} metadata --json\`: ${e.message.split('\n')[0]}) — the site lists no permissions`);
+    return undefined;
+  }
+}
+
+// The appindex platform key each of the CLI's permission columns belongs to.
+const PERMISSION_PLATFORMS = { android: 'android', ios: 'ios', macos: 'macos', ohos: 'harmony' };
+
+/**
+ * The per-platform `permissions` arrays for the app index from a `day metadata --json`
+ * document: every declared permission's native keys on each platform, and the raw ones, each
+ * with its reason as a locale-keyed description. Android takes no reason, so its entries carry
+ * none; the site's own catalog describes them.
+ */
+export function permissionsByPlatform(metadata) {
+  const project = metadata?.project ?? {};
+  const out = {};
+  const add = (platform, key, reasons) => {
+    const list = (out[platform] ??= []);
+    if (list.some((e) => e.key === key)) return;
+    const entry = { key };
+    if (reasons && Object.keys(reasons).length) entry.description = reasons;
+    list.push(entry);
+  };
+  for (const decl of project.permissions ?? []) {
+    for (const [column, platform] of Object.entries(PERMISSION_PLATFORMS)) {
+      for (const key of decl[column] ?? []) add(platform, key, column === 'android' ? undefined : decl.reasons);
+    }
+  }
+  const raw = project.rawPermissions ?? {};
+  for (const key of raw.android ?? []) add('android', key);
+  for (const [column, platform] of [['ios', 'ios'], ['macos', 'macos']]) {
+    for (const [key, v] of Object.entries(raw[column] ?? {})) add(platform, key, v?.reasons);
+  }
+  for (const p of raw.ohos ?? []) if (p?.name) add('harmony', p.name, p.reasons);
+  for (const list of Object.values(out)) list.sort((a, b) => a.key.localeCompare(b.key));
+  return out;
 }
 
 /** `owner/name` from a GitHub remote URL in any of git's spellings, or undefined. */
@@ -402,6 +470,12 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   }
 
   const listing = storeListing(dayToml.store);
+  const metadata = readDayMetadata(projectRoot, opts.metadata ?? process.env.DAYSITE_METADATA, log);
+  const permissions = permissionsByPlatform(metadata);
+  if (metadata) {
+    const n = Object.values(permissions).reduce((a, l) => a + l.length, 0);
+    log(`permissions: ${n} native declaration(s) across ${Object.keys(permissions).length} platform(s)`);
+  }
   if (listing.apple) log(`listed on the App Store: ${listing.apple.url}`);
   if (listing.google) log(`listed on Google Play: ${listing.google.url}`);
 
@@ -412,6 +486,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     const entry = { platform: target };
     if (version) entry.version = version;
     if (app.build != null) entry.buildNumber = String(app.build);
+    if (permissions[key]?.length) entry.permissions = permissions[key];
     if (key === 'ios' && (storeApp['bundle-id'] ?? app.id)) entry.bundleIdentifier = storeApp['bundle-id'] ?? app.id;
     if (key === 'android' && app.id) entry.applicationId = app.id;
     // Live store listings (Day.toml `[store]`, docs/store.md "Listed apps"): the conventional
@@ -483,12 +558,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const [projectRoot, outDir] = positional;
   if (!projectRoot || !outDir) {
     console.error(
-      'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] [--release-assets FILE]',
+      'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] [--release-assets FILE] [--metadata FILE]',
     );
     process.exit(2);
   }
   await generateAppIndex(resolve(projectRoot), resolve(outDir), {
     repo: flags.repo,
     releaseAssets: flags['release-assets'],
+    metadata: flags.metadata,
   });
 }

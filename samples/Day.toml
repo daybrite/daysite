@@ -14,6 +14,17 @@ targets = ["ios-uikit", "android-mdc", "web-dom"]
 apple-app-id = "6802801331"
 google-play-id = "dev.daybrite.showcase"
 
+# The declarations (their reasons are catalog messages in the real app; here the generator reads
+# the CLI's resolved view from day-metadata.json, since the sample has no catalogs to resolve).
+[permissions]
+camera = true
+location-when-in-use = true
+notifications = true
+motion = true
+
+[permissions.raw]
+ios = { NSBluetoothAlwaysUsageDescription = true }
+
 # The web build on a home screen (day docs/web.md "Home screen and offline").
 [web]
 background-color = "#123246"

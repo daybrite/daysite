@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseGithubRepo, readReleaseAssets, storeListing } from './generate-appindex.mjs';
+import { parseGithubRepo, permissionsByPlatform, readReleaseAssets, storeListing } from './generate-appindex.mjs';
 
 test('an unlisted app has no store links', () => {
   assert.deepEqual(storeListing(undefined), {});
@@ -63,4 +63,35 @@ test('a GitHub remote in any spelling names the repository', () => {
   ]) assert.equal(parseGithubRepo(url), 'daybrite/Day-Showcase', url);
   assert.equal(parseGithubRepo('https://gitlab.com/x/y.git'), undefined);
   assert.equal(parseGithubRepo(''), undefined);
+});
+
+test('permissions fan out to each platform with their reasons per locale', () => {
+  const metadata = {
+    project: {
+      permissions: [
+        {
+          name: 'camera', android: ['android.permission.CAMERA'], ios: ['NSCameraUsageDescription'],
+          macos: ['NSCameraUsageDescription'], ohos: ['ohos.permission.CAMERA'],
+          reasons: { en: 'Scan.', fr: 'Scanner.' },
+        },
+        { name: 'notifications', android: ['android.permission.POST_NOTIFICATIONS'], ios: [], macos: [], ohos: [], reasons: {} },
+      ],
+      rawPermissions: {
+        android: ['android.permission.READ_CONTACTS'],
+        ios: { NSBluetoothAlwaysUsageDescription: { reasons: { en: 'Find your lock.' } } },
+        macos: {},
+        ohos: [{ name: 'ohos.permission.READ_CONTACTS', when: 'inuse', reasons: { en: 'Friends.' } }],
+      },
+    },
+  };
+  const by = permissionsByPlatform(metadata);
+  assert.deepEqual(by.android.map((e) => e.key), ['android.permission.CAMERA', 'android.permission.POST_NOTIFICATIONS', 'android.permission.READ_CONTACTS']);
+  assert.equal(by.android[0].description, undefined, 'Android takes no reason');
+  assert.deepEqual(by.ios, [
+    { key: 'NSBluetoothAlwaysUsageDescription', description: { en: 'Find your lock.' } },
+    { key: 'NSCameraUsageDescription', description: { en: 'Scan.', fr: 'Scanner.' } },
+  ]);
+  assert.deepEqual(by.macos, [{ key: 'NSCameraUsageDescription', description: { en: 'Scan.', fr: 'Scanner.' } }]);
+  assert.deepEqual(by.harmony.map((e) => e.key), ['ohos.permission.CAMERA', 'ohos.permission.READ_CONTACTS']);
+  assert.deepEqual(permissionsByPlatform(undefined), {});
 });

@@ -1,10 +1,14 @@
 {
   "$schema": "https://appfair.org/schemas/appindex/v1.json",
   "generator": "daysite/generate-appindex",
-  "generated": "2026-09-10T18:45:28.729Z",
+  "generated": "2026-09-10T23:17:42.194Z",
   "apps": [
     {
-      "name": "Day Showcase",
+      "name": "daysite",
+      "source": {
+        "url": "https://github.com/daybrite/daysite",
+        "release": "https://github.com/daybrite/daysite/releases/latest"
+      },
       "links": {
         "privacy": {
           "ar": "https://daybrite.dev/privacy",
@@ -105,6 +109,44 @@
           "platform": "ios-uikit",
           "version": "0.4.1",
           "buildNumber": "2",
+          "permissions": [
+            {
+              "key": "NSBluetoothAlwaysUsageDescription",
+              "description": {
+                "ar": "عرض كيفية طلب Day لبلوتوث — لا يتصل العرض التوضيحي بأي جهاز أبدًا.",
+                "en": "Show how Day asks for Bluetooth — the showcase never connects to a device.",
+                "fr": "Montrer comment Day demande le Bluetooth — la vitrine ne se connecte jamais à un appareil.",
+                "zh-CN": "演示 Day 如何请求蓝牙权限——展示应用从不连接任何设备。"
+              }
+            },
+            {
+              "key": "NSCameraUsageDescription",
+              "description": {
+                "ar": "عرض كيفية طلب Day للإذن — لا يفتح العرض التوضيحي الكاميرا أبدًا.",
+                "en": "Show how Day asks for a permission — the showcase never opens the camera.",
+                "fr": "Montrer comment Day demande une autorisation — la vitrine n'ouvre jamais l'appareil photo.",
+                "zh-CN": "演示 Day 如何请求权限——展示应用从不打开相机。"
+              }
+            },
+            {
+              "key": "NSLocationWhenInUseUsageDescription",
+              "description": {
+                "ar": "عرض إحداثياتك مباشرةً في صفحة الجهاز والمستشعرات.",
+                "en": "Show your coordinates live on the Device & sensors page.",
+                "fr": "Afficher vos coordonnées en direct sur la page Appareil et capteurs.",
+                "zh-CN": "在“设备与传感器”页面实时显示您的坐标。"
+              }
+            },
+            {
+              "key": "NSMotionUsageDescription",
+              "description": {
+                "ar": "عرض قراءات مقياس التسارع والجيروسكوب والمغناطيسية مباشرةً في صفحة الجهاز والمستشعرات.",
+                "en": "Show live accelerometer, gyroscope and magnetometer traces on the Device & sensors page.",
+                "fr": "Afficher en direct les courbes de l'accéléromètre, du gyroscope et du magnétomètre sur la page Appareil et capteurs.",
+                "zh-CN": "在“设备与传感器”页面实时显示加速度计、陀螺仪和磁力计曲线。"
+              }
+            }
+          ],
           "bundleIdentifier": "dev.daybrite.showcase",
           "channels": {
             "appleappstore": {
@@ -139,6 +181,23 @@
           "platform": "android-mdc",
           "version": "0.4.1",
           "buildNumber": "2",
+          "permissions": [
+            {
+              "key": "android.permission.ACCESS_COARSE_LOCATION"
+            },
+            {
+              "key": "android.permission.ACCESS_FINE_LOCATION"
+            },
+            {
+              "key": "android.permission.ACTIVITY_RECOGNITION"
+            },
+            {
+              "key": "android.permission.CAMERA"
+            },
+            {
+              "key": "android.permission.POST_NOTIFICATIONS"
+            }
+          ],
           "applicationId": "dev.daybrite.showcase",
           "channels": {
             "googleplaystore": {

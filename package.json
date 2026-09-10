@@ -12,7 +12,7 @@
     "astro": "astro",
     "check": "astro check",
     "test": "node --test 'scripts/*.test.mjs'",
-    "sample": "node scripts/generate-appindex.mjs samples samples && node scripts/assemble-gallery.mjs samples/screenshots samples"
+    "sample": "node scripts/generate-appindex.mjs samples samples --metadata samples/day-metadata.json && node scripts/assemble-gallery.mjs samples/screenshots samples"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",

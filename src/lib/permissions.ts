@@ -223,12 +223,34 @@ function humanizeUnknown(key: string): string {
     .replace(/^./, (c) => c.toUpperCase());
 }
 
-export function metaForPermission(
-  key: string,
-  platform: 'ios' | 'android',
-): PermissionMeta {
-  if (platform === 'ios') {
+// HarmonyOS `ohos.permission.*` — the ones Day's declaration table can write
+// (docs/permissions.md in the day repo), mapped onto the same groups and icons.
+export const OHOS_PERMISSIONS: Record<string, PermissionMeta> = {
+  CAMERA:                 { label: 'Camera',               icon: 'photo_camera',   sensitivity: 'high',   group: 'camera' },
+  MICROPHONE:             { label: 'Microphone',           icon: 'mic',            sensitivity: 'high',   group: 'microphone' },
+  LOCATION:               { label: 'Precise location',     icon: 'location_on',    sensitivity: 'high',   group: 'location' },
+  APPROXIMATELY_LOCATION: { label: 'Approximate location', icon: 'location_on',    sensitivity: 'high',   group: 'location' },
+  LOCATION_IN_BACKGROUND: { label: 'Background location',  icon: 'my_location',    sensitivity: 'high',   group: 'location_bg' },
+  ACTIVITY_MOTION:        { label: 'Motion & fitness',     icon: 'directions_run', sensitivity: 'medium', group: 'motion' },
+  READ_IMAGEVIDEO:        { label: 'Photos & videos',      icon: 'photo_library',  sensitivity: 'high',   group: 'photos' },
+  READ_CONTACTS:          { label: 'Contacts',             icon: 'contacts',       sensitivity: 'high',   group: 'contacts' },
+  READ_CALENDAR:          { label: 'Calendar',             icon: 'calendar_month', sensitivity: 'high',   group: 'calendar' },
+  ACCESS_BLUETOOTH:       { label: 'Bluetooth',            icon: 'bluetooth',      sensitivity: 'medium', group: 'bluetooth' },
+};
+
+/** The appindex platform keys a permission row can belong to: iOS and macOS share Apple's
+ *  usage-description keys, HarmonyOS has its own, Android its manifest names. */
+export type PermissionPlatform = 'ios' | 'macos' | 'android' | 'harmony';
+
+export function metaForPermission(key: string, platform: PermissionPlatform): PermissionMeta {
+  if (platform === 'ios' || platform === 'macos') {
     return IOS_PERMISSIONS[key] ?? { ...FALLBACK_META, label: humanizeUnknown(key) };
+  }
+  if (platform === 'harmony') {
+    return OHOS_PERMISSIONS[key.replace(/^ohos\.permission\./, '')] ?? {
+      ...FALLBACK_META,
+      label: humanizeUnknown(key),
+    };
   }
   return ANDROID_PERMISSIONS[androidShortKey(key)] ?? {
     ...FALLBACK_META,
@@ -238,7 +260,7 @@ export function metaForPermission(
 
 export function describePermission(
   key: string,
-  platform: 'ios' | 'android',
+  platform: PermissionPlatform,
   description?: string,
 ): PermissionView & { iconName: string } {
   const meta = metaForPermission(key, platform);

@@ -27,7 +27,12 @@ import {
   sortLocales,
 } from './i18n.ts';
 import { DAY_TARGETS, dayTarget, orderKeys } from './day-targets.ts';
-import { describePermission, shouldHideAndroidPermission, sortPermissions } from './permissions.ts';
+import {
+  describePermission,
+  shouldHideAndroidPermission,
+  sortPermissions,
+  type PermissionPlatform,
+} from './permissions.ts';
 import { lookupAndroidDescription, lookupPermissionLabel } from './permission-descriptions.ts';
 import { loadGallery, type GalleryManifest } from './gallery.ts';
 
@@ -167,6 +172,14 @@ function collectLocales(app: AppEntry): string[] {
   return Array.from(seen);
 }
 
+/** The permission vocabulary an appindex platform key speaks; every other key takes iOS's
+ *  (its rows are then whatever the index carries, labeled by their key). */
+function permissionPlatform(platformId: string): PermissionPlatform {
+  return platformId === 'android' || platformId === 'macos' || platformId === 'harmony'
+    ? platformId
+    : 'ios';
+}
+
 function pickDefaultLocale(locales: string[]): string {
   if (locales.includes('en-US')) return 'en-US';
   if (locales.includes('en')) return 'en';
@@ -208,7 +221,8 @@ function buildPlatformView(
     alt: `${title.value ?? app.name} screenshot ${i + 1} (${screenshotsLocale})`,
   }));
 
-  // Permissions: filter Android plumbing, attach localized descriptions.
+  // Permissions: filter Android plumbing, attach localized descriptions. A platform with no
+  // permission gate of its own (the web, desktop Linux, Windows) lists none, which is true.
   const permissions: PermissionView[] = [];
   if (platform.permissions) {
     for (const p of platform.permissions) {
@@ -217,7 +231,7 @@ function buildPlatformView(
       if (!desc && platformId === 'android') {
         desc = lookupAndroidDescription(p.key, locale);
       }
-      const view = describePermission(p.key, platformId, desc);
+      const view = describePermission(p.key, permissionPlatform(platformId), desc);
       view.label = lookupPermissionLabel(view.label, locale);
       permissions.push(view);
     }

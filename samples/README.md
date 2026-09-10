@@ -7,6 +7,9 @@ scaled down to keep the fixture small. Everything here is copied from the
 [Day-Showcase](https://github.com/daybrite/Day-Showcase) repository and its capture tree
 (Apache-2.0, like that app).
 
+`day-metadata.json` is `day metadata --json` as the CLI reports it for the app, trimmed to
+the permissions the generator reads (their native keys per platform and reasons per locale).
+
 `npm run sample` runs the same two generators CI runs for a real repository and writes
 `appindex.json` and `gallery-manifest.json` beside `site.toml` (both generated, both
 ignored); `npx astro build` or `npm run dev` then builds against them.

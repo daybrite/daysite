@@ -73,7 +73,7 @@ CI generates two data files next to `site.toml`; neither is committed:
 
 | File | Written by | From |
 | --- | --- | --- |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`), the icon family under `build/day/host/png/` or `resource/icons/` |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`), `day metadata --json` (`--metadata FILE`, or run through `DAY_BIN`) for the declared permissions with their native keys per platform and reasons per locale, the icon family under `build/day/host/png/` or `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
