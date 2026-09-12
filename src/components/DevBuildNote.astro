@@ -1,0 +1,71 @@
+---
+// The notice a development channel's pages carry: which branch the build came from, that it
+// moves, and the one link to the released version.
+//
+// One line, placed inside layout the page already has, rather than a banner across the top. The
+// pages this appears on are exactly the pages the version picker switches between, so a block
+// that exists on one channel and not the other pushes everything below it down — switching
+// version made the whole page jump. Both hosts have slack to spend instead: the hero's text
+// block is shorter than the app mark beside it, and the gallery's picker row has room to its
+// side. Below `sm` the hero stacks and this does cost a line; there is no slack there to use.
+import type { ChannelView } from '../lib/channels.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+
+interface Props {
+  channel: ChannelView;
+  /** The release channel, when the repository has published one. */
+  release?: ChannelView;
+  /** That channel's page in this locale, for the call to action. */
+  releaseHref?: string;
+  locale: string;
+  /** Placement classes from the host (the hero starts its text, the gallery centres it). */
+  class?: string;
+}
+
+const { channel, release, releaseHref, locale, class: className } = Astro.props;
+const ui = uiStrings(locale);
+const line = ui.devBuildInline.replace('[BRANCH]', channel.ref || channel.label);
+const cta = release ? ui.devBuildReleaseLink.replace('[VERSION]', release.label) : undefined;
+---
+
+<p
+  class:list={['dev-note flex flex-wrap items-center gap-x-2 gap-y-1 text-sm', className]}
+  role="note"
+  data-pagefind-ignore
+>
+  <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M10.3 3.9 2.5 17.4A1.9 1.9 0 0 0 4.2 20.3h15.6a1.9 1.9 0 0 0 1.7-2.9L13.7 3.9a1.9 1.9 0 0 0-3.4 0z" />
+    <path d="M12 9.4v4.2" />
+    <path d="M12 17h.01" />
+  </svg>
+  <span>{line}</span>
+  {cta && releaseHref ? (
+    <a href={releaseHref} class="font-semibold underline underline-offset-2">{cta}</a>
+  ) : (
+    <span>{ui.devBuildNoRelease}</span>
+  )}
+  {/* The commit is the first thing to go when the line has to wrap: dropping it is what keeps
+      the note to one line at the narrower desktop widths, and the About card carries it as a
+      row of its own on the landing page. */}
+  {channel.commit && (
+    <span class="hidden font-mono text-xs opacity-80 sm:inline">
+      {channel.commitURL ? (
+        <a href={channel.commitURL} target="_blank" rel="noopener" class="underline underline-offset-2">{channel.commit}</a>
+      ) : (
+        channel.commit
+      )}
+    </span>
+  )}
+</p>
+
+<style>
+  /* Amber text, no plate: the accent belongs to the app's brand, and a warning that borrows it
+     stops reading as a warning — but a filled card here would be the vertical space this notice
+     exists to avoid. Both themes are spelled out because the site paints its own background. */
+  .dev-note {
+    color: oklch(48% 0.12 62);
+  }
+  :global(html[data-theme='dark']) .dev-note {
+    color: oklch(84% 0.11 80);
+  }
+</style>

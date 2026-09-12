@@ -44,6 +44,11 @@ const { hero } = Astro.props;
       {hero.subtitle && (
         <p class="max-w-2xl text-lg text-[color:var(--color-text-soft)] text-pretty sm:text-xl">{hero.subtitle}</p>
       )}
+      {/* A line the page can add without growing: from `sm` up the row centres against the app
+          mark, which is taller than a title and a subtitle, so a third line lands in space the
+          hero already occupied. That is what lets the development-channel notice appear here
+          and the release page stay exactly as tall (DevBuildNote). */}
+      <slot name="notice" />
     </div>
   </div>
 </section>

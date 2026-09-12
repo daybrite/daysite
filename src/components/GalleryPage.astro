@@ -14,7 +14,7 @@ import type { LoadedSite } from '../lib/data.ts';
 import DeviceShell from './DeviceShell.astro';
 import PlatformIcon from './PlatformIcon.astro';
 import ChannelPicker from './ChannelPicker.astro';
-import DevBuildBanner from './DevBuildBanner.astro';
+import DevBuildNote from './DevBuildNote.astro';
 import { localizedText, shotLabel, columnParts, deviceLabel } from '../lib/gallery.ts';
 import { dayTarget, DAY_TARGETS } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
@@ -99,15 +99,6 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
 ---
 
   <div class="space-y-10">
-    {data.channel.development && (
-      <DevBuildBanner
-        channel={data.channel}
-        release={releaseChannel}
-        releaseHref={releaseChannel && channelHref(releaseChannel)}
-        locale={locale.code}
-      />
-    )}
-
     <header class="space-y-3 text-center">
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">{ui.galleryHeading}</h1>
       <p class="text-[color:var(--color-text-soft)]" set:html={blurbHTML}></p>
@@ -115,6 +106,19 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
         <div class="flex justify-center">
           <ChannelPicker channels={channels} locale={locale.code} hrefFor={channelHref} />
         </div>
+      )}
+      {/* Under the picker, on a line of its own. Beside it would cost no height at all, but the
+          row would then centre the pair rather than the picker, sliding the control 260px out
+          from under the pointer that just clicked it — a worse motion than the line it saves.
+          The gallery has no hero to hide the notice in, so this one line is what it costs. */}
+      {data.channel.development && (
+        <DevBuildNote
+          channel={data.channel}
+          release={releaseChannel}
+          releaseHref={releaseChannel && channelHref(releaseChannel)}
+          locale={locale.code}
+          class="justify-center"
+        />
       )}
       {(showThemes.length > 1 || showLocales.length > 1) && (
         <div class="flex flex-wrap items-center justify-center gap-3" data-gallery-switchers data-pagefind-ignore>

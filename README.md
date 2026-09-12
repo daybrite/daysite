@@ -65,6 +65,13 @@ A repository with no release publishes main at the locale root instead, the pick
 and is not drawn, and `/<locale>/main/` redirects there — so a link made before the first release
 still resolves after it.
 
+The development notice is one line rather than a banner, and it is placed in layout the page
+already has: inside the hero's text block, which from `sm` up is shorter than the app mark beside
+it, and under the gallery's version picker. Both channels' pages are then the same height, so the
+picker a visitor just clicked, and everything below it, stays exactly where it was. Give the
+notice a block of its own and the release and development pages differ by its height, which is a
+jump on every switch.
+
 `scripts/generate-site.mjs` assembles all of this and writes `channels.json` beside `site.toml`;
 `src/lib/channels.ts` is what the pages read. Without a `channels.json` the site has exactly one
 channel, which is the layout every daysite had before channels existed.

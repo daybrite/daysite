@@ -6,7 +6,7 @@ import { localeIndexHref } from '../lib/routes.ts';
 
 import Hero from './Hero.astro';
 import ChannelPicker from './ChannelPicker.astro';
-import DevBuildBanner from './DevBuildBanner.astro';
+import DevBuildNote from './DevBuildNote.astro';
 import PlatformPicker from './PlatformPicker.astro';
 import PlatformShots from './PlatformShots.astro';
 import DescriptionBlock from './DescriptionBlock.astro';
@@ -42,16 +42,19 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  {channel?.development && (
-    <DevBuildBanner
-      channel={channel}
-      release={releaseChannel}
-      releaseHref={releaseChannel && channelHref(releaseChannel)}
-      locale={locale.code}
-    />
-  )}
-
-  <Hero hero={hero} />
+  {/* The development notice rides inside the hero rather than above it, so the release page and
+      the development page are the same height and switching version moves nothing. */}
+  <Hero hero={hero}>
+    {channel?.development && (
+      <DevBuildNote
+        slot="notice"
+        channel={channel}
+        release={releaseChannel}
+        releaseHref={releaseChannel && channelHref(releaseChannel)}
+        locale={locale.code}
+      />
+    )}
+  </Hero>
 
   {/* The per-platform content is split around the picker. By default the screenshots go BELOW
       with the description; `screenshot-placement = "above-about"` puts them here instead, first
