@@ -190,6 +190,15 @@ jobs:
               exit 1
             }
           done
+      - name: The app mark carries its hover effect
+        run: |
+          set -euo pipefail
+          # `icon-effect` defaults to raise, and a live effect means the master is INLINED —
+          # CSS cannot reach inside an <img>. The scaffold's generated master marks day: layers,
+          # so this scaffold must get the inline mark rather than the plain fallback.
+          grep -q '<div class="day-mark' dist/en/index.html
+          grep -q 'data-fx="raise"' dist/en/index.html
+          grep -q 'id="day:foreground"' dist/en/index.html
       - name: The landing page uses the raw vector icon
         run: |
           set -euo pipefail

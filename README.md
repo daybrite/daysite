@@ -89,6 +89,7 @@ tagline = "Weather, beautifully native"
 accent-color = "#4A90D9"
 default-theme = "system"       # light | dark | system
 default-platform = "web"       # platforms key preselected in the picker
+icon-effect = "raise"          # what the app mark does on hover (see below); "none" turns it off
 webapp = "webapp"              # subdirectory hosting the web-dom build (default "webapp")
 screenshot-placement = "below-about"  # below-about (default) | above-about: the carousel under the description, or first after the hero
 show-gallery = true
@@ -99,6 +100,33 @@ show-source-link = true
 footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
 ```
+
+### icon-effect
+
+The landing page's app mark answers to hover and to tap, by moving the layers a Day SVG master
+marks by id — `day:background`, one or more `day:foreground…`, and the `day:monochrome`
+silhouette that otherwise ships hidden for the platforms' tinted-icon modes (the day repository's
+docs/icons.md). `raise` is the default; `none` turns it off.
+
+| value | what moves | suits |
+| --- | --- | --- |
+| `raise` | the motif lifts off the backdrop and casts a shadow onto it, and the backdrop dims | any master |
+| `tilt` | the mark turns toward the pointer and the motif leads the backdrop into the turn | art with layers worth separating |
+| `bloom` | each shape in the motif steps outward from the centre in turn; a shape at the centre stays | motifs arranged around a centre |
+| `emboss` | `day:monochrome` moves under the motif and shows as a shadow matching it shape for shape | any master that ships the layer |
+| `iris` | the backdrop opens and brightens behind a motif that barely moves | backdrops with a gradient or a glow |
+| `spin` | the motif turns once, all the way round, and lands where it started | any master |
+
+Three details decide whether an effect is worth setting on a given app:
+
+- **The master has to mark layers.** CSS cannot reach inside an `<img>`, so a live effect inlines
+  the SVG master into the page. A project with a raster-only icon, or an SVG that marks no `day:`
+  layers, renders the plain mark and no effect — whatever this key says.
+- **`bloom` and `iris` read the artwork.** Bloom moves each shape along the radius it already sits
+  on, so a motif whose shapes all sit at the centre barely moves; iris opens the backdrop, so a
+  flat-color backdrop only brightens.
+- **Every effect rests where the page already was.** `prefers-reduced-motion` keeps the change of
+  state and drops the travel, and nothing in the hero reflows when the mark moves.
 
 Gallery curation lives in the app's dayscripts, not here: a `screenshot:` step with a
 localized `title:` (and optionally `caption:` and `source:`) becomes a curated gallery row, in

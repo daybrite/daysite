@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import type {
   AssetView,
   FaviconPaths,
   HeroView,
+  IconEffect,
   LocaleInfo,
   PermissionView,
   PlatformEntry,
@@ -18,6 +19,7 @@ import type {
   SiteData,
   SiteInfo,
 } from './types.ts';
+import { ICON_EFFECTS } from './types.ts';
 import {
   dedupeLocales,
   localeInfo,
@@ -84,7 +86,16 @@ export async function loadSiteInfo(): Promise<SiteInfo> {
     (parsed as Record<string, unknown>)[camel] = v;
   }
   if (!parsed.host) throw new Error('site.toml: "host" is required');
+  // A misspelled effect would otherwise ship as silence — the mark simply never moves, and
+  // nothing in the build says why. `host` already fails the build when it is wrong; so does
+  // this.
+  if (parsed.iconEffect && !ICON_EFFECTS.includes(parsed.iconEffect)) {
+    throw new Error(
+      `site.toml: icon-effect = "${parsed.iconEffect}" is not one of ${ICON_EFFECTS.join(', ')}`,
+    );
+  }
   return {
+    iconEffect: 'raise',
     showSourceLink: true,
     showStoreBadges: true,
     showPermissions: true,
@@ -128,6 +139,27 @@ function resolveAssetURL(
   const trimmedBase = base.endsWith('/') ? base : `${base}/`;
   const trimmedLoc = location.startsWith('/') ? location.slice(1) : location;
   return trimmedBase + trimmedLoc;
+}
+
+/**
+ * The SVG master's own markup, for inlining into the landing page.
+ *
+ * The mark is normally an `<img>`, and CSS cannot reach inside one — so an icon effect
+ * (site.toml `icon-effect`) needs the master in the document. The generator has already
+ * copied it to `public/app/icon.svg` and hidden the reserved layers there, so this reads that
+ * copy rather than the project's.
+ *
+ * Returns nothing when the project ships no SVG master, or when the master marks no layers:
+ * every effect moves `day:` layers against each other, and there is nothing to move in a flat
+ * drawing. The page then renders the plain mark, which is what it did before effects existed.
+ */
+function vectorIconMarkup(): string | undefined {
+  const path = resolve(projectRoot(), 'public', 'app', 'icon.svg');
+  if (!existsSync(path)) return undefined;
+  const svg = readFileSync(path, 'utf8');
+  if (!/\bid="day:(background|foreground)/.test(svg)) return undefined;
+  // The master carries its own pixel size; the page sizes the mark with CSS.
+  return svg.replace(/<svg\b[^>]*>/, (open) => open.replace(/\s(width|height)="[^"]*"/g, ''));
 }
 
 /**
@@ -412,6 +444,9 @@ export interface LoadedSite extends SiteData {
   hasWebApp: boolean;
   /** The channel these pages describe (lib/channels.ts). */
   channel: ChannelView;
+  /** The app mark's hover treatment, and the master's markup when one can carry it. */
+  iconEffect: IconEffect;
+  iconMarkup?: string;
   /** Every channel the site publishes, in picker order; one entry when there is only one. */
   channels: ChannelView[];
   /**
@@ -513,6 +548,8 @@ export async function loadSite(channelId?: string): Promise<LoadedSite> {
     favicons: siteFavicons,
     // The primary app's SVG master doubles as the site-wide favicon preference.
     vectorIcon: apps[0]?.vectorIconURL,
+    iconEffect: site.iconEffect ?? 'raise',
+    iconMarkup: site.iconEffect === 'none' ? undefined : vectorIconMarkup(),
     channel: { ...channel, current: true },
     channels: channelFile.channels.map((c) => ({ ...c, current: c.id === channel.id })),
     appView: apps[0]!,

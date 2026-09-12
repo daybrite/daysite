@@ -13,6 +13,13 @@ export interface SiteInfo {
   /** appindex `platforms` key preselected in the picker (e.g. "ios", "web"). */
   defaultPlatform?: string;
   /**
+   * What the landing page's app mark does when a visitor hovers or taps it, moving the
+   * master's `day:` layers against each other (`icon-effect` in site.toml). `raise` by
+   * default; `none` turns it off. See ICON_EFFECTS for the set and lib/data.ts for what each
+   * one needs from the master.
+   */
+  iconEffect?: IconEffect;
+  /**
    * Directory (under the site root) where the hosted web-dom build lives, e.g. "webapp" →
    * the "Open the web app" button links to `{base}/webapp/`. The deploy pipeline stages the
    * web-dom dist there; the name here and the staging directory must agree, so the workflow
@@ -58,6 +65,15 @@ export interface SiteInfo {
    */
   pagefind?: boolean;
 }
+
+/**
+ * The hover treatments the app mark can take. Each moves layers a Day SVG master marks by id
+ * (day/docs/icons.md): `day:background`, one or more `day:foreground…`, and the otherwise
+ * hidden `day:monochrome`. A master with none of them, or no SVG at all, renders the plain
+ * mark and no effect, whatever this says.
+ */
+export const ICON_EFFECTS = ['none', 'raise', 'tilt', 'bloom', 'emboss', 'iris', 'spin'] as const;
+export type IconEffect = (typeof ICON_EFFECTS)[number];
 
 // Subset of the appindex.json fields actually used at render time.
 export interface AppIndex {

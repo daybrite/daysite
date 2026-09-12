@@ -1,5 +1,5 @@
 ---
-import type { AppView, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { AppView, IconEffect, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { localeIndexHref } from '../lib/routes.ts';
@@ -23,9 +23,14 @@ interface Props {
   /** The build channel these pages describe, and every channel the site publishes. */
   channel?: ChannelView;
   channels?: ChannelView[];
+  /** The app mark's hover treatment and the master that carries it (lib/data.ts). */
+  iconEffect?: IconEffect;
+  iconMarkup?: string;
 }
 
-const { site, appView, locale, hasGallery, channel, channels = [] } = Astro.props;
+const {
+  site, appView, locale, hasGallery, channel, channels = [], iconEffect, iconMarkup,
+} = Astro.props;
 const ui = uiStrings(locale.code);
 // The picker's other stop, and the notice's call to action: the newest release, when there is
 // one. A single-channel site (no channels.json, or a repository with no release) draws neither.
@@ -44,7 +49,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 <div class="space-y-12 sm:space-y-16">
   {/* The development notice rides inside the hero rather than above it, so the release page and
       the development page are the same height and switching version moves nothing. */}
-  <Hero hero={hero}>
+  <Hero hero={hero} iconEffect={iconEffect} iconMarkup={iconMarkup}>
     {channel?.development && (
       <DevBuildNote
         slot="notice"
