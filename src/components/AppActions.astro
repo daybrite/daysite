@@ -8,6 +8,7 @@
 // Per-view, not per-site: the About card already sits inside its platform's
 // `data-platform-section`, so the picker shows and hides these with everything else.
 import type { ArtifactEntry, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
 import StoreBadge from './StoreBadge.astro';
 import { dayTarget } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
@@ -16,9 +17,12 @@ interface Props {
   view: PlatformView;
   site: SiteInfo;
   locale: LocaleInfo;
+  /** Which channel's web build to open — each stages its own under its segment
+   *  (`webapp/`, `main/webapp/`), so the button runs the version this page describes. */
+  channel?: ChannelView;
 }
 
-const { view, site, locale } = Astro.props;
+const { view, site, locale, channel } = Astro.props;
 const ui = uiStrings(locale.code);
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const p = view.id;
@@ -33,7 +37,8 @@ const badge =
         : undefined
     : undefined;
 
-const webappHref = p === 'web' ? `${BASE}/${site.webapp ?? 'webapp'}/` : undefined;
+const webappDir = channel?.webapp ?? site.webapp ?? 'webapp';
+const webappHref = p === 'web' ? `${BASE}/${webappDir}/` : undefined;
 // The app's full address, printed under the button so it can be read, copied, or typed on
 // another device. Middle-truncated when the card is narrower than the URL: the head shrinks
 // behind an ellipsis, the tail — where the path, the part that tells sites apart, ends — stays.

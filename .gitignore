@@ -9,6 +9,10 @@ public/gallery/
 public/app/
 public/_generated/
 public/webapp/
+# A second build channel's copies of all three, under its own segment (src/lib/channels.ts),
+# plus the packages a development channel serves from the site itself.
+public/main/
+public/downloads/
 # The sample's generated data (`npm run sample`), like an app repository's website/ pair.
 samples/appindex.json
 samples/gallery-manifest.json

@@ -1,0 +1,80 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '../../../../layouts/Layout.astro';
+import GalleryPage from '../../../../components/GalleryPage.astro';
+import { loadSite, siteChannels } from '../../../../lib/data.ts';
+import { uiStrings } from '../../../../lib/uistrings.ts';
+import { galleryHref, localeLinksFor } from '../../../../lib/routes.ts';
+import { galleryBlurb } from '../../../../lib/gallery.ts';
+
+/**
+ * /{locale}/{channel}/gallery/ — a non-default channel's screenshot gallery, and a redirect at
+ * the default channel's own segment. Same rules as the landing route beside it; the page is
+ * generated only for channels whose manifest holds captures.
+ */
+interface Props {
+  /** Which channel this page renders (lib/channels.ts). */
+  id: string;
+  /** True for the stub that forwards the default channel's own segment to the locale root. */
+  redirect: boolean;
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const { channels } = await siteChannels();
+  const base = await loadSite();
+  const out: { channel: string; id: string; redirect: boolean }[] = [];
+  for (const c of channels) {
+    const data = await loadSite(c.id);
+    if (!data.gallery) continue;
+    if (c.path) out.push({ channel: c.path, id: c.id, redirect: false });
+    if (c.alias) out.push({ channel: c.alias, id: c.id, redirect: true });
+  }
+  return base.locales.flatMap((l) =>
+    out.map((o) => ({
+      params: { locale: l.code, channel: o.channel },
+      props: { id: o.id, redirect: o.redirect },
+    })),
+  );
+};
+
+const { locale: localeParam } = Astro.params;
+const { id, redirect } = Astro.props as Props;
+const data = await loadSite(id);
+const locale = data.locales.find((l) => l.code === localeParam)!;
+const ui = uiStrings(locale.code);
+const appView = data.apps[0]!;
+const hero = appView.hero(locale.code);
+const blurb = galleryBlurb(ui.galleryBlurb);
+const target = galleryHref(locale.code, data.channel.path);
+const pageTitle = `${ui.galleryHeading} – ${hero.title}`;
+---
+
+{redirect ? (
+  <html lang={locale.code}>
+    <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="refresh" content={`0; url=${target}`} />
+      <meta name="robots" content="noindex" />
+      <link rel="canonical" href={target} />
+      <title>{pageTitle}</title>
+    </head>
+    <body><a href={target}>{pageTitle}</a></body>
+  </html>
+) : (
+  <Layout
+    site={data.site}
+    localeLinks={localeLinksFor(data.locales, (c) => galleryHref(c, data.channel.path))}
+    current={locale}
+    pagePath={target}
+    pageTitle={pageTitle}
+    pageDescription={blurb.text}
+    socialImage={appView.socialImage ?? data.socialImage}
+    favicons={data.favicons}
+    vectorIcon={data.vectorIcon}
+    sourceURL={appView.sourceURL}
+    releaseURL={appView.releaseURL}
+    channel={data.channel}
+  >
+    <GalleryPage data={data} locale={locale} blurbHTML={blurb.html} />
+  </Layout>
+)}

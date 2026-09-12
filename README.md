@@ -3,7 +3,9 @@
 Astro template that turns a conventional [Day](https://daybrite.dev) project into a published
 website: a localized landing page, a per-platform screenshot gallery, download links for every
 packaged target, and the hosted web build — generated from data the repository already maintains,
-so the site needs almost no metadata of its own.
+so the site needs almost no metadata of its own. It publishes two versions of the app side by
+side, the newest release and the newest build of the default branch; see
+[Build channels](#build-channels).
 
 ## How an app uses it
 
@@ -34,9 +36,38 @@ an `astro:build:done` hook scans the output for a resource loaded from another o
 the build on the first one. Plain links out, such as the store listings and the privacy page,
 are fine, and so are images an app index keeps on the app's own repository (`source.assets`,
 which an appindex-driven site may declare): that is the data's choice, named in the build log,
-not something the template loads. Build time still needs the npm registry for the packages in `package-lock.json`, and
-the workflow hands the generator the latest release's asset list as a file, so the generator
-itself never touches the network.
+not something the template loads. Build time still needs the npm registry for the packages in
+`package-lock.json`, and the workflow reads GitHub for what the newest release carries — its
+asset list, its screenshots, its web build — and hands each to the generator as a file or a
+directory, so the generator itself never touches the network.
+
+## Build channels
+
+The site publishes the app twice, and a version picker above the platform picker switches between
+them. The two are assembled from deliberately different sources.
+
+| | `/<locale>/` — the release | `/<locale>/main/` — the branch |
+| --- | --- | --- |
+| picker label | the release's version, `1.2.3` | the default branch, `main` |
+| downloads | the release's own packages, at their `releases/latest/download/` URLs | this run's packages, served from the site under `main/downloads/` |
+| screenshots | the release's `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the captures this run's dayscripts took |
+| web app | the release's own `web-dom` dist, at `/webapp/` | this run's, at `/main/webapp/` |
+| page | as published | carries a development-build notice and a link to the release |
+
+The point of the split is that the release channel is built from **assets the release already
+carries** and nothing else, so what a visitor downloads is the version the page names. The
+development channel is built from the artifacts of the CI run that published the site, and says
+so on every page. Its packages are copied onto the site because a GitHub Actions artifact needs a
+signed-in account and expires with the run's retention window; that adds the size of one full
+package set (Day Rise's is 117 MB) to each Pages deploy.
+
+A repository with no release publishes main at the locale root instead, the picker has one entry
+and is not drawn, and `/<locale>/main/` redirects there — so a link made before the first release
+still resolves after it.
+
+`scripts/generate-site.mjs` assembles all of this and writes `channels.json` beside `site.toml`;
+`src/lib/channels.ts` is what the pages read. Without a `channels.json` the site has exactly one
+channel, which is the layout every daysite had before channels existed.
 
 ## site.toml
 
@@ -69,11 +100,15 @@ this template consumes. See the day repository's DESIGN.md §14.7.
 
 ## Where the content comes from
 
-CI generates two data files next to `site.toml`; neither is committed:
+CI generates these files next to `site.toml`; none is committed. `scripts/generate-site.mjs` runs
+the two generators once per build channel and writes `channels.json` last, so a second channel's
+copies land under its own segment (`main/appindex.json`, `main/gallery-manifest.json`,
+`public/main/gallery/`).
 
 | File | Written by | From |
 | --- | --- | --- |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`), `day metadata --json` (`--metadata FILE`, or run through `DAY_BIN`) for the declared permissions with their native keys per platform and reasons per locale, the icon family under `build/day/host/png/` or `resource/icons/` |
+| `channels.json` | `scripts/generate-site.mjs` | the channel list the workflow hands it: which build each channel describes, its label, its URL segment, and where its data and web build live |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`) or a directory of packed artifacts to serve from the site (`--downloads DIR`), `day metadata --json` (`--metadata FILE`, or run through `DAY_BIN`) for the declared permissions with their native keys per platform and reasons per locale, the icon family under `build/day/host/png/` or `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
@@ -114,12 +149,22 @@ record.
 
 ## What renders
 
-- `/<locale>/` — the landing page: platform picker across every built target (first, since it
-  selects what everything below shows), hero, screenshot carousel, localized store description,
+- `/<locale>/` — the landing page: version picker and platform picker (first, since between them
+  they select what everything below shows), hero, screenshot carousel, localized store description,
   per-platform download card, and an About card carrying that platform's way to get the app — the
   **Open the web app** button when a web build is hosted, the App Store or Google Play badge for a
   listed app (badges vendored under `public/badges/<locale>/`, see the README there), otherwise
   the lead package from the latest GitHub release — then permissions and release notes. One page per store locale, with the same locale-fallback ladder as appland.
+
+  The chosen platform is bookmarkable as a fragment — `/<locale>/#macos-appkit`, spelled with the
+  Day target id (the shorter appindex key, `#macos`, resolves too and rewrites itself to the
+  canonical form). It outranks both automatic choices, the visitor's own OS and their last pick,
+  and the version picker's links carry it, so switching 1.2.3 ↔ main stays on the platform being
+  read about. A fragment rather than a per-platform page because the page already holds every
+  platform's content — the picker only hides sections — so splitting it would turn one indexable
+  page into eight near-duplicates without revealing anything new. A visitor who was auto-selected
+  keeps the clean URL; only an explicit choice writes one, with `replaceState`, so clicking
+  through platforms leaves no history to back out of.
 - `/<locale>/gallery/` — one row per captured screen, every platform side by side, phones and
   tablets in hardware bezels and desktops in their native window chrome (Adwaita, Breeze, traffic lights,
   caption buttons — `src/styles/shells.css`, shared with daybrite.dev), with theme and locale
@@ -142,7 +187,11 @@ record.
      missing from the capture tree — an artifact that failed to upload, a trimmed download — is
      dropped from the index (and named in the build log) rather than shipped as a dead URL. The
      invariant is covered by `scripts/assemble-gallery.test.mjs` (`npm test`).
-- `/<webapp>/` — the web-dom build itself, staged by the deploy workflow next to the site.
+- `/<locale>/main/` and `/<locale>/main/gallery/` — the same two pages for the development
+  channel, from that channel's own data (see [Build channels](#build-channels)).
+- `/<webapp>/` and `/main/<webapp>/` — each channel's web-dom build, staged by the deploy
+  workflow next to the site.
+- `/main/downloads/` — the development channel's packages, as the CI run packed them.
 
 A repo with a `web-dom` target and **no** `website/` directory keeps the old behavior: the
 workflow deploys the bare web app at the Pages root.
@@ -156,8 +205,22 @@ npm --prefix .daysite install
 node .daysite/scripts/preview.mjs
 ```
 
-The preview generates the same data CI does — minus the release downloads, which only the workflow looks up — and picks up
-`build/day/screenshots/` from your last local `day launch --script` run for the gallery.
+The plain run needs no network: one channel, from this checkout, with `build/day/screenshots/`
+from your last local `day launch --script` run as the gallery and no download cards, since only
+the workflow looks a release up.
+
+`--ci` assembles what the workflow publishes — both channels, the release one from the newest
+GitHub release's assets and the development one from the newest successful run of the default
+branch. It shells out to `gh` for both and caches the downloads under `build/day/daysite/`, so a
+second run is fast. `--run <id>` picks a specific workflow run and `--no-serve` generates the data
+and stops.
+
+```sh
+node .daysite/scripts/preview.mjs --ci
+```
+
+Point `DAYSITE_CONFIG` at any `site.toml` to drive a bare template checkout against another app's
+data; both the generator and the Astro build read it.
 
 ## Continuous integration
 

@@ -52,6 +52,20 @@ export interface UIStrings {
   qrTitle: string;
   /** Under the full-screen QR code: what scanning it does. */
   qrHint: string;
+  /** Accessible name of the build-channel picker above the platform picker (lib/channels.ts). */
+  versionPickerLabel: string;
+  /** Heading of the notice on a development channel's pages. */
+  devBuildHeading: string;
+  /** The notice itself; "[BRANCH]" is the branch the build came from. */
+  devBuildBody: string;
+  /** The notice's link to the released version; "[VERSION]" is that version. */
+  devBuildReleaseLink: string;
+  /** The notice's second line when the project has published no release at all. */
+  devBuildNoRelease: string;
+  /** Under a development channel's download card: where those packages came from. */
+  devBuildDownloadNote: string;
+  /** About-card row naming the commit a development build came from. */
+  commitLabel: string;
 }
 
 const EN: UIStrings = {
@@ -85,6 +99,14 @@ const EN: UIStrings = {
   themeDark: 'Dark',
   qrTitle: 'Landing page for the [APP] app',
   qrHint: 'Scan with a phone to open this page.',
+  versionPickerLabel: 'Version',
+  devBuildHeading: 'Development build',
+  devBuildBody:
+    'These pages describe the newest build of [BRANCH]. It changes with every commit and can be unstable.',
+  devBuildReleaseLink: 'Get the [VERSION] release instead',
+  devBuildNoRelease: 'No release has been published yet.',
+  devBuildDownloadNote: 'Packed by the last CI run and signed for development.',
+  commitLabel: 'Commit',
 };
 
 const TABLES: Record<string, Partial<UIStrings>> = {
@@ -115,6 +137,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     galleryHeading: 'لقطات الشاشة',
     galleryBlurb:
       'تُلتقط هذه اللقطات تلقائيًا عبر جولة [DAYSCRIPT] في التكامل المستمر لكل عدة أدوات.',
+    versionPickerLabel: 'الإصدار',
+    devBuildHeading: 'إصدار تطويري',
+    devBuildBody: 'تصف هذه الصفحات أحدث بناء من [BRANCH]. يتغير مع كل التزام وقد يكون غير مستقر.',
+    devBuildReleaseLink: 'احصل على الإصدار [VERSION] بدلاً من ذلك',
+    devBuildNoRelease: 'لم يُنشر أي إصدار بعد.',
+    devBuildDownloadNote: 'حُزمت في آخر تشغيل للتكامل المستمر ووُقّعت للتطوير.',
+    commitLabel: 'التزام',
   },
   cs: {
     about: 'O aplikaci',
@@ -137,6 +166,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Zdrojový kód',
     releaseLink: 'Vydání',
     builtWith: 'Vytvořeno pomocí Day',
+    versionPickerLabel: 'Verze',
+    devBuildHeading: 'Vývojové sestavení',
+    devBuildBody: 'Tyto stránky popisují nejnovější sestavení větve [BRANCH]. Mění se s každým commitem a může být nestabilní.',
+    devBuildReleaseLink: 'Stáhnout raději vydání [VERSION]',
+    devBuildNoRelease: 'Zatím nebylo zveřejněno žádné vydání.',
+    devBuildDownloadNote: 'Zabaleno posledním během CI a podepsáno pro vývoj.',
   },
   de: {
     qrTitle: 'Startseite der App [APP]',
@@ -161,6 +196,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Quellcode',
     releaseLink: 'Release',
     builtWith: 'Erstellt mit Day',
+    versionPickerLabel: 'Version',
+    devBuildHeading: 'Entwicklungs-Build',
+    devBuildBody: 'Diese Seiten beschreiben den neuesten Build von [BRANCH]. Er ändert sich mit jedem Commit und kann instabil sein.',
+    devBuildReleaseLink: 'Stattdessen Release [VERSION] laden',
+    devBuildNoRelease: 'Es wurde noch kein Release veröffentlicht.',
+    devBuildDownloadNote: 'Im letzten CI-Lauf gepackt und für die Entwicklung signiert.',
   },
   es: {
     qrTitle: 'Página de inicio de la app [APP]',
@@ -185,6 +226,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Código fuente',
     releaseLink: 'Lanzamiento',
     builtWith: 'Creado con Day',
+    versionPickerLabel: 'Versión',
+    devBuildHeading: 'Compilación de desarrollo',
+    devBuildBody: 'Estas páginas describen la compilación más reciente de [BRANCH]. Cambia con cada commit y puede ser inestable.',
+    devBuildReleaseLink: 'Descarga la versión [VERSION] en su lugar',
+    devBuildNoRelease: 'Todavía no se ha publicado ninguna versión.',
+    devBuildDownloadNote: 'Empaquetado en la última ejecución de CI y firmado para desarrollo.',
   },
   fr: {
     qrTitle: 'Page d’accueil de l’app [APP]',
@@ -213,6 +260,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     galleryHeading: 'Captures d’écran',
     galleryBlurb:
       'Ces captures d’écran sont prises automatiquement par le parcours [DAYSCRIPT] d’intégration continue, pour chaque toolkit.',
+    versionPickerLabel: 'Version',
+    devBuildHeading: 'Build de développement',
+    devBuildBody: 'Ces pages décrivent le dernier build de [BRANCH]. Il change à chaque commit et peut être instable.',
+    devBuildReleaseLink: 'Télécharger plutôt la version [VERSION]',
+    devBuildNoRelease: 'Aucune version n’a encore été publiée.',
+    devBuildDownloadNote: 'Empaqueté par la dernière exécution CI et signé pour le développement.',
   },
   hi: {
     about: 'ऐप के बारे में',
@@ -235,6 +288,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'स्रोत',
     releaseLink: 'रिलीज़',
     builtWith: 'Day से निर्मित',
+    versionPickerLabel: 'संस्करण',
+    devBuildHeading: 'विकास बिल्ड',
+    devBuildBody: 'ये पृष्ठ [BRANCH] के नवीनतम बिल्ड का वर्णन करते हैं। यह हर कमिट के साथ बदलता है और अस्थिर हो सकता है।',
+    devBuildReleaseLink: 'इसके बजाय [VERSION] रिलीज़ लें',
+    devBuildNoRelease: 'अभी तक कोई रिलीज़ प्रकाशित नहीं हुई है।',
+    devBuildDownloadNote: 'पिछले CI रन में पैक किया गया और विकास के लिए हस्ताक्षरित।',
+    commitLabel: 'कमिट',
   },
   id: {
     about: 'Tentang aplikasi',
@@ -257,6 +317,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Kode sumber',
     releaseLink: 'Rilis',
     builtWith: 'Dibuat dengan Day',
+    versionPickerLabel: 'Versi',
+    devBuildHeading: 'Build pengembangan',
+    devBuildBody: 'Halaman ini menjelaskan build terbaru dari [BRANCH]. Build ini berubah setiap commit dan bisa tidak stabil.',
+    devBuildReleaseLink: 'Ambil rilis [VERSION] saja',
+    devBuildNoRelease: 'Belum ada rilis yang diterbitkan.',
+    devBuildDownloadNote: 'Dikemas oleh proses CI terakhir dan ditandatangani untuk pengembangan.',
   },
   it: {
     qrTitle: 'Pagina iniziale dell’app [APP]',
@@ -281,6 +347,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Codice sorgente',
     releaseLink: 'Rilascio',
     builtWith: 'Creato con Day',
+    versionPickerLabel: 'Versione',
+    devBuildHeading: 'Build di sviluppo',
+    devBuildBody: 'Queste pagine descrivono la build più recente di [BRANCH]. Cambia a ogni commit e può essere instabile.',
+    devBuildReleaseLink: 'Scarica invece la versione [VERSION]',
+    devBuildNoRelease: 'Non è ancora stata pubblicata nessuna versione.',
+    devBuildDownloadNote: 'Pacchettizzato dall’ultima esecuzione CI e firmato per lo sviluppo.',
   },
   ja: {
     qrTitle: '[APP] アプリのランディングページ',
@@ -305,6 +377,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'ソースコード',
     releaseLink: 'リリース',
     builtWith: 'Day で作成',
+    versionPickerLabel: 'バージョン',
+    devBuildHeading: '開発ビルド',
+    devBuildBody: 'このページは [BRANCH] の最新ビルドを説明しています。コミットごとに変わり、動作が不安定な場合があります。',
+    devBuildReleaseLink: '代わりに [VERSION] リリースを入手',
+    devBuildNoRelease: 'まだリリースは公開されていません。',
+    devBuildDownloadNote: '直近の CI 実行でパッケージ化され、開発用に署名されています。',
+    commitLabel: 'コミット',
   },
   ko: {
     qrTitle: '[APP] 앱 랜딩 페이지',
@@ -329,6 +408,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: '소스 코드',
     releaseLink: '릴리스',
     builtWith: 'Day로 제작',
+    versionPickerLabel: '버전',
+    devBuildHeading: '개발 빌드',
+    devBuildBody: '이 페이지는 [BRANCH]의 최신 빌드를 설명합니다. 커밋마다 바뀌며 불안정할 수 있습니다.',
+    devBuildReleaseLink: '대신 [VERSION] 릴리스 받기',
+    devBuildNoRelease: '아직 공개된 릴리스가 없습니다.',
+    devBuildDownloadNote: '최근 CI 실행에서 패키징되었으며 개발용으로 서명되었습니다.',
+    commitLabel: '커밋',
   },
   ms: {
     about: 'Tentang aplikasi',
@@ -351,6 +437,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Kod sumber',
     releaseLink: 'Keluaran',
     builtWith: 'Dibina dengan Day',
+    versionPickerLabel: 'Versi',
+    devBuildHeading: 'Binaan pembangunan',
+    devBuildBody: 'Halaman ini menerangkan binaan terkini [BRANCH]. Ia berubah pada setiap commit dan boleh menjadi tidak stabil.',
+    devBuildReleaseLink: 'Dapatkan keluaran [VERSION] sebaliknya',
+    devBuildNoRelease: 'Belum ada keluaran diterbitkan.',
+    devBuildDownloadNote: 'Dibungkus oleh larian CI terakhir dan ditandatangani untuk pembangunan.',
   },
   nl: {
     about: 'Over de app',
@@ -373,6 +465,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Broncode',
     releaseLink: 'Release',
     builtWith: 'Gemaakt met Day',
+    versionPickerLabel: 'Versie',
+    devBuildHeading: 'Ontwikkelbuild',
+    devBuildBody: 'Deze pagina’s beschrijven de nieuwste build van [BRANCH]. Die verandert bij elke commit en kan instabiel zijn.',
+    devBuildReleaseLink: 'Download in plaats daarvan release [VERSION]',
+    devBuildNoRelease: 'Er is nog geen release gepubliceerd.',
+    devBuildDownloadNote: 'Verpakt door de laatste CI-run en ondertekend voor ontwikkeling.',
   },
   pl: {
     about: 'O aplikacji',
@@ -395,6 +493,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Kod źródłowy',
     releaseLink: 'Wydanie',
     builtWith: 'Utworzono za pomocą Day',
+    versionPickerLabel: 'Wersja',
+    devBuildHeading: 'Kompilacja rozwojowa',
+    devBuildBody: 'Te strony opisują najnowszą kompilację gałęzi [BRANCH]. Zmienia się z każdym commitem i może być niestabilna.',
+    devBuildReleaseLink: 'Pobierz zamiast tego wydanie [VERSION]',
+    devBuildNoRelease: 'Nie opublikowano jeszcze żadnego wydania.',
+    devBuildDownloadNote: 'Spakowane w ostatnim przebiegu CI i podpisane na potrzeby rozwoju.',
   },
   pt: {
     about: 'Sobre',
@@ -417,6 +521,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Código-fonte',
     releaseLink: 'Lançamento',
     builtWith: 'Criado com Day',
+    versionPickerLabel: 'Versão',
+    devBuildHeading: 'Compilação de desenvolvimento',
+    devBuildBody: 'Estas páginas descrevem a compilação mais recente de [BRANCH]. Ela muda a cada commit e pode ser instável.',
+    devBuildReleaseLink: 'Baixe a versão [VERSION] em vez disso',
+    devBuildNoRelease: 'Nenhuma versão foi publicada ainda.',
+    devBuildDownloadNote: 'Empacotado pela última execução de CI e assinado para desenvolvimento.',
   },
   ru: {
     about: 'О приложении',
@@ -439,6 +549,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Исходный код',
     releaseLink: 'Выпуск',
     builtWith: 'Создано с помощью Day',
+    versionPickerLabel: 'Версия',
+    devBuildHeading: 'Сборка для разработки',
+    devBuildBody: 'Эти страницы описывают последнюю сборку ветки [BRANCH]. Она меняется с каждым коммитом и может быть нестабильной.',
+    devBuildReleaseLink: 'Скачать вместо неё выпуск [VERSION]',
+    devBuildNoRelease: 'Ни один выпуск ещё не опубликован.',
+    devBuildDownloadNote: 'Собрано последним запуском CI и подписано для разработки.',
+    commitLabel: 'Коммит',
   },
   th: {
     about: 'เกี่ยวกับแอป',
@@ -461,6 +578,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'ซอร์สโค้ด',
     releaseLink: 'รุ่น',
     builtWith: 'สร้างด้วย Day',
+    versionPickerLabel: 'เวอร์ชัน',
+    devBuildHeading: 'บิลด์สำหรับนักพัฒนา',
+    devBuildBody: 'หน้านี้อธิบายบิลด์ล่าสุดของ [BRANCH] ซึ่งเปลี่ยนทุกครั้งที่มีคอมมิตและอาจไม่เสถียร',
+    devBuildReleaseLink: 'ดาวน์โหลดรุ่น [VERSION] แทน',
+    devBuildNoRelease: 'ยังไม่มีการเผยแพร่รุ่นใด',
+    devBuildDownloadNote: 'แพ็กโดยการรัน CI ล่าสุดและเซ็นสำหรับการพัฒนา',
+    commitLabel: 'คอมมิต',
   },
   tr: {
     about: 'Uygulama hakkında',
@@ -483,6 +607,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Kaynak kodu',
     releaseLink: 'Yayın',
     builtWith: 'Day ile oluşturuldu',
+    versionPickerLabel: 'Sürüm',
+    devBuildHeading: 'Geliştirme derlemesi',
+    devBuildBody: 'Bu sayfalar [BRANCH] dalının en yeni derlemesini anlatır. Her commit ile değişir ve kararsız olabilir.',
+    devBuildReleaseLink: 'Bunun yerine [VERSION] sürümünü indirin',
+    devBuildNoRelease: 'Henüz bir sürüm yayımlanmadı.',
+    devBuildDownloadNote: 'Son CI çalıştırmasında paketlendi ve geliştirme için imzalandı.',
   },
   uk: {
     about: 'Про застосунок',
@@ -505,6 +635,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Вихідний код',
     releaseLink: 'Випуск',
     builtWith: 'Створено за допомогою Day',
+    versionPickerLabel: 'Версія',
+    devBuildHeading: 'Збірка для розробки',
+    devBuildBody: 'Ці сторінки описують найновішу збірку гілки [BRANCH]. Вона змінюється з кожним комітом і може бути нестабільною.',
+    devBuildReleaseLink: 'Завантажте натомість випуск [VERSION]',
+    devBuildNoRelease: 'Жодного випуску ще не опубліковано.',
+    devBuildDownloadNote: 'Спаковано останнім запуском CI та підписано для розробки.',
+    commitLabel: 'Коміт',
   },
   vi: {
     about: 'Giới thiệu về ứng dụng',
@@ -527,6 +664,12 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: 'Mã nguồn',
     releaseLink: 'Bản phát hành',
     builtWith: 'Được tạo bằng Day',
+    versionPickerLabel: 'Phiên bản',
+    devBuildHeading: 'Bản dựng phát triển',
+    devBuildBody: 'Các trang này mô tả bản dựng mới nhất của [BRANCH]. Nó thay đổi theo từng commit và có thể không ổn định.',
+    devBuildReleaseLink: 'Tải bản phát hành [VERSION] thay thế',
+    devBuildNoRelease: 'Chưa có bản phát hành nào được công bố.',
+    devBuildDownloadNote: 'Được đóng gói bởi lần chạy CI gần nhất và ký cho mục đích phát triển.',
   },
   zh: {
     qrTitle: '[APP] 应用的主页',
@@ -554,6 +697,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     galleryLink: '图库',
     galleryHeading: '截图',
     galleryBlurb: '这些截图由持续集成的 [DAYSCRIPT] 演练针对每个工具包自动截取。',
+    versionPickerLabel: '版本',
+    devBuildHeading: '开发版构建',
+    devBuildBody: '本页描述 [BRANCH] 的最新构建。它随每次提交而变化，可能不稳定。',
+    devBuildReleaseLink: '改为获取 [VERSION] 发行版',
+    devBuildNoRelease: '尚未发布任何版本。',
+    devBuildDownloadNote: '由最近一次 CI 运行打包，并以开发身份签名。',
+    commitLabel: '提交',
   },
   'zh-Hant': {
     about: '關於',
@@ -576,6 +726,13 @@ const TABLES: Record<string, Partial<UIStrings>> = {
     sourceLink: '原始碼',
     releaseLink: '發行版',
     builtWith: '使用 Day 建置',
+    versionPickerLabel: '版本',
+    devBuildHeading: '開發版組建',
+    devBuildBody: '本頁描述 [BRANCH] 的最新組建。它隨每次提交而變動，可能不穩定。',
+    devBuildReleaseLink: '改為取得 [VERSION] 發行版',
+    devBuildNoRelease: '尚未發布任何版本。',
+    devBuildDownloadNote: '由最近一次 CI 執行打包，並以開發身分簽署。',
+    commitLabel: '提交',
   },
 };
 

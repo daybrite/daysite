@@ -1,0 +1,72 @@
+---
+// The build-channel picker: which version of the app everything below describes — the newest
+// release (`0.4.1`) or the newest build of the default branch (`main`). It sits directly above
+// the platform picker, because the pair reads as one question: which build, on which platform.
+//
+// Unlike the platform picker these are LINKS, not tabs. A channel is a separate set of pages
+// with its own screenshots, downloads, and hosted web build (lib/channels.ts), so switching is a
+// navigation, and each channel's URL can be shared. A site with one channel draws nothing.
+//
+// `data-channel-link` is how PlatformPicker finds these: once a visitor picks a platform, it
+// appends that platform's fragment to each href, so switching version keeps the platform.
+import type { ChannelView } from '../lib/channels.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+
+interface Props {
+  channels: ChannelView[];
+  locale: string;
+  /** This page's href for a given channel — the landing page's or the gallery's. */
+  hrefFor: (channel: ChannelView) => string;
+}
+
+const { channels, locale, hrefFor } = Astro.props;
+const ui = uiStrings(locale);
+---
+
+{channels.length > 1 && (
+  <div
+    class="ch-picker inline-flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium shadow-sm"
+    aria-label={ui.versionPickerLabel}
+    data-pagefind-ignore
+  >
+    {channels.map((c) => (
+      <a
+        href={hrefFor(c)}
+        data-channel-link
+        aria-current={c.current ? 'page' : undefined}
+        title={c.development ? (c.commit ? `${c.ref ?? c.label} · ${c.commit}` : c.label) : c.tag}
+        class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[color:var(--color-text-soft)] no-underline transition ring-1 ring-inset ring-transparent hover:text-[color:var(--color-text)] hover:ring-[color:var(--color-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] aria-[current=page]:bg-[color:var(--color-accent)] aria-[current=page]:text-[color:var(--color-accent-fg)] aria-[current=page]:shadow aria-[current=page]:ring-transparent"
+      >
+        {c.development ? (
+          /* A branch: the build follows a moving ref. */
+          <svg viewBox="0 0 24 24" class="size-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="6" cy="5" r="2.2" />
+            <circle cx="6" cy="19" r="2.2" />
+            <circle cx="18" cy="8" r="2.2" />
+            <path d="M6 7.2v9.6" />
+            <path d="M18 10.2c0 4-4.6 3.6-7 5.4" />
+          </svg>
+        ) : (
+          /* A tag: the build is pinned to a published version. */
+          <svg viewBox="0 0 24 24" class="size-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 11.3V4.5a1 1 0 0 1 1-1h6.8a1 1 0 0 1 .7.3l8.2 8.2a1 1 0 0 1 0 1.4l-6.8 6.8a1 1 0 0 1-1.4 0L3.8 12a1 1 0 0 1-.3-.7z" />
+            <circle cx="7.8" cy="7.8" r="1.15" />
+          </svg>
+        )}
+        {c.label}
+      </a>
+    ))}
+  </div>
+)}
+
+<style>
+  /* Scrolls rather than wraps, like the platform picker below it: a segmented control that
+     wraps inside a rounded-full border stops reading as one control. */
+  .ch-picker {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .ch-picker::-webkit-scrollbar {
+    display: none;
+  }
+</style>

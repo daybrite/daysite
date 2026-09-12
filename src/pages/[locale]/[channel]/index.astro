@@ -1,0 +1,90 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Layout from '../../../layouts/Layout.astro';
+import LandingPage from '../../../components/LandingPage.astro';
+import { loadSite, siteChannels } from '../../../lib/data.ts';
+import { pickText } from '../../../lib/i18n.ts';
+import { localeIndexHref, localeLinksFor } from '../../../lib/routes.ts';
+
+/**
+ * /{locale}/{channel}/ — the landing page of a build channel that does not own the locale root
+ * (lib/channels.ts). With a release published, that is `/en/main/`: the same pages, screenshots,
+ * and downloads as `/en/`, built from the last CI run instead of the release.
+ *
+ * The default channel's own segment resolves here too, as a redirect: `/en/main/` keeps working
+ * on a repository with no release, where main IS `/en/`, so a link to it survives the first
+ * release rather than starting to 404 in reverse.
+ *
+ * A site with one channel and no alias generates nothing here, which is every site built before
+ * channels existed.
+ */
+interface Props {
+  /** Which channel this page renders (lib/channels.ts). */
+  id: string;
+  /** True for the stub that forwards the default channel's own segment to the locale root. */
+  redirect: boolean;
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const { channels } = await siteChannels();
+  const data = await loadSite();
+  const out: { params: { locale: string; channel: string }; props: { id: string; redirect: boolean } }[] = [];
+  for (const c of channels) {
+    if (c.path) out.push({ params: { locale: '', channel: c.path }, props: { id: c.id, redirect: false } });
+    if (c.alias) out.push({ params: { locale: '', channel: c.alias }, props: { id: c.id, redirect: true } });
+  }
+  return data.locales.flatMap((l) =>
+    out.map((o) => ({ params: { locale: l.code, channel: o.params.channel }, props: o.props })),
+  );
+};
+
+const { locale: localeParam } = Astro.params;
+const { id, redirect } = Astro.props as Props;
+const data = await loadSite(id);
+const locale = data.locales.find((l) => l.code === localeParam)!;
+const target = localeIndexHref(locale.code, data.channel.path);
+
+const appView = data.apps[0]!;
+const hero = appView.hero(locale.code);
+const localizedSiteTitle = pickText(data.site.title, locale.code).value ?? '';
+const pageTitle = hero.subtitle ? `${hero.title} – ${hero.subtitle}` : hero.title;
+const pageDescription = hero.subtitle || (hero.description.split('\n')[0] ?? localizedSiteTitle);
+const pagePath = localeIndexHref(locale.code, data.channel.path || undefined);
+---
+
+{redirect ? (
+  <html lang={locale.code}>
+    <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="refresh" content={`0; url=${target}`} />
+      <meta name="robots" content="noindex" />
+      <link rel="canonical" href={target} />
+      <title>{pageTitle}</title>
+    </head>
+    <body><a href={target}>{pageTitle}</a></body>
+  </html>
+) : (
+  <Layout
+    site={data.site}
+    localeLinks={localeLinksFor(data.locales, (c) => localeIndexHref(c, data.channel.path))}
+    current={locale}
+    pagePath={pagePath}
+    pageTitle={pageTitle}
+    pageDescription={pageDescription}
+    socialImage={appView.socialImage ?? data.socialImage}
+    favicons={data.favicons}
+    vectorIcon={data.vectorIcon}
+    sourceURL={appView.sourceURL}
+    releaseURL={appView.releaseURL}
+    channel={data.channel}
+  >
+    <LandingPage
+      site={data.site}
+      appView={appView}
+      locale={locale}
+      hasGallery={!!data.gallery}
+      channel={data.channel}
+      channels={data.channels}
+    />
+  </Layout>
+)}

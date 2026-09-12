@@ -47,6 +47,22 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
     }
   }
 }
+
+/**
+ * The URL fragment each platform answers to, so a choice is bookmarkable: `/en/#macos-appkit`.
+ *
+ * The slug is the DAY TARGET id rather than the appindex key — `macos-appkit`, not `macos` — so
+ * the address bar speaks the same vocabulary as `day build -p`, the gallery's columns, and the
+ * capture trees. The client also accepts the short key, so a hand-typed `#macos` still resolves.
+ *
+ * A fragment rather than a path or a query: the page already contains every platform's content
+ * (the picker only hides sections), so per-platform URLs would split one indexable page into
+ * eight near-duplicates without revealing anything new, and a query parameter would do the same
+ * with a uglier URL. Nothing carries `id="<slug>"`, so the browser scrolls nowhere on load and
+ * the script owns the fragment outright.
+ */
+const slugs: Record<string, string> = {};
+for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
 ---
 
 {platforms.length > 1 && (
@@ -57,6 +73,7 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
     data-platform-picker
     data-initial={initial}
     data-ua-map={JSON.stringify(uaMap)}
+    data-slugs={JSON.stringify(slugs)}
     data-pagefind-ignore
   >
     {platforms.map((p) => (
@@ -125,6 +142,26 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
   }
 
   /**
+   * Record the choice in the address bar, so the page can be bookmarked and shared on one
+   * platform. `replaceState`, not `pushState`: clicking through eight platforms would otherwise
+   * leave eight history entries between the visitor and the page they arrived from.
+   *
+   * Only ever called for an EXPLICIT choice. A visitor who lands on `/en/` and is auto-selected
+   * by their own OS keeps the clean URL, which is the one worth sharing.
+   */
+  function setHash(slug: string) {
+    try {
+      history.replaceState(null, '', `${location.pathname}${location.search}#${slug}`);
+    } catch {}
+    // The version picker's links carry the platform across, so switching 0.4.1 ↔ main lands on
+    // the platform being read about. The href itself is rewritten rather than the click
+    // intercepted, so a copied link and a cmd-click carry it too.
+    for (const a of document.querySelectorAll<HTMLAnchorElement>('a[data-channel-link]')) {
+      a.hash = `#${slug}`;
+    }
+  }
+
+  /**
    * The visitor's OS, as one of the keys the server put in `data-ua-map`, or '' when the user
    * agent does not say. Order matters twice over: HarmonyOS and Android both claim "Android",
    * and every Android UA also contains "Linux".
@@ -160,13 +197,46 @@ for (const [os, keys] of Object.entries(OS_PLATFORMS)) {
       const saved = localStorage.getItem(KEY);
       if (has(saved || '')) initial = saved!;
     } catch {}
+
+    // And the fragment outranks everything: it is this visit's explicit request, whether it came
+    // from a bookmark, a shared link, or the Back button. Either spelling resolves — the Day
+    // target id the server writes (`macos-appkit`) or the shorter appindex key (`macos`).
+    let slugs: Record<string, string> = {};
+    try {
+      slugs = JSON.parse(picker.dataset.slugs || '{}');
+    } catch {}
+    const fromHash = () => {
+      const want = decodeURIComponent(location.hash.slice(1)).toLowerCase();
+      if (!want) return '';
+      for (const [p, slug] of Object.entries(slugs)) {
+        if (slug === want || p === want) return p;
+      }
+      return '';
+    };
+    const asked = fromHash();
+    if (has(asked)) initial = asked;
     if (initial) applyPlatform(picker, initial);
+    // Carry an arriving fragment onto the version picker's links without rewriting the URL the
+    // visitor already has.
+    if (has(asked)) setHash(slugs[asked] || asked);
 
     picker.addEventListener('click', (e) => {
       const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-platform-tab]');
       if (!tab) return;
       const p = tab.dataset.platformTab!;
       applyPlatform(picker, p, true);
+      setHash(slugs[p] || p);
+    });
+
+    // An edited address, a link into the page, or a fragment-only navigation — which is what a
+    // browser does when the target differs from the current page by its fragment alone, without
+    // re-running any of this. `setHash` again so the version links follow, and so a hand-typed
+    // short key (`#macos`) settles on the canonical spelling.
+    window.addEventListener('hashchange', () => {
+      const p = fromHash();
+      if (!has(p)) return;
+      applyPlatform(picker, p);
+      setHash(slugs[p] || p);
     });
   }
 

@@ -1,11 +1,14 @@
 ---
 import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
 import AppActions from './AppActions.astro';
 
 interface Props {
   view: PlatformView;
   site: SiteInfo;
   locale: LocaleInfo;
+  /** Passed to AppActions so "Open the web app" stays inside this build channel. */
+  channel?: ChannelView;
   i18n: {
     aboutHeading: string;
     versionLabel: string;
@@ -15,10 +18,11 @@ interface Props {
     privacyLink: string;
     supportLink: string;
     dependenciesLabel: string;
+    commitLabel: string;
   };
 }
 
-const { view, site, locale, i18n } = Astro.props;
+const { view, site, locale, channel, i18n } = Astro.props;
 ---
 
 <aside class="rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5 sm:p-6 space-y-4 shadow-lg shadow-black/5">
@@ -35,6 +39,21 @@ const { view, site, locale, i18n } = Astro.props;
       <div class="flex justify-between gap-3">
         <dt class="text-[color:var(--color-text-muted)]">{i18n.buildLabel}</dt>
         <dd class="font-mono">{view.buildNumber}</dd>
+      </div>
+    )}
+    {/* On a development channel the version above is the source tree's, which still reads as
+        the last release until someone bumps it — the commit is what tells two branch builds
+        apart, so it sits beside it rather than only in the notice at the top of the page. */}
+    {channel?.development && channel.commit && (
+      <div class="flex justify-between gap-3">
+        <dt class="text-[color:var(--color-text-muted)]">{i18n.commitLabel}</dt>
+        <dd class="font-mono">
+          {channel.commitURL ? (
+            <a href={channel.commitURL} target="_blank" rel="noopener" class="text-[color:var(--color-accent)] hover:underline">{channel.commit}</a>
+          ) : (
+            channel.commit
+          )}
+        </dd>
       </div>
     )}
     {view.id === 'ios' && view.permissions.length > 0 && (
@@ -57,7 +76,7 @@ const { view, site, locale, i18n } = Astro.props;
     )}
   </dl>
 
-  <AppActions view={view} site={site} locale={locale} />
+  <AppActions view={view} site={site} locale={locale} channel={channel} />
 
   {(view.privacyURL || view.supportURL) && (
     <div class="flex flex-wrap gap-2 pt-2 border-t border-[color:var(--color-border-soft)]" data-pagefind-ignore>

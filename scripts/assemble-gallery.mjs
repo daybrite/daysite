@@ -21,6 +21,12 @@
 //         appindex: generated data beside the config, generated assets where they serve
 //         from.
 //
+//         A site that publishes more than one build channel (src/lib/channels.ts) runs this
+//         once per channel, with `prefix` moving both the served images and the published
+//         index under that channel's segment: the release channel keeps `gallery/`, the
+//         development channel gets `main/gallery/`, and each channel's manifest names its
+//         own copies.
+//
 // Usage : node scripts/assemble-gallery.mjs <screenshots-dir> [site-toml-dir]
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
@@ -90,7 +96,7 @@ function republish(index, published) {
  *  untitled shot) 404'd on the sites that resolved them. Hence also the third rule below: the
  *  republished index is REBUILT from the copy loop's own record rather than passed through, so it
  *  cannot describe a file this run did not write — whatever the reason it went missing. */
-function fromIndex(index, shotsDir, outImages, log) {
+function fromIndex(index, shotsDir, outImages, prefix, log) {
   const curated = index.shots.some((s) => s.title);
   const shown = index.shots.filter((s) => !curated || s.title);
   const shownIds = new Set(shown.map((s) => s.id));
@@ -118,7 +124,7 @@ function fromIndex(index, shotsDir, outImages, log) {
     if (!columns.includes(rel)) columns.push(rel);
     const plat = (byShot.get(e.shot)[rel] ??= {});
     plat[e.variant] = {
-      src: `gallery/${rel}/${e.variant}/${e.file}`,
+      src: `${prefix}${rel}/${e.variant}/${e.file}`,
       width: e.width ?? undefined,
       height: e.height ?? undefined,
     };
@@ -200,7 +206,7 @@ function variantDirs(tDir, target) {
 }
 
 /** The no-index fallback (a local preview without the day CLI): scan the trees directly. */
-function fromScan(shotsDir, outImages) {
+function fromScan(shotsDir, outImages, prefix) {
   const targets = existsSync(shotsDir)
     ? readdirSync(shotsDir).filter((t) => {
         if (SKIP_DIRS.has(t)) return false;
@@ -221,7 +227,7 @@ function fromScan(shotsDir, outImages) {
       for (const file of readdirSync(vDir).sort()) {
         if (!file.toLowerCase().endsWith('.png')) continue;
         const id = file.slice(0, -4);
-        const src = `gallery/${column}/${variant}/${file}`;
+        const src = `${prefix}${column}/${variant}/${file}`;
         mkdirSync(join(outImages, ...column.split('/'), variant), { recursive: true });
         copyFileSync(join(vDir, file), join(outImages, ...column.split('/'), variant, file));
         copied += 1;
@@ -248,14 +254,22 @@ function fromScan(shotsDir, outImages) {
 
 /**
  * @param {string} shotsDir  the capture tree (or the CI artifacts directory)
- * @param {string} siteDir   where `gallery-manifest.json` is written, beside site.toml
- * @param {{ quiet?: boolean, outImages?: string }} [opts]  `outImages` overrides the published
- *        image directory; the test suite points it at a temp dir so it does not clobber a
- *        working preview.
+ * @param {string} siteDir   where the manifest is written, beside site.toml
+ * @param {{ quiet?: boolean, outImages?: string, publicDir?: string, prefix?: string,
+ *           manifest?: string }} [opts]
+ *        `prefix` is the served path every image URL starts with, `gallery/` by default and
+ *        `<channel>/gallery/` for a second build channel; `manifest` names the manifest file
+ *        relative to `siteDir`. `publicDir` is the served root (the template's `public/`), and
+ *        `outImages` overrides the image directory outright; the test suite points either at a
+ *        temp dir so it does not clobber a working preview.
  */
 export function assembleGallery(shotsDir, siteDir, opts = {}) {
   const log = (m) => opts.quiet || console.log(`[gallery] ${m}`);
-  const outImages = opts.outImages ?? join(TEMPLATE_ROOT, 'public', 'gallery');
+  // Always a single trailing slash and no leading one: it is spliced straight into every `src`.
+  const prefix = `${(opts.prefix ?? 'gallery').replace(/^\/+|\/+$/g, '')}/`;
+  const outImages =
+    opts.outImages ??
+    join(opts.publicDir ?? join(TEMPLATE_ROOT, 'public'), ...prefix.split('/').filter(Boolean));
   rmSync(outImages, { recursive: true, force: true });
 
   const indexPath = join(shotsDir, 'gallery.json');
@@ -270,8 +284,8 @@ export function assembleGallery(shotsDir, siteDir, opts = {}) {
   }
 
   const { copied, manifest, index: republished } = index
-    ? fromIndex(index, shotsDir, outImages, log)
-    : fromScan(shotsDir, outImages);
+    ? fromIndex(index, shotsDir, outImages, prefix, log)
+    : fromScan(shotsDir, outImages, prefix);
 
   // Publish the machine-readable index beside the images it describes — REBUILT from the copy
   // loop (see `republish`), never copied through, so every URL it carries has bytes behind it.
@@ -287,7 +301,8 @@ export function assembleGallery(shotsDir, siteDir, opts = {}) {
     log('no gallery.json in the capture tree — run `day screenshot index` to publish the machine-readable index');
   }
 
-  const manifestPath = join(siteDir, 'gallery-manifest.json');
+  const manifestPath = join(siteDir, opts.manifest ?? 'gallery-manifest.json');
+  mkdirSync(dirname(manifestPath), { recursive: true });
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
   log(
     manifest.shots.length > 0

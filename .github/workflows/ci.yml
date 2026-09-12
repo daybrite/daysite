@@ -120,16 +120,47 @@ jobs:
           set -euo pipefail
           npm ci --no-audit --no-fund
           SITE_DIR="$RUNNER_TEMP/day-sample/website"
-          node scripts/generate-appindex.mjs "$RUNNER_TEMP/day-sample" "$SITE_DIR"
-          # A fresh scaffold has no dayscript captures on this runner; the gallery page is
-          # simply absent, which is itself part of what this exercises.
-          node scripts/assemble-gallery.mjs "$RUNNER_TEMP/day-sample/build/day/screenshots" "$SITE_DIR"
-          mkdir -p public/webapp
-          cp -R "$RUNNER_TEMP/day-sample/$WEB_DIST/." public/webapp/
-          test -f public/webapp/index.html
+          # TWO build channels, so the deployed demo is shaped like an app's own site: a version
+          # picker, a development-build notice, and a second copy of every page under /main/.
+          # A fresh scaffold has published no release and captured no screenshots on this
+          # runner, so both channels read the same data — what this exercises is the routing
+          # and the per-channel prefixes, which an app repo cannot check before its first
+          # release. The absent gallery is part of it too: neither channel gets that page.
+          echo '[{"id":"release","label":"1.0.0","tag":"v1.0.0"},{"id":"main","label":"main","ref":"main","development":true}]' \
+            > "$RUNNER_TEMP/channels.json"
+          node scripts/generate-site.mjs "$RUNNER_TEMP/day-sample" "$SITE_DIR" \
+            --channels "$RUNNER_TEMP/channels.json" --repo daybrite/daysite
+          for d in webapp main/webapp; do
+            mkdir -p "public/$d"
+            cp -R "$RUNNER_TEMP/day-sample/$WEB_DIST/." "public/$d/"
+            test -f "public/$d/index.html"
+          done
           DAYSITE_CONFIG="$SITE_DIR/site.toml" npx astro build
           test -f dist/index.html
           test -f dist/webapp/index.html
+      - name: Both build channels render, each with its own pages
+        run: |
+          set -euo pipefail
+          # The development channel is a full second site, not a link: its own landing page, its
+          # own hosted web build, and a notice saying which build it describes.
+          test -f dist/en/main/index.html
+          test -f dist/main/webapp/index.html
+          grep -q 'Development build' dist/en/main/index.html
+          grep -q 'noindex' dist/en/main/index.html
+          # The release channel owns the locale root and is the one search engines see. Both
+          # checks are `if grep`, not `grep && exit`: an AND-list ending in a failed grep is
+          # itself a failed command, and `set -e` would end the step on the passing case.
+          if grep -q 'Development build' dist/en/index.html; then
+            echo 'the release pages must not carry the development notice' >&2; exit 1
+          fi
+          if grep -q 'noindex' dist/en/index.html; then
+            echo 'the release pages must be indexable' >&2; exit 1
+          fi
+          # The picker offers both, and each channel's web-app button opens its own build.
+          grep -qF 'href="/daysite/en/main/"' dist/en/index.html
+          grep -qF 'href="/daysite/en/"' dist/en/main/index.html
+          grep -qF 'href="/daysite/main/webapp/"' dist/en/main/index.html
+          grep -qF 'href="/daysite/webapp/"' dist/en/index.html
       - name: The site renders every scaffolded platform
         run: |
           set -euo pipefail
@@ -147,6 +178,15 @@ jobs:
           for name in macOS iOS Android HarmonyOS GNOME KDE Windows Web; do
             grep -qF ">$name<" dist/index.html || {
               echo "platform picker is missing $name" >&2
+              exit 1
+            }
+          done
+          # Each platform is bookmarkable as `#<target>`, which the picker resolves from the map
+          # the server writes. The map is the whole contract between the URL and the selection,
+          # so a target missing from it is a fragment that silently does nothing.
+          for target in ios-uikit android-mdc harmony-arkui macos-appkit linux-gtk linux-qt windows-xaml web-dom; do
+            grep -o 'data-slugs="[^"]*"' dist/en/index.html | grep -qF "$target" || {
+              echo "no #$target fragment: the picker's slug map is missing it" >&2
               exit 1
             }
           done

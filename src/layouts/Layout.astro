@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import type { FaviconPaths, LocaleInfo, LocaleLink, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
 import { pickText } from '../lib/i18n.ts';
 import { localeIndexHref } from '../lib/routes.ts';
 import { uiStrings } from '../lib/uistrings.ts';
@@ -42,6 +43,12 @@ interface Props {
    * auto-detection by navigating to /<their-locale>/ explicitly.
    */
   autoRedirect?: boolean;
+  /**
+   * The build channel this page belongs to (lib/channels.ts). It decides which staged web build
+   * the page knows about and keeps the header's home link inside the channel, so a visitor on
+   * `/en/main/gallery/` who clicks the title lands on `/en/main/`, not on the release.
+   */
+  channel?: ChannelView;
 }
 
 const {
@@ -57,18 +64,24 @@ const {
   sourceURL,
   releaseURL,
   autoRedirect = false,
+  channel,
 } = Astro.props;
 
 // LocaleInfo.href is built without the deployed base prefix (i18n.ts can't
 // safely read `import.meta.env.BASE_URL` because it's also imported from
 // the Node-side astro.config.mjs). Use the base-aware route helper here.
-const localeHomeHref = localeIndexHref(current.code);
+const localeHomeHref = localeIndexHref(current.code, channel?.path);
 const path = pagePath ?? localeHomeHref;
 const canonical = new URL(path, site.host).toString();
 const accent = site.accentColor ?? '#3B82F6';
 // The app's own overrides (website/theme.css), inlined last so they win over the template —
-// and whether a web build is hosted, which decides if the page carries the site manifest.
-const { themeCss, hasWebApp } = await loadSite();
+// and whether this channel has a web build hosted, which decides if the page carries the site
+// manifest.
+const { themeCss, hasWebApp, channels } = await loadSite(channel?.id);
+// Keep a development channel out of search results ONLY when a release channel is there to be
+// found instead. A project before its first release publishes the branch build at the locale
+// root, and noindexing that would hide the whole site.
+const noindex = !!channel?.development && channels.some((c) => !c.development);
 
 // Site title appears in the sticky top-bar and as a hreflang anchor; it's
 // localized via pickText so siteinfo.yaml can carry either a plain string
@@ -129,6 +142,12 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     <meta name="description" content={pageDescription} />
     <link rel="canonical" href={canonical} />
 
+    {/* A development channel's pages describe a build that changes with every commit, and the
+        release pages describe the same app. Letting both into an index would put "development
+        build" results in front of people looking for the app, so only the release pages are
+        indexed — they stay reachable through the version picker either way. */}
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
     {/* The SVG master first: browsers pick the sharpest declared icon, and a vector wins
         at every size. The PNG set remains for apple-touch / PWA slots and as the raster
         fallback — and the whole set for projects that ship no SVG master. */}
@@ -147,8 +166,10 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     {/* The site manifest (src/pages/site.webmanifest.ts): its start URL is the hosted web
         app, so adding THIS page to a home screen installs the app, icon and all. Only when a
         web build is staged — a manifest that starts nowhere would make the site itself the
-        app. */}
-    {hasWebApp && <link rel="manifest" href={`${baseURL}site.webmanifest`} />}
+        app — and only from the default channel, whose web build the manifest describes: a
+        development channel's pages would otherwise install the released app under the name of
+        the build they show. */}
+    {hasWebApp && !channel?.path && <link rel="manifest" href={`${baseURL}site.webmanifest`} />}
 
     {alternates.map((a) => (
       <link rel="alternate" hreflang={a.hrefLang} href={a.href} />

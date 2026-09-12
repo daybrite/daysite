@@ -5,9 +5,21 @@ import { relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import { loadSite } from './src/lib/data.ts';
+import { loadSite, siteChannels } from './src/lib/data.ts';
 
 const data = await loadSite();
+// Every channel stages its own web-dom build (`webapp/`, `main/webapp/`); all of them are the
+// app's own output rather than the template's, so none is walked by the self-contained check.
+const channels = (await siteChannels()).channels;
+const webappDirs = channels.map((c) => c.webapp);
+// Segments the sitemap leaves out: a development channel that is not the site's only one (its
+// pages carry `noindex` too — Layout.astro says why), and every alias, which is a redirect stub
+// rather than a page.
+const hasRelease = channels.some((c) => !c.development);
+const unlistedSegments = channels.flatMap((c) => [
+  ...(c.development && c.path && hasRelease ? [`/${c.path}/`] : []),
+  ...(c.alias ? [`/${c.alias}/`] : []),
+]);
 
 const localeCodes = data.locales.map((l) => l.code);
 
@@ -58,11 +70,12 @@ function pagefindIntegration(enabled) {
  * appindex-driven site may declare). Those origins are allowed, and named in the log so the
  * choice stays visible; a Day project's own site declares none.
  *
- * @param {string} webappDir
+ * @param {string[]} webappDirs one per build channel (site.toml `webapp`, under each channel's
+ *        own segment)
  * @param {string[]} assetOrigins origins the app index declares its assets on
  * @returns {import('astro').AstroIntegration}
  */
-function selfContainedIntegration(webappDir, assetOrigins) {
+function selfContainedIntegration(webappDirs, assetOrigins) {
   const LOADING_LINK_RELS = new Set([
     'stylesheet', 'preload', 'modulepreload', 'prefetch', 'icon', 'apple-touch-icon', 'manifest',
   ]);
@@ -102,13 +115,13 @@ function selfContainedIntegration(webappDir, assetOrigins) {
     hooks: {
       'astro:build:done': async ({ dir, logger }) => {
         const root = fileURLToPath(dir);
-        const skip = resolve(root, webappDir);
+        const skips = webappDirs.map((d) => resolve(root, d));
         const found = [];
         let files = 0;
         for (const entry of await readdir(root, { recursive: true, withFileTypes: true })) {
           if (!entry.isFile()) continue;
           const path = resolve(entry.parentPath, entry.name);
-          if (path === skip || path.startsWith(skip + sep)) continue;
+          if (skips.some((s) => path === s || path.startsWith(s + sep))) continue;
           const isHTML = path.endsWith('.html');
           if (!isHTML && !path.endsWith('.css')) continue;
           files++;
@@ -163,6 +176,7 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
+      filter: (page) => !unlistedSegments.some((s) => page.includes(s)),
       i18n: {
         defaultLocale: data.defaultLocale,
         locales: Object.fromEntries(
@@ -172,7 +186,7 @@ export default defineConfig({
     }),
     pagefindIntegration(data.site.pagefind === true),
     selfContainedIntegration(
-      data.site.webapp ?? 'webapp',
+      webappDirs,
       data.apps.flatMap((a) => {
         try {
           return a.app.source?.assets ? [new URL(a.app.source.assets).origin] : [];

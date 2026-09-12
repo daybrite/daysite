@@ -38,11 +38,35 @@ export interface GalleryManifest {
   shots: GalleryShot[];
 }
 
-export async function loadGallery(siteInfoFile: string): Promise<GalleryManifest | undefined> {
-  const path = join(dirname(siteInfoFile), 'gallery-manifest.json');
+/**
+ * @param siteInfoFile the app's site.toml
+ * @param manifest     path of the channel's manifest relative to it (lib/channels.ts); the
+ *                     default channel's is `gallery-manifest.json`, main's `main/…`
+ */
+export async function loadGallery(
+  siteInfoFile: string,
+  manifest = 'gallery-manifest.json',
+): Promise<GalleryManifest | undefined> {
+  const path = join(dirname(siteInfoFile), manifest);
   if (!existsSync(path)) return undefined;
   const parsed = JSON.parse(await readFile(path, 'utf8')) as GalleryManifest;
   return parsed.shots?.length ? parsed : undefined;
+}
+
+/**
+ * The gallery subtitle in two spellings: the visible one links dayscript's documentation, and
+ * the page description, a meta attribute, takes the bare word. Both routes that render the
+ * gallery build it the same way, so the two channels' pages describe themselves identically.
+ */
+export function galleryBlurb(template: string): { text: string; html: string } {
+  const DAYSCRIPT_DOCS = 'https://daybrite.dev/docs/dayscript/';
+  return {
+    text: template.replace('[DAYSCRIPT]', 'dayscript'),
+    html: template.replace(
+      '[DAYSCRIPT]',
+      `<a href="${DAYSCRIPT_DOCS}" target="_blank" rel="noopener" class="text-[color:var(--color-accent)] underline underline-offset-[3px]">dayscript</a>`,
+    ),
+  };
 }
 
 /** `san-francisco-fahrenheit` → `San Francisco Fahrenheit` — the shot's display label. */

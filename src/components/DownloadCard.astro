@@ -12,9 +12,12 @@ interface Props {
   view: PlatformView;
   site: SiteInfo;
   locale: LocaleInfo;
+  /** A line under the list saying where these packages came from — a development channel's
+   *  are staged on the site from its last CI run rather than downloaded from a release. */
+  note?: string;
 }
 
-const { view, locale } = Astro.props;
+const { view, locale, note } = Astro.props;
 const ui = uiStrings(locale.code);
 const day = dayTarget(view.id);
 
@@ -53,5 +56,10 @@ function human(size?: number): string | undefined {
         </li>
       ))}
     </ul>
+    {note && (
+      <p class="mt-4 border-t border-[color:var(--color-border-soft)] pt-3 text-xs text-[color:var(--color-text-muted)]">
+        {note}
+      </p>
+    )}
   </section>
 )}

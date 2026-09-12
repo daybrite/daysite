@@ -26,8 +26,15 @@
 // Day's additive keys (macos, windows, linux-gtk, linux-qt, harmony, web) for the rest — an
 // App Fair consumer reads the subset it understands, daysite reads all of it.
 //
+// A site with more than one build channel (src/lib/channels.ts) runs this once per channel:
+// `--out` names that channel's appindex, `--gallery` the manifest it reads its carousels from,
+// and `--downloads DIR` replaces the release lookup for a development channel — the packages
+// the CI run just built are copied under the site's own `--download-prefix` and linked from
+// there, because a branch build has no release to link.
+//
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
 //            [--repo owner/name] [--release-assets FILE] [--metadata FILE]
+//            [--out NAME] [--gallery NAME] [--downloads DIR] [--download-prefix PATH]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
 import { execFileSync } from 'node:child_process';
@@ -80,6 +87,34 @@ function assetTarget(name) {
   if (/-gtk-.*\.flatpak$/.test(name)) return 'linux-gtk';
   if (/-qt-.*\.flatpak$/.test(name)) return 'linux-qt';
   return undefined;
+}
+
+/**
+ * The name a packed file takes as a release asset, which is also the name a development
+ * channel's staged copy takes — the two channels then differ only in where the bytes are, not
+ * in what they are called. Mirrors the release job's two edits (daybrite/actions dayapp.yml):
+ * GitHub rewrites a space in an uploaded asset name to a dot, and pack's `-unsigned` .ipa
+ * marker is dropped so the iOS download keeps one name whether or not the run had signing
+ * secrets.
+ */
+export function releaseAssetName(name) {
+  return name.toLowerCase().replace(/[ ]/g, '-').replace('-unsigned.ipa', '.ipa');
+}
+
+/** Every file under `dir`, at any depth, as `{ name, path }`. The CI download lands one
+ *  directory per artifact (`dist-macos-appkit/…`), so a flat read would find nothing. */
+function* walkFiles(dir) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of entries) {
+    const path = join(dir, e.name);
+    if (e.isDirectory()) yield* walkFiles(path);
+    else yield { name: e.name, path };
+  }
 }
 
 // Where a Day project keeps its icons, best source first. `png/` is the platform-neutral set
@@ -303,6 +338,9 @@ export function storeListing(table) {
 
 export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   const log = (m) => opts.quiet || console.log(`[appindex] ${m}`);
+  // Where the site serves its own files from. The template's `public/` in every real run; the
+  // test suite points it at a temp directory so a run does not clobber a working preview.
+  const publicDir = opts.publicDir ?? join(TEMPLATE_ROOT, 'public');
 
   const dayToml = parseTOML(readFileSync(join(projectRoot, 'Day.toml'), 'utf8'));
   const app = dayToml.app ?? {};
@@ -357,7 +395,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   // available — and, when the size-exact family is there, the raster favicon set, copied as-is
   // (docs: "The app icon" in the README). The site build rasterizes nothing itself.
   let iconLocation;
-  const pub = join(TEMPLATE_ROOT, 'public', 'app');
+  const pub = join(publicDir, 'app');
   const family = findIconFamily(projectRoot);
   const icon = family?.largest ?? findAppIcon(projectRoot);
   if (icon) {
@@ -407,7 +445,6 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
         '$1 display="none"',
       );
     }
-    const pub = join(TEMPLATE_ROOT, 'public', 'app');
     mkdirSync(pub, { recursive: true });
     writeFileSync(join(pub, 'icon.svg'), svg);
     iconVectorLocation = 'app/icon.svg';
@@ -416,17 +453,50 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   }
 
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? repoFromGit(projectRoot, log);
-  const assets = readReleaseAssets(opts.releaseAssets ?? process.env.DAYSITE_RELEASE_ASSETS, log);
   const assetsByTarget = new Map();
-  for (const a of assets) {
-    const t = assetTarget(a.name);
-    if (!t) continue;
-    if (!assetsByTarget.has(t)) assetsByTarget.set(t, []);
-    assetsByTarget.get(t).push({
-      name: a.name,
-      url: `https://github.com/${repo}/releases/latest/download/${encodeURIComponent(a.name)}`,
-      size: a.size,
-    });
+  const addArtifact = (target, entry) => {
+    if (!assetsByTarget.has(target)) assetsByTarget.set(target, []);
+    assetsByTarget.get(target).push(entry);
+  };
+  let assetCount = 0;
+  if (opts.downloads) {
+    // A DEVELOPMENT channel: the packages this CI run built, staged on the site itself. There
+    // is no release behind a branch build, so the site serves the bytes and the card links a
+    // path under `--download-prefix` rather than a releases/latest URL. Only real packages are
+    // copied — the provenance sidecars beside them describe a download, they are not one — so
+    // the site carries what a visitor can install and nothing else.
+    const prefix = `${(opts.downloadPrefix ?? 'downloads').replace(/^\/+|\/+$/g, '')}/`;
+    const outDown = join(publicDir, ...prefix.split('/').filter(Boolean));
+    rmSync(outDown, { recursive: true, force: true });
+    let bytes = 0;
+    const staged = new Set();
+    for (const found of walkFiles(opts.downloads)) {
+      const name = releaseAssetName(found.name);
+      const target = assetTarget(name);
+      // Two artifacts can normalize to one name — a signed and an unsigned .ipa both become
+      // `<stem>-ios-uikit.ipa` — and the card would then offer the same file twice.
+      if (!target || staged.has(name)) continue;
+      staged.add(name);
+      mkdirSync(outDown, { recursive: true });
+      copyFileSync(found.path, join(outDown, name));
+      const size = statSync(found.path).size;
+      bytes += size;
+      addArtifact(target, { name, url: `${prefix}${name}`, size });
+      assetCount++;
+    }
+    log(`${assetCount} package(s), ${(bytes / 1e6).toFixed(1)} MB → public/${prefix}`);
+  } else {
+    const assets = readReleaseAssets(opts.releaseAssets ?? process.env.DAYSITE_RELEASE_ASSETS, log);
+    assetCount = assets.length;
+    for (const a of assets) {
+      const t = assetTarget(a.name);
+      if (!t) continue;
+      addArtifact(t, {
+        name: a.name,
+        url: `https://github.com/${repo}/releases/latest/download/${encodeURIComponent(a.name)}`,
+        size: a.size,
+      });
+    }
   }
 
   // Screenshots: when assemble-gallery.mjs has run (its manifest sits beside site.toml), each
@@ -435,7 +505,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   // the carousel; a locale without its own capture falls back to the default variant.
   let galleryShots;
   try {
-    galleryShots = JSON.parse(readFileSync(join(outDir, 'gallery-manifest.json'), 'utf8'));
+    galleryShots = JSON.parse(readFileSync(join(outDir, opts.gallery ?? 'gallery-manifest.json'), 'utf8'));
   } catch {
     galleryShots = undefined;
   }
@@ -536,12 +606,12 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     ],
   };
 
-  mkdirSync(outDir, { recursive: true });
-  const outPath = join(outDir, 'appindex.json');
+  const outPath = join(outDir, opts.out ?? 'appindex.json');
+  mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(index, null, 2) + '\n');
   log(
     `${Object.keys(platforms).length} platform(s), ${locales.length} locale(s), ` +
-      `${assets.length} release asset(s) → ${outPath}`,
+      `${assetCount} ${opts.downloads ? 'staged package(s)' : 'release asset(s)'} → ${outPath}`,
   );
   return index;
 }
@@ -558,7 +628,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const [projectRoot, outDir] = positional;
   if (!projectRoot || !outDir) {
     console.error(
-      'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] [--release-assets FILE] [--metadata FILE]',
+      'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] ' +
+        '[--release-assets FILE] [--metadata FILE] [--out NAME] [--gallery NAME] ' +
+        '[--downloads DIR] [--download-prefix PATH]',
     );
     process.exit(2);
   }
@@ -566,5 +638,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     repo: flags.repo,
     releaseAssets: flags['release-assets'],
     metadata: flags.metadata,
+    out: flags.out,
+    gallery: flags.gallery,
+    downloads: flags.downloads && resolve(flags.downloads),
+    downloadPrefix: flags['download-prefix'],
   });
 }

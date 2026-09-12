@@ -1,8 +1,12 @@
 ---
 import type { AppView, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
+import { localeIndexHref } from '../lib/routes.ts';
 
 import Hero from './Hero.astro';
+import ChannelPicker from './ChannelPicker.astro';
+import DevBuildBanner from './DevBuildBanner.astro';
 import PlatformPicker from './PlatformPicker.astro';
 import PlatformShots from './PlatformShots.astro';
 import DescriptionBlock from './DescriptionBlock.astro';
@@ -16,10 +20,17 @@ interface Props {
   locale: LocaleInfo;
   /** Whether the site has gallery data (adds the "see every platform" link). */
   hasGallery?: boolean;
+  /** The build channel these pages describe, and every channel the site publishes. */
+  channel?: ChannelView;
+  channels?: ChannelView[];
 }
 
-const { site, appView, locale, hasGallery } = Astro.props;
+const { site, appView, locale, hasGallery, channel, channels = [] } = Astro.props;
 const ui = uiStrings(locale.code);
+// The picker's other stop, and the notice's call to action: the newest release, when there is
+// one. A single-channel site (no channels.json, or a repository with no release) draws neither.
+const releaseChannel = channels.find((c) => !c.development);
+const channelHref = (c: ChannelView) => localeIndexHref(locale.code, c.path);
 // The screenshots read best after the words that say what they show, so they sit under the
 // description and the About card unless site.toml asks for them first (`screenshot-placement`).
 const shotsAbove = site.screenshotPlacement === 'above-about';
@@ -31,6 +42,15 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
+  {channel?.development && (
+    <DevBuildBanner
+      channel={channel}
+      release={releaseChannel}
+      releaseHref={releaseChannel && channelHref(releaseChannel)}
+      locale={locale.code}
+    />
+  )}
+
   <Hero hero={hero} />
 
   {/* The per-platform content is split around the picker. By default the screenshots go BELOW
@@ -41,21 +61,25 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
     appView.platforms.map((p) =>
       views[p] ? (
         <div data-platform-section={p} class="space-y-12 sm:space-y-16">
-          <PlatformShots view={views[p]!} site={site} locale={locale} hasGallery={hasGallery} />
+          <PlatformShots view={views[p]!} site={site} locale={locale} hasGallery={hasGallery} channel={channel} />
         </div>
       ) : null,
     )}
 
   {/* Everything above answers for the platform chosen HERE, and everything below it does too —
       the picker sits between the screenshots and the description so the choice is visible at the
-      moment the screenshots invite it, rather than announced above the title. */}
-  {appView.platforms.length > 1 && (
-    <div class="flex justify-center">
-      <PlatformPicker
-        platforms={appView.platforms}
-        defaultPlatform={site.defaultPlatform}
-        views={views}
-      />
+      moment the screenshots invite it, rather than announced above the title. The version picker
+      stacks on top of it: which build, then which platform. */}
+  {(channels.length > 1 || appView.platforms.length > 1) && (
+    <div class="flex flex-col items-center gap-3">
+      <ChannelPicker channels={channels} locale={locale.code} hrefFor={channelHref} />
+      {appView.platforms.length > 1 && (
+        <PlatformPicker
+          platforms={appView.platforms}
+          defaultPlatform={site.defaultPlatform}
+          views={views}
+        />
+      )}
     </div>
   )}
 
@@ -75,6 +99,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
             view={views[p]!}
             site={site}
             locale={locale}
+            channel={channel}
             i18n={{
               aboutHeading: ui.about,
               versionLabel: ui.versionLabel,
@@ -84,14 +109,15 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
               privacyLink: ui.privacyLink,
               supportLink: ui.supportLink,
               dependenciesLabel: ui.dependenciesLabel,
+              commitLabel: ui.commitLabel,
             }}
           />
-          <DownloadCard view={views[p]!} site={site} locale={locale} />
+          <DownloadCard view={views[p]!} site={site} locale={locale} note={channel?.development ? ui.devBuildDownloadNote : undefined} />
           </div>
         </div>
 
         {!shotsAbove && (
-          <PlatformShots view={views[p]!} site={site} locale={locale} hasGallery={hasGallery} />
+          <PlatformShots view={views[p]!} site={site} locale={locale} hasGallery={hasGallery} channel={channel} />
         )}
 
         {site.showPermissions !== false && (

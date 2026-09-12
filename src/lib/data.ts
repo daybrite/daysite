@@ -35,6 +35,13 @@ import {
 } from './permissions.ts';
 import { lookupAndroidDescription, lookupPermissionLabel } from './permission-descriptions.ts';
 import { loadGallery, type GalleryManifest } from './gallery.ts';
+import {
+  loadChannels,
+  pickChannel,
+  type ChannelRecord,
+  type ChannelView,
+} from './channels.ts';
+import { siteHref } from './routes.ts';
 
 const FALLBACK_DEFAULT_LOCALE = 'en-US';
 
@@ -59,13 +66,20 @@ function siteInfoPath(): string {
   return resolve(projectRoot(), 'samples', 'site.toml');
 }
 
+/**
+ * site.toml, parsed once. Each channel gets its OWN copy (loadSite fills in a missing `title`
+ * from that channel's appindex), so the memo holds the parse rather than the object.
+ */
+let siteInfoRaw: Promise<Record<string, unknown>> | undefined;
+
 export async function loadSiteInfo(): Promise<SiteInfo> {
-  const raw = await readFile(siteInfoPath(), 'utf8');
+  const raw = await (siteInfoRaw ??= readFile(siteInfoPath(), 'utf8').then(
+    (t) => parseTOML(t) as Record<string, unknown>,
+  ));
   // TOML kebab-case keys are accepted alongside camelCase, so site.toml reads like Day.toml
   // (`accent-color`) while the code keeps appland's field names.
-  const table = parseTOML(raw) as Record<string, unknown>;
   const parsed: Partial<SiteInfo> = {};
-  for (const [k, v] of Object.entries(table)) {
+  for (const [k, v] of Object.entries(raw)) {
     const camel = k.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
     (parsed as Record<string, unknown>)[camel] = v;
   }
@@ -82,8 +96,8 @@ export async function loadSiteInfo(): Promise<SiteInfo> {
   } as SiteInfo;
 }
 
-export async function loadAppIndex(siteInfo: SiteInfo): Promise<AppIndex> {
-  const ref = siteInfo.appindex ?? 'appindex.json';
+export async function loadAppIndex(siteInfo: SiteInfo, channel?: ChannelRecord): Promise<AppIndex> {
+  const ref = channel?.appindex ?? siteInfo.appindex ?? 'appindex.json';
   const baseDir = dirname(siteInfoPath());
   const path = isAbsolute(ref) ? ref : resolve(baseDir, ref);
   const raw = await readFile(path, 'utf8');
@@ -262,7 +276,11 @@ function buildPlatformView(
     id: platformId,
     displayName: day?.name ?? platformId,
     target: platform.platform ?? day?.target,
-    artifacts: platform.artifacts ?? [],
+    // A release channel's artifacts carry absolute releases/latest/download URLs; a development
+    // channel's are staged on the site itself (`main/downloads/…`), because a branch build has no
+    // release to link. `siteHref` passes the first through and puts the second under the
+    // deployment base, so the card renders one kind of link either way.
+    artifacts: (platform.artifacts ?? []).map((a) => ({ ...a, url: siteHref(a.url) })),
     version: platform.version,
     buildNumber: platform.buildNumber,
     storeURL,
@@ -387,11 +405,15 @@ export interface LoadedSite extends SiteData {
   /** The app's own CSS overrides (website/theme.css beside site.toml), inlined into every page. */
   themeCss?: string;
   /**
-   * True when the web-dom build is staged under `public/<webapp>/` (the workflow unzips it
-   * there). The landing page then links `site.webmanifest`, whose start URL is that app, so
-   * "Add to Home Screen" from the site installs the app itself.
+   * True when this channel's web-dom build is staged under `public/<channel.webapp>/` (the
+   * workflow unzips it there). The landing page then links `site.webmanifest`, whose start URL
+   * is that app, so "Add to Home Screen" from the site installs the app itself.
    */
   hasWebApp: boolean;
+  /** The channel these pages describe (lib/channels.ts). */
+  channel: ChannelView;
+  /** Every channel the site publishes, in picker order; one entry when there is only one. */
+  channels: ChannelView[];
   /**
    * Convenience accessor that returns the first (and, in single-app mode,
    * only) AppView. Existing single-app callers use this in place of the old
@@ -400,12 +422,26 @@ export interface LoadedSite extends SiteData {
   appView: AppView;
 }
 
-let cached: LoadedSite | undefined;
+/** One entry per channel: each has its own appindex, gallery, and staged web build. */
+const cached = new Map<string, LoadedSite>();
 
-export async function loadSite(): Promise<LoadedSite> {
-  if (cached) return cached;
+/**
+ * Every channel the site publishes, in picker order, with `current` set on none of them —
+ * routes call {@link loadSite} for the one they render. Cheap enough to call per page: it
+ * reads one small JSON.
+ */
+export async function siteChannels(): Promise<{ default: string; channels: ChannelRecord[] }> {
   const site = await loadSiteInfo();
-  const index = await loadAppIndex(site);
+  return loadChannels(siteInfoPath(), site.appindex ?? 'appindex.json', site.webapp ?? 'webapp');
+}
+
+export async function loadSite(channelId?: string): Promise<LoadedSite> {
+  const channelFile = await siteChannels();
+  const channel = pickChannel(channelFile, channelId);
+  const hit = cached.get(channel.id);
+  if (hit) return hit;
+  const site = await loadSiteInfo();
+  const index = await loadAppIndex(site, channel);
 
   // Locale union across every app in the index
   const localeUnion = new Set<string>();
@@ -445,7 +481,7 @@ export async function loadSite(): Promise<LoadedSite> {
   const siteFavicons: FaviconPaths | undefined = multiApp ? rasterFavicons() : apps[0]?.favicons;
 
   const hasWebApp = existsSync(
-    resolve(projectRoot(), 'public', site.webapp ?? 'webapp', 'index.html'),
+    resolve(projectRoot(), 'public', ...channel.webapp.split('/'), 'index.html'),
   );
 
   // site.toml's `title` is optional for a Day app: the store listing already names the app in
@@ -459,12 +495,12 @@ export async function loadSite(): Promise<LoadedSite> {
   // every scaffold — and in one language, whatever the page's own. The footer instead carries
   // the Day attribution, which is localized; an author who wants a copyright writes one.
 
-  const gallery = await loadGallery(siteInfoPath());
+  const gallery = await loadGallery(siteInfoPath(), channel.gallery);
   let themeCss: string | undefined;
   const themePath = resolve(dirname(siteInfoPath()), 'theme.css');
   if (existsSync(themePath)) themeCss = await readFile(themePath, 'utf8');
 
-  cached = {
+  const loaded: LoadedSite = {
     hasWebApp,
     site,
     gallery,
@@ -477,9 +513,12 @@ export async function loadSite(): Promise<LoadedSite> {
     favicons: siteFavicons,
     // The primary app's SVG master doubles as the site-wide favicon preference.
     vectorIcon: apps[0]?.vectorIconURL,
+    channel: { ...channel, current: true },
+    channels: channelFile.channels.map((c) => ({ ...c, current: c.id === channel.id })),
     appView: apps[0]!,
   };
-  return cached;
+  cached.set(channel.id, loaded);
+  return loaded;
 }
 
 export { resolveAssetURL };

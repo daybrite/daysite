@@ -46,6 +46,7 @@ if (data.multiApp) {
   vectorIcon={data.vectorIcon}
   sourceURL={sourceURL}
   releaseURL={releaseURL}
+  channel={data.channel}
   autoRedirect
 >
   {data.multiApp ? (
@@ -56,6 +57,13 @@ if (data.multiApp) {
       hrefFor={(slug) => appPageHref(locale.code, slug)}
     />
   ) : (
-    <LandingPage site={data.site} appView={data.apps[0]!} locale={locale} hasGallery={!!data.gallery} />
+    <LandingPage
+      site={data.site}
+      appView={data.apps[0]!}
+      locale={locale}
+      hasGallery={!!data.gallery}
+      channel={data.channel}
+      channels={data.channels}
+    />
   )}
 </Layout>

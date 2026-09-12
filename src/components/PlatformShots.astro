@@ -3,6 +3,7 @@
 // component of its own only because LandingPage renders it in one of two places
 // (`screenshot-placement`); it takes the landing page's already-resolved pieces.
 import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { galleryHref } from '../lib/routes.ts';
 import ScreenshotCarousel from './ScreenshotCarousel.astro';
@@ -12,9 +13,11 @@ interface Props {
   site: SiteInfo;
   locale: LocaleInfo;
   hasGallery?: boolean;
+  /** Keeps the gallery link inside this page's build channel (lib/channels.ts). */
+  channel?: ChannelView;
 }
 
-const { view, site, locale, hasGallery } = Astro.props;
+const { view, site, locale, hasGallery, channel } = Astro.props;
 const ui = uiStrings(locale.code);
 ---
 
@@ -25,7 +28,7 @@ const ui = uiStrings(locale.code);
     {hasGallery && site.showGallery !== false && (
       <div class="-mt-6 flex justify-center">
         <a
-          href={galleryHref(locale.code)}
+          href={galleryHref(locale.code, channel?.path)}
           class="group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-[color:var(--color-accent)] no-underline transition hover:bg-[color:var(--color-accent-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-accent)]"
         >
           {/* Overlapping frames: the one shape that says "more screenshots" without a word
