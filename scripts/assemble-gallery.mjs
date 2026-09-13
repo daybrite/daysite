@@ -118,7 +118,17 @@ function fromIndex(index, shotsDir, outImages, prefix, log) {
     }
     mkdirSync(join(outImages, ...rel.split('/'), e.variant), { recursive: true });
     copyFileSync(src, join(outImages, ...rel.split('/'), e.variant, e.file));
-    published.push(e);
+    // Republished pointing at THIS run's copies. `day screenshot index` knows nothing of build
+    // channels: it spells every path `gallery/…` and every URL from site.toml's host. For the
+    // channel that owns the root that is right; for a second one, served from `main/gallery/`,
+    // it linked the root channel's images instead — which 404 wherever that channel captured
+    // nothing, and that is how daybrite.dev lost four apps' galleries.
+    const path = `${prefix}${rel}/${e.variant}/${e.file}`;
+    const url =
+      typeof e.url === 'string' && typeof e.path === 'string' && e.url.endsWith(e.path)
+        ? e.url.slice(0, e.url.length - e.path.length) + path
+        : e.url;
+    published.push({ ...e, path, url });
     // From here on it is the page's turn, and the page shows the curated set only.
     if (!shownIds.has(e.shot)) continue;
     if (!columns.includes(rel)) columns.push(rel);

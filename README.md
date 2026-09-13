@@ -210,8 +210,13 @@ record.
 - `/gallery/gallery.json` — the machine-readable index of every published screenshot, written
   by `day screenshot index`: file name, absolute URL, shot id, localized title and caption,
   platform-toolkit, theme, locale, pixel dimensions, byte size, and sha-256. Other sites
-  reference the gallery through it — daybrite.dev builds its Day Showcase gallery from this
-  site's copy — and any tool can enumerate the screenshots without scraping pages.
+  reference the gallery through it — daybrite.dev builds its app galleries from these indexes —
+  and any tool can enumerate the screenshots without scraping pages. Each build channel serves
+  its own: this one describes the channel at the locale root, and `/main/gallery/gallery.json` the
+  development build. The CLI spells every entry `gallery/…`, so the assembler rewrites a second
+  channel's `path` and `url` to point at that channel's own copies; before it did,
+  `main/gallery/`'s index linked the release channel's images, and daybrite.dev dropped every app
+  whose release channel had none.
 
   Two rules keep it honest, and they are deliberately different from the page's:
 

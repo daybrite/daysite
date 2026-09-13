@@ -181,3 +181,25 @@ test('an all-untitled index publishes every shot as a row', (t) => {
   const manifest = assembleGallery(f.shots, f.site, { quiet: true, outImages: f.out });
   assert.deepEqual(manifest.shots.map((s) => s.id).sort(), ['home', 'scratch']);
 });
+
+test('a second build channel republishes an index that links its own copies', (t) => {
+  // The main channel serves its images from main/gallery/, and the index it publishes there is
+  // what daybrite.dev reads. An index still spelling `gallery/…` links the release channel's
+  // images, which do not exist for a screen only the branch build captured.
+  const f = fixture();
+  t.after(() => rmSync(f.root, { recursive: true, force: true }));
+  assembleGallery(f.shots, f.site, {
+    quiet: true,
+    outImages: f.out,
+    prefix: 'main/gallery',
+    manifest: 'main/gallery-manifest.json',
+  });
+  const index = JSON.parse(readFileSync(join(f.out, 'gallery.json'), 'utf8'));
+  assert.ok(index.screenshots.length > 0, 'the index must not be empty');
+  for (const e of index.screenshots) {
+    assert.ok(e.path.startsWith('main/gallery/'), `${e.path} is not under the channel's prefix`);
+    assert.ok(e.url.endsWith(`/${e.path}`), `${e.url} does not link ${e.path}`);
+    const rel = e.path.replace(/^main\/gallery\//, '');
+    assert.ok(existsSync(join(f.out, rel)), `index names ${e.path}, which was never published`);
+  }
+});
