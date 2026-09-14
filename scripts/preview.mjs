@@ -117,8 +117,11 @@ if (!flag('ci')) {
       indexCaptures(shots);
     }
     // The released web build, hosted at the site root so `/webapp/` runs the version the
-    // release channel's pages describe.
-    const webZip = release.assets.find((a) => /-web-dom\.zip$/.test(a.name));
+    // release channel's pages describe. The web-dom target's screenshots-web-dom.zip ends the
+    // same way, so it is ruled out by name.
+    const webZip = release.assets.find(
+      (a) => a.name.endsWith('-web-dom.zip') && !a.name.startsWith('screenshots-'),
+    );
     const webOut = join(TEMPLATE_ROOT, 'public', 'webapp');
     if (webZip && !existsSync(join(webOut, 'index.html'))) {
       gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern', webZip.name);
