@@ -49,7 +49,7 @@ jobs:
           grep -q "jamais l&#39;appareil photo\|jamais l'appareil photo" dist/fr/index.html
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
-  # ships a website/), build its web-dom target, and run THIS checkout of the template over the
+  # ships a website/), build its web-dom target, and run this checkout of the template over the
   # scaffold's own data — store/ listings, Day.toml, the built web app. Template changes are
   # thereby exercised against exactly what a fresh `day new app` produces, not against a
   # fixture that can drift from the CLI.
@@ -120,7 +120,7 @@ jobs:
           set -euo pipefail
           npm ci --no-audit --no-fund
           SITE_DIR="$RUNNER_TEMP/day-sample/website"
-          # TWO build channels, so the deployed demo is shaped like an app's own site: a version
+          # Two build channels, so the deployed demo is shaped like an app's own site: a version
           # picker, a development-build notice, and a second copy of every page under /main/.
           # A fresh scaffold has published no release and captured no screenshots on this
           # runner, so both channels read the same data — what this exercises is the routing

@@ -58,7 +58,7 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
   // instead, which is also what makes its version picker a single entry and therefore invisible.
   const defaultSpec = specs.find((s) => !s.development) ?? specs[0];
 
-  // Clear what the LAST run served, because which channel owns which prefix can change: a
+  // Clear what the last run served, because which channel owns which prefix can change: a
   // project's first release moves the branch build from `downloads/` to `main/downloads/`, and
   // the directory it vacated would otherwise be copied into the next deploy and served forever.
   // Only the two directories a channel owns are removed — its staged web build is put there by

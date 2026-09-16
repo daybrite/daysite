@@ -1,6 +1,6 @@
 // Tests for scripts/assemble-gallery.mjs — `node --test scripts/`.
 //
-// The invariant under test: the gallery.json this template publishes describes EXACTLY the images
+// The invariant under test: the gallery.json this template publishes describes exactly the images
 // it published. It was broken once in a way no build could notice — the copy loop followed the
 // page's curation rule (titled shots only) while the index was passed through verbatim, so 679 of
 // the Day Showcase's 2,624 indexed URLs pointed at bytes that were never uploaded, and every site

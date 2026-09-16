@@ -10,7 +10,7 @@
 //
 //   node .daysite/scripts/preview.mjs --ci
 //
-// `--ci` assembles what the workflow publishes: BOTH build channels (src/lib/channels.ts), the
+// `--ci` assembles what the workflow publishes: Both build channels (src/lib/channels.ts), the
 // release one from the newest GitHub release's own assets and the development one from the
 // newest successful run of the default branch. It shells out to `gh` for both and caches the
 // downloads under `build/day/daysite/`, so a second run is fast. `--run <id>` picks a specific

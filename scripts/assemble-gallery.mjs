@@ -86,7 +86,7 @@ function republish(index, published) {
  *
  *  Two audiences, two rules, and they are deliberately not the same rule:
  *
- *  - The PAGE is curated. Shots WITH a title are the curated set; when any exist, only they get
+ *  - The PAGE is curated. Shots with a title are the curated set; when any exist, only they get
  *    a row (`title:` is how a dayscript says "this screen is worth showing").
  *  - The SITE publishes every capture the index describes, curated or not, because the index is
  *    what other sites read — daybrite.dev builds its Day Showcase gallery from this one — and an
@@ -118,7 +118,7 @@ function fromIndex(index, shotsDir, outImages, prefix, log) {
     }
     mkdirSync(join(outImages, ...rel.split('/'), e.variant), { recursive: true });
     copyFileSync(src, join(outImages, ...rel.split('/'), e.variant, e.file));
-    // Republished pointing at THIS run's copies. `day screenshot index` knows nothing of build
+    // Republished pointing at this run's copies. `day screenshot index` knows nothing of build
     // channels: it spells every path `gallery/…` and every URL from site.toml's host. For the
     // channel that owns the root that is right; for a second one, served from `main/gallery/`,
     // it linked the root channel's images instead — which 404 wherever that channel captured

@@ -360,7 +360,7 @@ const env = {
 
   // Motion sensors (docs/sensors.md): the browser arm of day-part-sensors, over `devicemotion`.
   //
-  // ONE listener feeds both kinds — the event carries acceleration and rotation together. The
+  // One listener feeds both kinds — the event carries acceleration and rotation together. The
   // magnetometer has no cross-browser API at all (Chromium's Generic Sensor `Magnetometer` is
   // flag-gated and absent from Safari and Firefox), so kind 2 is always unavailable.
   //
@@ -474,7 +474,7 @@ const env = {
   // HTTP (docs/http.md): the browser arm of day-part-http. One fetch() per request id, with
   // an AbortController serving both day_dom_http_abort and the timeout timer (the timer
   // bounds connect + response head; the body phase is uncapped — Rust-fallback parity). The
-  // completion re-enters wasm EXACTLY once per id: day_http_done, or day_http_failed with
+  // completion re-enters wasm exactly once per id: day_http_done, or day_http_failed with
   // kind 1 BadUrl / 2 Timeout / 3 Cancelled / 0 Io (a browser hides DNS/connect/TLS detail).
   // Headers cross as flat `u32-LE len, bytes` key/value records both ways — no JSON escaping,
   // order and duplicates preserved. Request buffers are COPIED out before the first await:
@@ -536,7 +536,7 @@ const env = {
   // App-local files (docs/fs.md): the browser arm of day-part-fs, stored in the Origin
   // Private File System — a real origin-scoped file hierarchy.
   // One operation per request id (op: 0 read, 1 write, 2 remove, 3 list); the completion
-  // re-enters wasm EXACTLY once: day_fs_done (bytes; list joins names with \u001f,
+  // re-enters wasm exactly once: day_fs_done (bytes; list joins names with \u001f,
   // directories carrying a trailing slash) or day_fs_failed (kind 1 NotFound, 2 no OPFS in
   // this context — pre-OPFS browsers and private-browsing/ephemeral sessions, which WebKit
   // gives no storage backing — 0 everything else). Request buffers are COPIED out before the

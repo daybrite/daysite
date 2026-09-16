@@ -48,7 +48,7 @@ html, body {
 /* Type sizing (docs/web.md). Two goals: match the generosity of a native app's default text, and
    respect the OS accessibility text size the way the native backends' `preferredFont(forTextStyle:)`
    does. `--day-text-scale` lifts the whole rem ramp a touch so the UI doesn't read as miniscule
-   next to native; day-dom's ramp applies the SAME factor.
+   next to native; day-dom's ramp applies the same factor.
      - Desktop keeps a FIXED base (1rem = the browser's font-size preference), so Safari and Chrome
        on the same Mac render identically and nothing shrinks to the bare 13px system size.
      - Touch devices anchor `html` to `-apple-system-body`, whose value IS iOS Dynamic Type: every

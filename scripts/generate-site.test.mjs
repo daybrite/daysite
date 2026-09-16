@@ -52,7 +52,7 @@ function fixture() {
   writeFileSync(join(dist, 'demo-macos-appkit.dmg.sbom-cdx.json'), '{}');
   const ipa = join(root, 'dist-in', 'dist-ios-uikit');
   mkdirSync(ipa, { recursive: true });
-  // What a run WITHOUT signing secrets packs, spelled the way `day pack` spells it.
+  // What a run without signing secrets packs, spelled the way `day pack` spells it.
   writeFileSync(join(ipa, 'Demo-ios-uikit-unsigned.ipa'), 'ipa');
 
   writeFileSync(
