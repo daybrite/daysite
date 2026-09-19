@@ -169,7 +169,7 @@ function vectorIconMarkup(): string | undefined {
 
 /**
  * The raster favicon set, when the generator copied one into `public/app/` from the size-exact
- * icon family `day icon` renders (see generate-appindex.mjs). Without the family, the app mark
+ * icon family `day icon build` renders (see generate-appindex.mjs). Without the family, the app mark
  * itself fills every slot — larger than needed, and still the app's own icon. The SVG master,
  * when there is one, is what browsers actually prefer; these cover the apple-touch and PWA
  * slots, which take no SVG. Nothing here rasterizes: the site build carries no image library.

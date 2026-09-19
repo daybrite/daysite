@@ -150,8 +150,8 @@ copies land under its own segment (`main/appindex.json`, `main/gallery-manifest.
 ### The app icon
 
 The site's identity is the project's own icon, copied rather than rendered. The generator looks
-first for the size-exact `day-icon-<N>.png` family that `day icon` writes under
-`build/day/host/png/` (the workflow runs `day icon -p web-dom` for exactly this; a `day new`
+first for the size-exact `day-icon-<N>.png` family that `day icon build` writes under
+`build/day/host/png/` (the workflow runs `day icon build -p web-dom` for exactly this; a `day new`
 scaffold also ships a copy under `resource/icons/png/`), copies its largest size to
 `public/app/icon.png` for the landing page's app mark and the Open Graph image, and its 64, 256,
 and 512 px sizes to `public/app/` as the favicon, apple-touch-icon, and PWA tile. The build then

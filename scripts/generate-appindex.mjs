@@ -19,7 +19,7 @@
 //                             target and its stable /releases/latest/download/ URL. The script
 //                             itself never touches the network: no file, no download cards —
 //                             the same degradation the daybrite.dev showcase page uses.
-//   build/day/host/png/     → the size-exact icon family `day icon` renders (favicons); else
+//   build/day/host/png/     → the size-exact icon family `day icon build` renders (favicons); else
 //   resource/icons/         → the largest PNG there is the app mark, copied into public/
 //
 // `platforms` uses the schema's conventional `ios`/`android` keys for those two targets and
@@ -137,8 +137,8 @@ const FAVICON_SIZES = {
 // and still makes a favicon set, minus that one slot (the manifest then offers 256 and 512).
 const FAVICON_OPTIONAL = new Set([192]);
 
-// Where the size-exact `day-icon-<N>.png` family lives, freshest first: `day icon` renders it
-// under build/day/host/png/ (the CI website job runs `day icon -p web-dom` for exactly this),
+// Where the size-exact `day-icon-<N>.png` family lives, freshest first: `day icon build` renders it
+// under build/day/host/png/ (the CI website job runs `day icon build -p web-dom` for exactly this),
 // and `day new` scaffolds a copy under resource/icons/png/.
 const ICON_FAMILY_DIRS = [join('build', 'day', 'host', 'png'), join('resource', 'icons', 'png')];
 
@@ -419,10 +419,10 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     log(`favicon set: ${family.dir.slice(projectRoot.length + 1)}/${missing.length ? ` (no ${missing.join(', ')} px render; an older day-cli)` : ''}`);
   } else {
     for (const name of Object.values(FAVICON_SIZES)) rmSync(join(pub, name), { force: true });
-    log('no size-exact icon family (`day icon -p web-dom` renders one) — no raster favicon set');
+    log('no size-exact icon family (`day icon build -p web-dom` renders one) — no raster favicon set');
   }
 
-  // The VECTOR master itself (the day icon pipeline's source, docs/icons.md in the day repo):
+  // The VECTOR master itself (the app icon pipeline's source, docs/icons.md in the day repo):
   // preferred by the site wherever a browser renders the icon — the landing app mark and the
   // favicon — because it stays crisp at every size. The PNG above remains the source for the
   // DERIVED raster set (apple-touch, PWA tiles, legacy favicons) and the only icon for
