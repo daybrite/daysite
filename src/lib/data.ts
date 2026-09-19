@@ -45,7 +45,12 @@ import {
 } from './channels.ts';
 import { siteHref } from './routes.ts';
 
-const FALLBACK_DEFAULT_LOCALE = 'en-US';
+// Where a project's site lands when its index names no locale at all: a piece's demo app, which
+// has UI strings but no store listing to localize. `en` rather than `en-US` because that is the
+// code the rest of the system already uses — every `store/<locale>/` listing in the ecosystem is
+// `en`, and so is every app's `resource/locales/` directory — so a project with a listing and one
+// without answer at the same path instead of differing by a region tag nobody wrote.
+const FALLBACK_DEFAULT_LOCALE = 'en';
 
 /** Resolve `website/site.toml` starting from the daysite template root. */
 function projectRoot(): string {
