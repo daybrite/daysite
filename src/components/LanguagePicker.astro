@@ -1,4 +1,5 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
 import type { LocaleInfo } from '../lib/types.ts';
 
 interface Props {
@@ -7,12 +8,13 @@ interface Props {
 }
 
 const { locales, current } = Astro.props;
+const ui = uiStrings(current.code);
 ---
 
 <details class="relative" data-language-picker data-pagefind-ignore>
   <summary
     class="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-sm font-medium hover:border-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] transition"
-    aria-label="Select language"
+    aria-label={ui.selectLanguage}
   >
     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
       <circle cx="12" cy="12" r="9" />

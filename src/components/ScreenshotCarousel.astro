@@ -1,18 +1,21 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
 import type { PlatformView } from '../lib/types.ts';
 
 interface Props {
+  locale?: string;
   view: PlatformView;
 }
 
 const { view } = Astro.props;
+const ui = uiStrings(Astro.props.locale ?? 'en');
 const shots = view.screenshots;
 ---
 
 {shots.length > 0 && (
   <section class="space-y-4">
     <header class="flex items-end justify-between gap-4">
-      <h2 class="text-xl sm:text-2xl font-semibold tracking-tight">Screenshots</h2>
+      <h2 class="text-xl sm:text-2xl font-semibold tracking-tight">{ui.galleryHeading}</h2>
       <p class="text-xs uppercase tracking-wider text-[color:var(--color-text-muted)]" data-pagefind-ignore>
         {view.displayName}
       </p>
@@ -64,7 +67,7 @@ const shots = view.screenshots;
           <button
             type="button"
             data-carousel-prev
-            aria-label="Previous screenshot"
+            aria-label={ui.previousScreenshot}
             class="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 size-10 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)]/95 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
           >
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
@@ -74,7 +77,7 @@ const shots = view.screenshots;
           <button
             type="button"
             data-carousel-next
-            aria-label="Next screenshot"
+            aria-label={ui.nextScreenshot}
             class="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 size-10 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)]/95 backdrop-blur shadow-lg opacity-0 group-hover:opacity-100 transition focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
           >
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">

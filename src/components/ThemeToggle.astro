@@ -1,4 +1,9 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
+interface Props {
+  locale?: string;
+}
+const ui = uiStrings(Astro.props.locale ?? 'en');
 // Three-way light / auto / dark theme picker.
 //
 // Storage model:
@@ -18,15 +23,15 @@
 
 <div
   role="group"
-  aria-label="Theme"
+  aria-label={ui.themeLabel}
   class="inline-flex items-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-0.5"
 >
   <button
     type="button"
     data-theme-set="light"
     data-active="false"
-    aria-label="Light"
-    title="Light"
+    aria-label={ui.themeLight}
+    title={ui.themeLight}
     class="inline-flex items-center justify-center size-7 rounded-full text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] data-[active=true]:bg-[color:var(--color-accent-soft)] data-[active=true]:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] transition"
   >
     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -38,8 +43,8 @@
     type="button"
     data-theme-set="auto"
     data-active="false"
-    aria-label="Auto (follow system)"
-    title="Auto (follow system)"
+    aria-label={ui.themeAuto}
+    title={ui.themeAuto}
     class="inline-flex items-center justify-center size-7 rounded-full text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] data-[active=true]:bg-[color:var(--color-accent-soft)] data-[active=true]:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] transition"
   >
     <svg viewBox="0 0 24 24" class="size-4" aria-hidden="true">
@@ -51,8 +56,8 @@
     type="button"
     data-theme-set="dark"
     data-active="false"
-    aria-label="Dark"
-    title="Dark"
+    aria-label={ui.themeDark}
+    title={ui.themeDark}
     class="inline-flex items-center justify-center size-7 rounded-full text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] data-[active=true]:bg-[color:var(--color-accent-soft)] data-[active=true]:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] transition"
   >
     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">

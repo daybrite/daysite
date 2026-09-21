@@ -95,3 +95,11 @@ test('permissions fan out to each platform with their reasons per locale', () =>
   assert.deepEqual(by.harmony.map((e) => e.key), ['ohos.permission.CAMERA', 'ohos.permission.READ_CONTACTS']);
   assert.deepEqual(permissionsByPlatform(undefined), {});
 });
+
+// Day app scaffolds share one version across all workspace crates.
+test('inherited package versions render as a version string, never an object', async () => {
+  const { cargoVersion } = await import('./generate-appindex.mjs');
+  assert.equal(cargoVersion({ package: { version: '1.2.3' } }), '1.2.3');
+  assert.equal(cargoVersion({ package: { version: { workspace: true } }, workspace: { package: { version: '2.0.1' } } }), '2.0.1');
+  assert.equal(cargoVersion({ package: { version: { workspace: true } } }), undefined);
+});

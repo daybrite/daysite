@@ -1,15 +1,18 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
 import type { PlatformView } from '../lib/types.ts';
 import { dayTarget } from '../lib/day-targets.ts';
 import PlatformIcon from './PlatformIcon.astro';
 
 interface Props {
+  locale?: string;
   platforms: string[];
   defaultPlatform?: string;
   views: Partial<Record<string, PlatformView | null>>;
 }
 
 const { platforms, defaultPlatform, views } = Astro.props;
+const ui = uiStrings(Astro.props.locale ?? 'en');
 /**
  * The build-time selection, and the LAST resort at runtime: the client prefers the visitor's own
  * OS, then Web. `default-platform` in site.toml therefore only decides the no-JS rendering and
@@ -69,7 +72,7 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
   <div
     class="pf-picker flex max-w-full flex-nowrap snap-x items-center gap-0.5 overflow-x-auto rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium shadow-sm"
     role="tablist"
-    aria-label="Choose platform"
+    aria-label={ui.choosePlatform}
     data-platform-picker
     data-initial={initial}
     data-ua-map={JSON.stringify(uaMap)}

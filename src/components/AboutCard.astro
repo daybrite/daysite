@@ -1,4 +1,5 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
 import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
 import AppActions from './AppActions.astro';
@@ -22,6 +23,7 @@ interface Props {
   };
 }
 
+const ui = uiStrings(Astro.props.locale.code);
 const { view, site, locale, channel, i18n } = Astro.props;
 ---
 
@@ -58,13 +60,13 @@ const { view, site, locale, channel, i18n } = Astro.props;
     )}
     {view.id === 'ios' && view.permissions.length > 0 && (
       <div class="flex justify-between gap-3 items-baseline">
-        <dt class="text-[color:var(--color-text-muted)]">Permissions</dt>
+        <dt class="text-[color:var(--color-text-muted)]">{ui.permissions}</dt>
         <dd class="font-mono">{view.permissions.length}</dd>
       </div>
     )}
     {view.id === 'android' && view.permissions.length > 0 && (
       <div class="flex justify-between gap-3 items-baseline">
-        <dt class="text-[color:var(--color-text-muted)]">Permissions</dt>
+        <dt class="text-[color:var(--color-text-muted)]">{ui.permissions}</dt>
         <dd class="font-mono">{view.permissions.length}</dd>
       </div>
     )}

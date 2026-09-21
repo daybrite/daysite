@@ -83,6 +83,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
       <ChannelPicker channels={channels} locale={locale.code} hrefFor={channelHref} />
       {appView.platforms.length > 1 && (
         <PlatformPicker
+          locale={locale.code}
           platforms={appView.platforms}
           defaultPlatform={site.defaultPlatform}
           views={views}

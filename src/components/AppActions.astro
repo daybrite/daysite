@@ -38,7 +38,7 @@ const badge =
     : undefined;
 
 const webappDir = channel?.webapp ?? site.webapp ?? 'webapp';
-const webappHref = p === 'web' ? `${BASE}/${webappDir}/` : undefined;
+const webappHref = p === 'web' ? `${BASE}/${webappDir}/?locale=${encodeURIComponent(locale.code)}` : undefined;
 // The app's full address, printed under the button so it can be read, copied, or typed on
 // another device. Middle-truncated when the card is narrower than the URL: the head shrinks
 // behind an ellipsis, the tail — where the path, the part that tells sites apart, ends — stays.

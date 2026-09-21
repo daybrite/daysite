@@ -319,7 +319,7 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
           />
         )}
         <LanguagePicker locales={localeLinks} current={current} />
-        <ThemeToggle />
+        <ThemeToggle locale={current.code} />
       </div>
     </header>
 
@@ -330,7 +330,7 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     {showQr && (
       <div class="qr-box" data-qr-box hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label={qrTitle}>
         <div class="qr-backdrop" data-qr-close></div>
-        <button class="qr-close" data-qr-close type="button" aria-label="Close (Esc)">✕</button>
+        <button class="qr-close" data-qr-close type="button" aria-label={ui.closeDialog}>✕</button>
         <figure class="qr-stage">
           <div class="qr-img" set:html={qrLarge}></div>
           <figcaption class="qr-cap">

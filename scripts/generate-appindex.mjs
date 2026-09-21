@@ -336,6 +336,16 @@ export function storeListing(table) {
   return out;
 }
 
+/** App workspaces can inherit the package version from workspace.package. */
+export function cargoVersion(cargo) {
+  const version = cargo.package?.version;
+  if (typeof version === 'string') return version;
+  if (version?.workspace === true && typeof cargo.workspace?.package?.version === 'string') {
+    return cargo.workspace.package.version;
+  }
+  return undefined;
+}
+
 export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   const log = (m) => opts.quiet || console.log(`[appindex] ${m}`);
   // Where the site serves its own files from. The template's `public/` in every real run; the
@@ -347,7 +357,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   const cargo = existsSync(join(projectRoot, 'Cargo.toml'))
     ? parseTOML(readFileSync(join(projectRoot, 'Cargo.toml'), 'utf8'))
     : {};
-  const version = cargo.package?.version;
+  const version = cargoVersion(cargo);
 
   const storeDir = join(projectRoot, 'store');
   const storeApp = existsSync(join(storeDir, 'app.toml'))

@@ -236,13 +236,13 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
       platform-aware — ←/→ cycle platforms across the SAME screen, ↑/↓ move to the
       previous/next screen on the SAME platform. Rows here can be sparse (a platform with no
       capture renders no tile), so every direction skips the holes. */}
-  <div class="lightbox" data-lightbox hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Screenshot viewer">
+  <div class="lightbox" data-lightbox hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label={ui.screenshotViewer}>
     <div class="lb-backdrop" data-lb-close></div>
-    <button class="lb-btn lb-close" data-lb-close type="button" aria-label="Close (Esc)">✕</button>
-    <button class="lb-btn lb-arrow lb-up" data-lb-dir="up" type="button" aria-label="Previous screen, same platform (↑)">↑</button>
-    <button class="lb-btn lb-arrow lb-down" data-lb-dir="down" type="button" aria-label="Next screen, same platform (↓)">↓</button>
-    <button class="lb-btn lb-arrow lb-left" data-lb-dir="left" type="button" aria-label="Previous platform (←)">‹</button>
-    <button class="lb-btn lb-arrow lb-right" data-lb-dir="right" type="button" aria-label="Next platform (→)">›</button>
+    <button class="lb-btn lb-close" data-lb-close type="button" aria-label={ui.closeDialog}>✕</button>
+    <button class="lb-btn lb-arrow lb-up" data-lb-dir="up" type="button" aria-label={ui.previousScreenshot}>↑</button>
+    <button class="lb-btn lb-arrow lb-down" data-lb-dir="down" type="button" aria-label={ui.nextScreenshot}>↓</button>
+    <button class="lb-btn lb-arrow lb-left" data-lb-dir="left" type="button" aria-label={ui.previousPlatform}>‹</button>
+    <button class="lb-btn lb-arrow lb-right" data-lb-dir="right" type="button" aria-label={ui.nextPlatform}>›</button>
     <figure class="lb-stage">
       <img class="lb-img" data-lb-img alt="" hidden />
       <figcaption class="lb-cap">

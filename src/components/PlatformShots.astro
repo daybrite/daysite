@@ -22,7 +22,7 @@ const ui = uiStrings(locale.code);
 ---
 
 <div class="space-y-12 sm:space-y-16">
-    <ScreenshotCarousel view={view} />
+    <ScreenshotCarousel view={view} locale={locale.code} />
     {/* A compact link, not a card: the label alone carries it, and a full-width panel
         after the screenshots separated them from whatever follows. */}
     {hasGallery && site.showGallery !== false && (

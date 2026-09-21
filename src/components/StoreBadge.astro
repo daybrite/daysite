@@ -1,4 +1,5 @@
 ---
+import { uiStrings } from '../lib/uistrings.ts';
 // A store badge at a given PLATE height. The stores' artwork is not cut alike: Apple's SVG is
 // its plate edge to edge (border stroke included); Google's plate is a 135x40 rect at (10, 10)
 // inside a 155x60 box, a transparent margin of a sixth of the box's height above and below and
@@ -25,7 +26,8 @@ interface Props {
 const { store, href, locale, height, heightSm = height, class: extra = '' } = Astro.props;
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const src = `${BASE}/badges/${badgeLocale(locale, store)}/${store === 'apple' ? 'apple-app-store' : 'google-play-store'}.svg`;
-const alt = store === 'apple' ? 'Download on the App Store' : 'Get it on Google Play';
+const ui = uiStrings(locale);
+const alt = store === 'apple' ? ui.appleStoreBadge : ui.googleStoreBadge;
 ---
 
 <a
