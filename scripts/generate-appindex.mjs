@@ -16,7 +16,7 @@
 //                             run here, else the site shows no permissions.
 //   --release-assets FILE   → the latest release's assets ([{name, size}], as the CI workflow
 //                             writes them from `gh api …/releases/latest`), each mapped to its
-//                             target and its stable /releases/latest/download/ URL. The script
+//                             target and its /releases/download/<tag>/ URL. The script
 //                             itself never touches the network: no file, no download cards —
 //                             the same degradation the daybrite.dev showcase page uses.
 //   build/day/host/png/     → the size-exact icon family `day icon build` renders (favicons); else
@@ -33,7 +33,7 @@
 // there, because a branch build has no release to link.
 //
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
-//            [--repo owner/name] [--release-assets FILE] [--metadata FILE]
+//            [--repo owner/name] [--release-assets FILE] [--tag vX.Y.Z] [--metadata FILE]
 //            [--out NAME] [--gallery NAME] [--downloads DIR] [--download-prefix PATH]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
@@ -357,7 +357,17 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   const cargo = existsSync(join(projectRoot, 'Cargo.toml'))
     ? parseTOML(readFileSync(join(projectRoot, 'Cargo.toml'), 'utf8'))
     : {};
-  const version = cargoVersion(cargo);
+  // A release channel describes the release, not the checkout: the site is generated from the
+  // newest commit, which may already be a version ahead of what has been released. The tag is
+  // the released version, so it wins where there is one; a development channel has none and
+  // keeps the version the source carries.
+  const releaseTag = opts.tag ?? process.env.DAYSITE_RELEASE_TAG ?? undefined;
+  const sourceVersion = cargoVersion(cargo);
+  const version = releaseTag ? releaseTag.replace(/^v/, '') : sourceVersion;
+  // The build number is the source tree's, so it describes the version reported here only while
+  // the two agree. A release channel generated from a newer commit leaves it out rather than
+  // pairing a released version with a build it never had.
+  const buildNumber = !releaseTag || version === sourceVersion ? app.build : undefined;
 
   const storeDir = join(projectRoot, 'store');
   const storeApp = existsSync(join(storeDir, 'app.toml'))
@@ -501,11 +511,14 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     for (const a of assets) {
       const t = assetTarget(a.name);
       if (!t) continue;
-      addArtifact(t, {
-        name: a.name,
-        url: `https://github.com/${repo}/releases/latest/download/${encodeURIComponent(a.name)}`,
-        size: a.size,
-      });
+      // Pinned to the tag rather than `releases/latest/download/…`: the pages describe one
+      // release, and `latest` answers with whatever is newest when a visitor clicks, which is a
+      // different build as soon as the next one goes out. Without a tag (a preview run reading a
+      // release it did not name) `latest` is still the best guess.
+      const url = releaseTag
+        ? `https://github.com/${repo}/releases/download/${encodeURIComponent(releaseTag)}/${encodeURIComponent(a.name)}`
+        : `https://github.com/${repo}/releases/latest/download/${encodeURIComponent(a.name)}`;
+      addArtifact(t, { name: a.name, url, size: a.size });
     }
   }
 
@@ -565,7 +578,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     const key = TARGET_KEYS[target];
     const entry = { platform: target };
     if (version) entry.version = version;
-    if (app.build != null) entry.buildNumber = String(app.build);
+    if (buildNumber != null) entry.buildNumber = String(buildNumber);
     if (permissions[key]?.length) entry.permissions = permissions[key];
     if (key === 'ios' && (storeApp['bundle-id'] ?? app.id)) entry.bundleIdentifier = storeApp['bundle-id'] ?? app.id;
     if (key === 'android' && app.id) entry.applicationId = app.id;
@@ -639,7 +652,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!projectRoot || !outDir) {
     console.error(
       'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] ' +
-        '[--release-assets FILE] [--metadata FILE] [--out NAME] [--gallery NAME] ' +
+        '[--release-assets FILE] [--tag vX.Y.Z] [--metadata FILE] [--out NAME] [--gallery NAME] ' +
         '[--downloads DIR] [--download-prefix PATH]',
     );
     process.exit(2);
@@ -647,6 +660,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   await generateAppIndex(resolve(projectRoot), resolve(outDir), {
     repo: flags.repo,
     releaseAssets: flags['release-assets'],
+    tag: flags.tag,
     metadata: flags.metadata,
     out: flags.out,
     gallery: flags.gallery,

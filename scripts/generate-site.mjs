@@ -100,6 +100,8 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
       out: `${p}appindex.json`,
       gallery: `${p}gallery-manifest.json`,
       releaseAssets: spec.releaseAssets ? resolve(spec.releaseAssets) : undefined,
+      // The released version, which the appindex reports and links its downloads to.
+      tag: spec.tag,
       downloads: spec.downloads ? resolve(spec.downloads) : undefined,
       downloadPrefix: `${p}downloads`,
       publicDir,

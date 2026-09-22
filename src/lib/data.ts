@@ -313,7 +313,7 @@ function buildPlatformView(
     id: platformId,
     displayName: day?.name ?? platformId,
     target: platform.platform ?? day?.target,
-    // A release channel's artifacts carry absolute releases/latest/download URLs; a development
+    // A release channel's artifacts carry absolute releases/download/<tag> URLs; a development
     // channel's are staged on the site itself (`main/downloads/…`), because a branch build has no
     // release to link. `siteHref` passes the first through and puts the second under the
     // deployment base, so the card renders one kind of link either way.

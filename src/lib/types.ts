@@ -147,7 +147,7 @@ export interface PlatformEntry {
   permissions?: PermissionEntry[];
   /**
    * Day extension: the downloadable packages this platform ships, with stable
-   * releases/latest/download URLs. Absent for platforms that are hosted rather than
+   * releases/download/<tag> URLs. Absent for platforms that are hosted rather than
    * downloaded (web) and for apps that have not released yet.
    */
   artifacts?: ArtifactEntry[];
@@ -233,7 +233,7 @@ export interface PlatformView {
   buildNumber?: string;
   storeURL?: string;
   storeBadge?: 'apple-app-store' | 'google-play-store';
-  /** Day packages to download (releases/latest URLs). */
+  /** Day packages to download (releases/download/<tag> URLs). */
   artifacts: ArtifactEntry[];
   /** Day target id this entry was built from (e.g. "ios-uikit"). */
   target?: string;

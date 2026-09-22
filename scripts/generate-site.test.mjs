@@ -31,7 +31,7 @@ function fixture() {
   mkdirSync(site, { recursive: true });
   writeFileSync(
     join(project, 'Day.toml'),
-    '[app]\nid = "dev.example.demo"\ntitle = "Demo"\ntargets = ["macos-appkit", "ios-uikit"]\n',
+    '[app]\nid = "dev.example.demo"\ntitle = "Demo"\nbuild = 7\ntargets = ["macos-appkit", "ios-uikit"]\n',
   );
   writeFileSync(join(project, 'Cargo.toml'), '[package]\nname = "demo"\nversion = "1.2.3"\n');
   writeFileSync(join(site, 'site.toml'), 'host = "https://example.test/Demo"\n');
@@ -141,8 +141,10 @@ test('a release links its assets on GitHub; a branch build serves packages from 
       Object.entries(idx.apps[0].platforms).map(([k, v]) => [k, (v.artifacts ?? []).map((a) => a.url)]),
     );
   };
+  // Pinned to the release's own tag: `latest` would move under the page as soon as the next
+  // release went out, and these pages describe one version.
   assert.deepEqual(arts('appindex.json').macos, [
-    'https://github.com/example/Demo/releases/latest/download/demo-macos-appkit.dmg',
+    'https://github.com/example/Demo/releases/download/v1.2.3/demo-macos-appkit.dmg',
   ]);
   const dev = arts('main/appindex.json');
   assert.deepEqual(dev.macos, ['main/downloads/demo-macos-appkit.dmg']);
@@ -152,6 +154,37 @@ test('a release links its assets on GitHub; a branch build serves packages from 
   assert.ok(existsSync(join(f.pub, 'main/downloads/demo-macos-appkit.dmg')));
   // A provenance sidecar describes a download; it is not one, so it is not served.
   assert.ok(!existsSync(join(f.pub, 'main/downloads/demo-macos-appkit.dmg.sbom-cdx.json')));
+});
+
+test('the release channel reports the released version, not the checkout it was built from', async (t) => {
+  // The site is generated from the newest commit, which is often a version ahead of the newest
+  // release: a tag is pushed, its build deploys the site, and the release itself is still a
+  // pre-release or still being assembled. The release pages have to keep describing what was
+  // released.
+  const f = fixture();
+  t.after(f.cleanup);
+  writeFileSync(join(f.project, 'Cargo.toml'), '[package]\nname = "demo"\nversion = "1.3.0"\n');
+  await generateSite(f.project, f.site, bothChannels(f), {
+    repo: 'example/Demo',
+    publicDir: f.pub,
+    quiet: true,
+  });
+  const versions = (file) => {
+    const idx = JSON.parse(readFileSync(join(f.site, file), 'utf8'));
+    return Object.fromEntries(
+      Object.entries(idx.apps[0].platforms).map(([k, v]) => [k, v.version]),
+    );
+  };
+  assert.equal(versions('appindex.json').macos, '1.2.3');
+  assert.equal(versions('main/appindex.json').macos, '1.3.0');
+  // The build number belongs to the source tree, so the release channel drops it rather than
+  // showing 1.2.3 beside a build it never shipped with.
+  const builds = (file) => {
+    const idx = JSON.parse(readFileSync(join(f.site, file), 'utf8'));
+    return idx.apps[0].platforms.macos.buildNumber;
+  };
+  assert.equal(builds('appindex.json'), undefined);
+  assert.equal(builds('main/appindex.json'), '7');
 });
 
 test('with no release, main owns the locale root and keeps its segment as an alias', async (t) => {

@@ -49,7 +49,8 @@ them. The two are assembled from deliberately different sources.
 | | `/<locale>/` — the release | `/<locale>/main/` — the branch |
 | --- | --- | --- |
 | picker label | the release's version, `1.2.3` | the default branch, `main` |
-| downloads | the release's own packages, at their `releases/latest/download/` URLs | this run's packages, served from the site under `main/downloads/` |
+| downloads | the release's own packages, at their `releases/download/<tag>/` URLs | this run's packages, served from the site under `main/downloads/` |
+| version | the released tag, so a checkout that has moved on does not change what the release pages report | the version in `Cargo.toml`, with the build number beside it |
 | screenshots | the release's `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the captures this run's dayscripts took |
 | web app | the release's own `web-dom` dist, at `/webapp/` | this run's, at `/main/webapp/` |
 | page | as published | carries a development-build notice and a link to the release |
@@ -177,8 +178,9 @@ so the site never installs as an app of its own.
 
 `appindex.json` conforms to the appindex schema — `platforms.ios` / `platforms.android` mean what
 they mean there — plus Day's additive extension: entries under `macos`, `windows`, `linux-gtk`,
-`linux-qt`, `harmony`, and `web` keys, and a per-platform `artifacts` array carrying the stable
-`releases/latest/download/` URLs (`src/lib/day-targets.ts` is the vocabulary). An appindex consumer
+`linux-qt`, `harmony`, and `web` keys, and a per-platform `artifacts` array carrying the
+`releases/download/<tag>/` URLs of the release the channel describes (`src/lib/day-targets.ts` is
+the vocabulary). An appindex consumer
 reads the subset it understands; the document doubles as the app's machine-readable publication
 record.
 
