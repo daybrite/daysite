@@ -9,9 +9,10 @@ import type {
   LocalizedText,
 } from './types.ts';
 
-// Native names for the locales we expect to encounter in publication-format documents. The list
-// is intentionally permissive — anything not present here just falls back to the locale code
-// itself.
+// Native names for the locales these sites meet most often, where a curated spelling beats ICU's
+// (简体中文 rather than 中文（中国）, Bahasa Indonesia rather than Indonesia). A tag that is not here
+// is named from ICU instead (`icuName`), so the table is an override list rather than the set of
+// languages a site can publish.
 //
 // ONE ENTRY PER NAME. A regional tag belongs here only when it is named differently from its
 // language (`pt-BR` is "Português (Brasil)", `pt-PT` is not), because `localeName` walks the tag
@@ -115,14 +116,55 @@ export function dedupeLocales(codes: string[]): string[] {
   });
 }
 
-/** The display metadata for a tag, from the most specific ancestor that has any. */
+/** Scripts that have an uppercase to move to. Georgian's `toLocaleUpperCase` produces Mtavruli
+ *  capitals, which is not how a language name is written, and casing a Japanese or Arabic name
+ *  does nothing at all — so the rule is applied only where it means something. */
+const BICAMERAL = /^[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Armenian}]/u;
+
+/** A name's first letter, uppercased in its own locale: ICU writes `français` where these sites
+ *  write `Français`. */
+function upperFirst(name: string, code: string): string {
+  if (!BICAMERAL.test(name)) return name;
+  return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+}
+
+/**
+ * ICU's own names for a tag the table above does not carry, so an app that ships a language
+ * nobody anticipated is still named rather than shown as its code. `languageDisplay: 'dialect'`
+ * is what makes `en-GB` "British English" instead of "English (United Kingdom)", and
+ * `fallback: 'none'` keeps ICU from inventing a name for a tag it does not know. The writing
+ * direction comes from the same data, so a new RTL language lays its picker row out correctly.
+ */
+function icuName(code: string): { native: string; english: string; rtl?: boolean } | null {
+  try {
+    const options = { type: 'language', languageDisplay: 'dialect', fallback: 'none' } as const;
+    const native = new Intl.DisplayNames([code], options).of(code);
+    const english = new Intl.DisplayNames(['en'], options).of(code);
+    if (!native || !english) return null;
+    const locale = new Intl.Locale(code) as Intl.Locale & {
+      getTextInfo?: () => { direction?: string };
+      textInfo?: { direction?: string };
+    };
+    const direction = (locale.getTextInfo?.() ?? locale.textInfo)?.direction;
+    return {
+      native: upperFirst(native, code),
+      english: upperFirst(english, 'en'),
+      rtl: direction === 'rtl',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The display metadata for a tag: the table above first, from the most specific ancestor that
+ *  has any, then ICU's. */
 function localeName(code: string): { native: string; english: string; rtl?: boolean } | null {
   const parts = expandLocale(code).split('-');
   for (let i = parts.length; i > 0; i--) {
     const meta = LOCALE_NAMES[parts.slice(0, i).join('-')];
     if (meta) return meta;
   }
-  return null;
+  return icuName(code);
 }
 
 /** Strip the region tag, e.g. "de-DE" → "de". */

@@ -16,6 +16,7 @@ import PlatformIcon from './PlatformIcon.astro';
 import ChannelPicker from './ChannelPicker.astro';
 import DevBuildNote from './DevBuildNote.astro';
 import { localizedText, shotLabel, columnParts, deviceLabel } from '../lib/gallery.ts';
+import { localeInfo } from '../lib/i18n.ts';
 import { dayTarget, DAY_TARGETS } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { galleryHref } from '../lib/routes.ts';
@@ -96,6 +97,11 @@ function variantFor(caps: Record<string, unknown>, theme: string, loc: string): 
 const initialTheme = showThemes[0] ?? 'default';
 // The gallery page's own locale doubles as the preselected screenshot locale when captured.
 const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery.locales[0] ?? 'default');
+
+/** A capture locale in its own language, the way the site's language picker writes it. `default`
+ *  is the set a run captured without naming a locale, which is the app's own default language. */
+const captureLocaleName = (code: string) =>
+  localeInfo(code === 'default' ? data.defaultLocale : code, data.defaultLocale).nativeName;
 ---
 
   <div class="space-y-10">
@@ -135,18 +141,48 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
               ))}
             </div>
           )}
+          {/* A menu rather than a second segmented control: an app that captures a dozen
+              languages would otherwise wrap its picker across the page. Shaped like the site's
+              own language picker, and each language named in its own words. */}
           {showLocales.length > 1 && (
-            <div class="inline-flex flex-wrap rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 text-sm font-medium" role="radiogroup" data-seg="slocale">
-              {showLocales.map((l) => (
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={l === initialLocale ? 'true' : 'false'}
-                  data-value={l}
-                  class="rounded-full px-3.5 py-1 transition aria-checked:bg-[color:var(--color-accent)] aria-checked:text-[color:var(--color-accent-fg)] text-[color:var(--color-text-soft)]"
-                >{l === 'default' ? data.defaultLocale : l}</button>
-              ))}
-            </div>
+            <details class="relative" data-seg="slocale" data-menu>
+              <summary
+                class="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1.5 text-sm font-medium hover:border-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] transition"
+                aria-label={ui.selectLanguage}
+              >
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+                </svg>
+                <span data-menu-value dir="auto">{captureLocaleName(initialLocale)}</span>
+                <svg viewBox="0 0 24 24" class="size-3 opacity-60" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              {/* Centered under the button rather than hung off its end (the site's own picker,
+                  which sits in a corner): these controls are centered in the page, so a panel
+                  anchored to one edge runs off a phone screen. */}
+              <div
+                class="absolute left-1/2 -translate-x-1/2 mt-2 w-64 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-auto rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-2xl p-1 z-40"
+                role="radiogroup"
+                aria-label={ui.selectLanguage}
+              >
+                {showLocales.map((l) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={l === initialLocale ? 'true' : 'false'}
+                    data-value={l}
+                    class="flex w-full items-baseline justify-between gap-3 rounded-xl px-3 py-2 text-sm text-start transition hover:bg-[color:var(--color-surface-2)] aria-checked:bg-[color:var(--color-surface-2)] aria-checked:font-semibold"
+                  >
+                    <span dir="auto">{captureLocaleName(l)}</span>
+                    <span class="text-xs text-[color:var(--color-text-muted)] uppercase tracking-wide">
+                      {l === 'default' ? data.defaultLocale : l}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </details>
           )}
         </div>
       )}
@@ -363,9 +399,26 @@ const initialLocale = showLocales.includes(locale.code) ? locale.code : (gallery
         b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
       }
       state[name] = btn.dataset.value!;
+      // A menu names its choice on the button that opens it, and closes behind the choice.
+      const value = el.querySelector<HTMLElement>('[data-menu-value]');
+      if (value) value.textContent = btn.querySelector('span')?.textContent?.trim() ?? btn.dataset.value!;
+      if (el instanceof HTMLDetailsElement) el.open = false;
       apply();
     });
   }
+
+  // The two ways out of an open menu that its own markup does not give it.
+  const openMenus = () => document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]');
+  document.addEventListener('click', (e) => {
+    for (const menu of openMenus()) if (!menu.contains(e.target as Node)) menu.open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    for (const menu of openMenus()) {
+      menu.open = false;
+      menu.querySelector('summary')?.focus();
+    }
+  });
 
   function apply() {
     for (const img of document.querySelectorAll<HTMLImageElement>('.gal-img')) {
