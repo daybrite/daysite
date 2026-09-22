@@ -156,11 +156,23 @@ jobs:
           if grep -q 'noindex' dist/en/index.html; then
             echo 'the release pages must be indexable' >&2; exit 1
           fi
-          # The picker offers both, and each channel's web-app button opens its own build.
+          # The picker offers both, and each channel's web-app button opens its own build — in
+          # the language of the page it sits on (`?locale=`), so a reader who came to the French
+          # page opens the app in French.
           grep -qF 'href="/daysite/en/main/"' dist/en/index.html
           grep -qF 'href="/daysite/en/"' dist/en/main/index.html
-          grep -qF 'href="/daysite/main/webapp/"' dist/en/main/index.html
-          grep -qF 'href="/daysite/webapp/"' dist/en/index.html
+          grep -qF 'href="/daysite/main/webapp/?locale=en"' dist/en/main/index.html
+          grep -qF 'href="/daysite/webapp/?locale=en"' dist/en/index.html
+          # A second language, so the locale is the page's own rather than a constant. Which one
+          # is whichever the scaffold's locale list sorts first, since the site publishes a page
+          # tree per language and any of them makes the point.
+          other=$(find dist -mindepth 1 -maxdepth 1 -type d -exec basename {} \; \
+            | grep -vxE 'en|main|webapp|gallery|app|apps|icons|badges|_astro' | sort | head -1)
+          [ -n "$other" ] || { echo 'the scaffold built no second language' >&2; exit 1; }
+          grep -qF "href=\"/daysite/webapp/?locale=$other\"" "dist/$other/index.html" || {
+            echo "dist/$other/index.html: the web-app button does not open the app in $other" >&2
+            exit 1
+          }
       - name: The site renders every scaffolded platform
         run: |
           set -euo pipefail
