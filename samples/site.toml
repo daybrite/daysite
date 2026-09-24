@@ -1,7 +1,7 @@
 # Configuration for a Day project website (website/site.toml).
-# This sample drives the bundled Day Showcase fixture (the app's own Day.toml, store/ texts,
-# icon master, and a few screenshots under samples/) so a bare template checkout can build:
-# `npm run sample` generates its data the way CI does for a real repository.
+# This sample describes Day Showcase as it is on its main branch: `npm run sample` clones the app,
+# exports its listing with the day CLI, fetches a few of its published screenshots, and generates
+# the site's data from them the way CI does for a real repository.
 # In an app repository, only `host` is required — everything else has a sensible default.
 
 host = "https://showcase.daybrite.dev"

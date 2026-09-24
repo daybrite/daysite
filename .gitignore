@@ -13,6 +13,8 @@ public/webapp/
 # plus the packages a development channel serves from the site itself.
 public/main/
 public/downloads/
-# The sample's generated data (`npm run sample`), like an app repository's website/ pair.
+# The sample's generated data (`npm run sample`), like an app repository's website/ pair, and the
+# Day Showcase clone, export and screenshots it is generated from.
 samples/appindex.json
 samples/gallery-manifest.json
+samples/.showcase/

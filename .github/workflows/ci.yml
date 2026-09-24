@@ -13,14 +13,19 @@ permissions:
   id-token: write
 
 jobs:
-  # Template self-test: build against the bundled sample (samples/, a Day project in miniature;
-  # samples/site.toml resolves when neither DAYSITE_CONFIG nor a conventional ../site.toml
-  # exists), through the same generators CI runs for a real repository. Cheap, so it runs on
-  # PRs too.
+  # Template self-test: build against the sample, Day Showcase as it is on its main branch right
+  # now (samples/site.toml resolves when neither DAYSITE_CONFIG nor a conventional ../site.toml
+  # exists), through the same generators CI runs for a real repository. `npm run sample` clones
+  # the Showcase, exports it with the day CLI and fetches a few of its published screenshots, so
+  # nothing about the app is committed here to go stale. Cheap, so it runs on PRs too.
   sample:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # main, like the exercise job: the Showcase on main is exported by the CLI on main.
+      - uses: daybrite/actions/.github/actions/setup-day-cli@main
+        with:
+          version: main
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -43,10 +48,17 @@ jobs:
           grep -q 'badges/en/google-play-store.svg' dist/en/index.html
           test -f dist/app/apple-touch-icon.png
           test -f dist/en/gallery/index.html
-          # The permissions card, from the CLI's metadata: the camera row, in French on the
-          # French page.
+          # The permissions card, from the CLI's export: the camera row, with its French reason
+          # on the French page. The reason is read from the export rather than written here,
+          # since it is whatever the Showcase says today; the page escapes an apostrophe.
           grep -q 'NSCameraUsageDescription' dist/en/index.html
-          grep -q "jamais l&#39;appareil photo\|jamais l'appareil photo" dist/fr/index.html
+          reason="$(node -e '
+            const p = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+              .permissions.find((p) => p.name === "camera");
+            if (!p?.reasons?.fr) throw new Error("the export has no French camera reason");
+            console.log(p.reasons.fr);
+          ' samples/.showcase/storefront.json)"
+          grep -qF "$reason" dist/fr/index.html || grep -qF "${reason//\'/&#39;}" dist/fr/index.html
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run this checkout of the template over the

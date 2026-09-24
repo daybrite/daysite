@@ -1,69 +1,3825 @@
 {
+  "listings": {
+    "android-mdc": {
+      "stores": {
+        "f-droid": {
+          "phone": {
+            "ar": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ]
+          },
+          "tablet": {
+            "ar": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              }
+            ]
+          }
+        },
+        "google-play-store": {
+          "phone": {
+            "ar": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              }
+            ]
+          },
+          "tablet": {
+            "ar": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "grid",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "dark"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "grid",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "dark"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "phone": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "animation",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "animation",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "animation",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ]
+        },
+        "tablet": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "layout",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "layout",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "layout",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "lottie",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "harmony-arkui": {
+      "stores": {
+        "appgallery": {
+          "default": {
+            "ar": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "ios-uikit": {
+      "stores": {
+        "altstore": {
+          "ipad": {
+            "ar": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "dark"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "dark"
+              }
+            ]
+          },
+          "iphone": {
+            "ar": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "dark"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "home",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "lottie",
+                "theme": "dark"
+              }
+            ]
+          }
+        },
+        "apple-app-store": {
+          "ipad": {
+            "ar": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "grid",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "dark"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "grid",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "dark"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ]
+          },
+          "iphone": {
+            "ar": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "dark"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "resources",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "map",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "dark"
+              },
+              {
+                "shot": "dates",
+                "theme": "light"
+              },
+              {
+                "shot": "animation",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "ipad": {
+          "ar": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "layout",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "layout",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            }
+          ]
+        },
+        "iphone": {
+          "ar": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "animation",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            },
+            {
+              "shot": "animation",
+              "theme": "light"
+            },
+            {
+              "shot": "map",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "linux-gtk": {
+      "stores": {
+        "flathub": {
+          "default": {
+            "ar": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "dark"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "dark"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "dark"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "dark"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "list",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "linux-qt": {
+      "stores": {},
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "grid",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "macos-appkit": {
+      "stores": {
+        "mac-app-store": {
+          "default": {
+            "ar": [
+              {
+                "shot": "localization",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "menus",
+                "theme": "light"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "menus",
+                "theme": "light"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "menus",
+                "theme": "light"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "textareas-code",
+                "theme": "light"
+              },
+              {
+                "shot": "menus",
+                "theme": "light"
+              },
+              {
+                "shot": "toolbars",
+                "theme": "light"
+              },
+              {
+                "shot": "tree",
+                "theme": "light"
+              },
+              {
+                "shot": "dates",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "toolbars",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            },
+            {
+              "shot": "dates",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "web-dom": {
+      "stores": {},
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "webview",
+              "theme": "light"
+            },
+            {
+              "shot": "localization",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "webview",
+              "theme": "light"
+            },
+            {
+              "shot": "localization",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "localization",
+              "theme": "light"
+            },
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "webview",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "textareas-code",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "webview",
+              "theme": "light"
+            },
+            {
+              "shot": "localization",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    },
+    "windows-xaml": {
+      "stores": {
+        "microsoft-store": {
+          "default": {
+            "ar": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "en": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "fr": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ],
+            "zh-CN": [
+              {
+                "shot": "canvas",
+                "theme": "light"
+              },
+              {
+                "shot": "controls",
+                "theme": "light"
+              },
+              {
+                "shot": "text",
+                "theme": "light"
+              },
+              {
+                "shot": "layout",
+                "theme": "light"
+              },
+              {
+                "shot": "list",
+                "theme": "dark"
+              },
+              {
+                "shot": "localization",
+                "theme": "light"
+              }
+            ]
+          }
+        }
+      },
+      "website": {
+        "default": {
+          "ar": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "en": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "fr": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ],
+          "zh-CN": [
+            {
+              "shot": "canvas",
+              "theme": "light"
+            },
+            {
+              "shot": "controls",
+              "theme": "light"
+            },
+            {
+              "shot": "text",
+              "theme": "light"
+            },
+            {
+              "shot": "resources",
+              "theme": "light"
+            },
+            {
+              "shot": "menus",
+              "theme": "light"
+            },
+            {
+              "shot": "tree",
+              "theme": "light"
+            }
+          ]
+        }
+      }
+    }
+  },
   "themes": [
-    "default"
+    "light",
+    "dark"
   ],
   "locales": [
-    "default"
+    "ar",
+    "en",
+    "fr",
+    "zh-CN"
+  ],
+  "platforms": [
+    "ios-uikit/ipad",
+    "ios-uikit/iphone",
+    "android-mdc/tablet",
+    "android-mdc/phone",
+    "harmony-arkui",
+    "macos-appkit",
+    "linux-gtk",
+    "linux-qt",
+    "windows-xaml",
+    "web-dom"
   ],
   "shots": [
     {
-      "id": "anchors",
-      "byPlatform": {
-        "web-dom": {
-          "default": {
-            "src": "gallery/web-dom/default/anchors.png",
-            "width": 900,
-            "height": 648
-          }
-        }
-      }
-    },
-    {
-      "id": "controls",
-      "byPlatform": {
-        "android-mdc": {
-          "default": {
-            "src": "gallery/android-mdc/default/controls.png",
-            "width": 506,
-            "height": 900
-          }
-        },
-        "ios-uikit": {
-          "default": {
-            "src": "gallery/ios-uikit/default/controls.png",
-            "width": 414,
-            "height": 900
-          }
-        }
-      }
-    },
-    {
       "id": "home",
+      "title": {
+        "ar": "الرئيسية",
+        "en": "Home",
+        "fr": "Accueil",
+        "zh-CN": "主页"
+      },
+      "caption": {
+        "ar": "الشريط الجانبي لصفحات العرض التوضيحي.",
+        "en": "The app's sidebar of demo pages.",
+        "fr": "La barre latérale des pages de démonstration.",
+        "zh-CN": "演示页面的侧边栏。"
+      },
+      "source": "src/lib.rs",
       "byPlatform": {
-        "android-mdc": {
-          "default": {
-            "src": "gallery/android-mdc/default/home.png",
-            "width": 506,
-            "height": 900
+        "ios-uikit/ipad": {
+          "dark": {
+            "src": "gallery/ios-uikit/ipad/dark/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/ios-uikit/ipad/dark-ar/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/ios-uikit/ipad/dark-fr/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/ios-uikit/ipad/dark-zh-CN/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/ios-uikit/ipad/light/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/ios-uikit/ipad/light-ar/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/ios-uikit/ipad/light-fr/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/ios-uikit/ipad/light-zh-CN/home.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "zh-CN"
           }
         },
-        "ios-uikit": {
-          "default": {
-            "src": "gallery/ios-uikit/default/home.png",
-            "width": 414,
-            "height": 900
+        "ios-uikit/iphone": {
+          "dark": {
+            "src": "gallery/ios-uikit/iphone/dark/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/ios-uikit/iphone/dark-ar/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/ios-uikit/iphone/dark-fr/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/ios-uikit/iphone/dark-zh-CN/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/ios-uikit/iphone/light/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/ios-uikit/iphone/light-ar/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/ios-uikit/iphone/light-fr/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/ios-uikit/iphone/light-zh-CN/home.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "android-mdc/tablet": {
+          "dark": {
+            "src": "gallery/android-mdc/tablet/dark/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/android-mdc/tablet/dark-ar/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/android-mdc/tablet/dark-fr/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/android-mdc/tablet/dark-zh-CN/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/android-mdc/tablet/light/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/android-mdc/tablet/light-ar/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/android-mdc/tablet/light-fr/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/android-mdc/tablet/light-zh-CN/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "android-mdc/phone": {
+          "dark": {
+            "src": "gallery/android-mdc/phone/dark/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/android-mdc/phone/dark-ar/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/android-mdc/phone/dark-fr/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/android-mdc/phone/dark-zh-CN/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/android-mdc/phone/light/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/android-mdc/phone/light-ar/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/android-mdc/phone/light-fr/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/android-mdc/phone/light-zh-CN/home.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "harmony-arkui": {
+          "dark": {
+            "src": "gallery/harmony-arkui/dark/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/harmony-arkui/dark-ar/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/harmony-arkui/dark-fr/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/harmony-arkui/dark-zh-CN/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/harmony-arkui/light/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/harmony-arkui/light-ar/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/harmony-arkui/light-fr/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/harmony-arkui/light-zh-CN/home.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "macos-appkit": {
+          "dark": {
+            "src": "gallery/macos-appkit/dark/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/macos-appkit/dark-ar/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/macos-appkit/dark-fr/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/macos-appkit/dark-zh-CN/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/macos-appkit/light/home.png",
+            "width": 1024,
+            "height": 674,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/macos-appkit/light-ar/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/macos-appkit/light-fr/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/macos-appkit/light-zh-CN/home.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "linux-gtk": {
+          "dark": {
+            "src": "gallery/linux-gtk/dark/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/linux-gtk/dark-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/linux-gtk/dark-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/linux-gtk/dark-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/linux-gtk/light/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/linux-gtk/light-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/linux-gtk/light-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/linux-gtk/light-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "linux-qt": {
+          "dark": {
+            "src": "gallery/linux-qt/dark/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/linux-qt/dark-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/linux-qt/dark-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/linux-qt/dark-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/linux-qt/light/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/linux-qt/light-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/linux-qt/light-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/linux-qt/light-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "windows-xaml": {
+          "dark": {
+            "src": "gallery/windows-xaml/dark/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/windows-xaml/dark-ar/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/windows-xaml/dark-fr/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/windows-xaml/dark-zh-CN/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/windows-xaml/light/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/windows-xaml/light-ar/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/windows-xaml/light-fr/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/windows-xaml/light-zh-CN/home.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "web-dom": {
+          "dark": {
+            "src": "gallery/web-dom/dark/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/web-dom/dark-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/web-dom/dark-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/web-dom/dark-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/web-dom/light/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/web-dom/light-ar/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/web-dom/light-fr/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/web-dom/light-zh-CN/home.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
           }
         }
       }
     },
     {
-      "id": "interaction",
+      "id": "about",
+      "title": {
+        "ar": "حول",
+        "en": "About",
+        "fr": "À propos",
+        "zh-CN": "关于"
+      },
+      "source": "src/pages/about.rs",
       "byPlatform": {
+        "ios-uikit/ipad": {
+          "dark": {
+            "src": "gallery/ios-uikit/ipad/dark/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/ios-uikit/ipad/dark-ar/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/ios-uikit/ipad/dark-fr/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/ios-uikit/ipad/dark-zh-CN/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/ios-uikit/ipad/light/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/ios-uikit/ipad/light-ar/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/ios-uikit/ipad/light-fr/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/ios-uikit/ipad/light-zh-CN/about.png",
+            "width": 2752,
+            "height": 2064,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "ios-uikit/iphone": {
+          "dark": {
+            "src": "gallery/ios-uikit/iphone/dark/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/ios-uikit/iphone/dark-ar/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/ios-uikit/iphone/dark-fr/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/ios-uikit/iphone/dark-zh-CN/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/ios-uikit/iphone/light/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/ios-uikit/iphone/light-ar/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/ios-uikit/iphone/light-fr/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/ios-uikit/iphone/light-zh-CN/about.png",
+            "width": 1320,
+            "height": 2868,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "android-mdc/tablet": {
+          "dark": {
+            "src": "gallery/android-mdc/tablet/dark/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/android-mdc/tablet/dark-ar/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/android-mdc/tablet/dark-fr/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/android-mdc/tablet/dark-zh-CN/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/android-mdc/tablet/light/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/android-mdc/tablet/light-ar/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/android-mdc/tablet/light-fr/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/android-mdc/tablet/light-zh-CN/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "android-mdc/phone": {
+          "dark": {
+            "src": "gallery/android-mdc/phone/dark/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/android-mdc/phone/dark-ar/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/android-mdc/phone/dark-fr/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/android-mdc/phone/dark-zh-CN/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/android-mdc/phone/light/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/android-mdc/phone/light-ar/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/android-mdc/phone/light-fr/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/android-mdc/phone/light-zh-CN/about.png",
+            "width": 1080,
+            "height": 1920,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "harmony-arkui": {
+          "dark": {
+            "src": "gallery/harmony-arkui/dark/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/harmony-arkui/dark-ar/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/harmony-arkui/dark-fr/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/harmony-arkui/dark-zh-CN/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/harmony-arkui/light/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/harmony-arkui/light-ar/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/harmony-arkui/light-fr/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/harmony-arkui/light-zh-CN/about.png",
+            "width": 360,
+            "height": 720,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "macos-appkit": {
+          "dark": {
+            "src": "gallery/macos-appkit/dark/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/macos-appkit/dark-ar/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/macos-appkit/dark-fr/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/macos-appkit/dark-zh-CN/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/macos-appkit/light/about.png",
+            "width": 1024,
+            "height": 674,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/macos-appkit/light-ar/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/macos-appkit/light-fr/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/macos-appkit/light-zh-CN/about.png",
+            "width": 1024,
+            "height": 677,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "linux-gtk": {
+          "dark": {
+            "src": "gallery/linux-gtk/dark/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/linux-gtk/dark-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/linux-gtk/dark-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/linux-gtk/dark-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/linux-gtk/light/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/linux-gtk/light-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/linux-gtk/light-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/linux-gtk/light-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "linux-qt": {
+          "dark": {
+            "src": "gallery/linux-qt/dark/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/linux-qt/dark-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/linux-qt/dark-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/linux-qt/dark-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/linux-qt/light/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/linux-qt/light-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/linux-qt/light-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/linux-qt/light-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
+        "windows-xaml": {
+          "dark": {
+            "src": "gallery/windows-xaml/dark/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/windows-xaml/dark-ar/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/windows-xaml/dark-fr/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/windows-xaml/dark-zh-CN/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/windows-xaml/light/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/windows-xaml/light-ar/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/windows-xaml/light-fr/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/windows-xaml/light-zh-CN/about.png",
+            "width": 1280,
+            "height": 800,
+            "theme": "light",
+            "locale": "zh-CN"
+          }
+        },
         "web-dom": {
-          "default": {
-            "src": "gallery/web-dom/default/interaction.png",
-            "width": 900,
-            "height": 648
+          "dark": {
+            "src": "gallery/web-dom/dark/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "en"
+          },
+          "dark-ar": {
+            "src": "gallery/web-dom/dark-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "ar"
+          },
+          "dark-fr": {
+            "src": "gallery/web-dom/dark-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "fr"
+          },
+          "dark-zh-CN": {
+            "src": "gallery/web-dom/dark-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "dark",
+            "locale": "zh-CN"
+          },
+          "light": {
+            "src": "gallery/web-dom/light/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "en"
+          },
+          "light-ar": {
+            "src": "gallery/web-dom/light-ar/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "ar"
+          },
+          "light-fr": {
+            "src": "gallery/web-dom/light-fr/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "fr"
+          },
+          "light-zh-CN": {
+            "src": "gallery/web-dom/light-zh-CN/about.png",
+            "width": 2560,
+            "height": 1600,
+            "theme": "light",
+            "locale": "zh-CN"
           }
         }
       }

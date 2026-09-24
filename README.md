@@ -275,8 +275,9 @@ what the CLI generates, and the deployed artifact is browsable at
 
 ## Template development
 
-`npm install && npm run sample && npm run dev` in a bare checkout serves the bundled sample
-(`samples/`, a trimmed copy of Day Showcase: `Day.toml`, `store/storefront.toml`, its exported
-storefront, the icon master, a few screenshots; `npm run sample` generates its data the way CI
-does for a real repository). Point
+`npm install && npm run sample && npm run dev` in a bare checkout serves the sample: Day Showcase
+as it is on its main branch, which `npm run sample` clones, exports with the day CLI (`DAY_BIN`,
+else `day`) and generates the site's data from the way CI does for a real repository, with a
+few of the screenshots the Showcase's own site publishes ([samples/README.md](samples/README.md)).
+Point
 `DAYSITE_CONFIG` at any `site.toml` to build against real app data.
