@@ -178,3 +178,24 @@ test('the appindex is generated from the storefront export alone', async () => {
   assert.equal(tagged.apps[0].platforms.ios.version, '1.3.0');
   assert.equal(tagged.apps[0].platforms.ios.buildNumber, undefined);
 });
+
+test('a declaration whose lists are all empty is treated as none, so every capture shows', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-empty-listing-'));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const doc = join(root, 'storefront.json');
+  writeFileSync(doc, JSON.stringify(storefrontDoc()));
+  // What an older CLI wrote for a target with a submission table and no screenshot lists.
+  const manifest = {
+    listings: { 'ios-uikit': { website: { iphone: { en: [] } } } },
+    themes: ['default'], locales: ['default'],
+    platforms: ['ios-uikit'],
+    shots: [{ id: 'home', title: { en: 'Home' }, byPlatform: { 'ios-uikit': { default: { src: 'gallery/ios-uikit/default/home.png', width: 10, height: 20 } } } }],
+  };
+  writeFileSync(join(site, 'gallery-manifest.json'), JSON.stringify(manifest));
+  const index = await generateAppIndex(project, site, { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true });
+  const shots = index.apps[0].platforms.ios.assets.screenshots;
+  assert.deepEqual(Object.keys(shots), ['en']);
+  assert.equal(shots.en[0].location, 'gallery/ios-uikit/default/home.png');
+});

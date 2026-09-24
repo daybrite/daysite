@@ -559,7 +559,12 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
         parts.find((c) => c.locale === l && c.theme === 'default');
       return match(locale) ?? (locale === defaultLocale ? match('default') : undefined);
     };
-    if (declared && typeof declared === 'object' && Object.keys(declared).length) {
+    // A declaration whose every list is empty is no declaration: an index from an older CLI
+    // wrote one for a target that had a submission table and no screenshot lists, and obeying
+    // it showed nothing where the gallery had every capture.
+    const declaresAny =
+      declared && typeof declared === 'object' && Object.values(declared).some((l) => Array.isArray(l) && l.length);
+    if (declaresAny) {
       for (const [locale, list] of Object.entries(declared)) {
         if (!Array.isArray(list)) continue;
         // `default` and the default locale resolve to the same captures; one list, not two.
