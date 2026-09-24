@@ -199,3 +199,33 @@ test('a declaration whose lists are all empty is treated as none, so every captu
   assert.deepEqual(Object.keys(shots), ['en']);
   assert.equal(shots.en[0].location, 'gallery/ios-uikit/default/home.png');
 });
+
+test('a target captured on two device panels gets one row per panel, the phone first', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-harmony-rows-'));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const doc = join(root, 'storefront.json');
+  const storefront = storefrontDoc();
+  storefront.project.targets.push('harmony-arkui');
+  writeFileSync(doc, JSON.stringify(storefront));
+  // The HarmonyOS legs: one Oniro image on a phone panel and a landscape tablet panel, each its
+  // own column (`harmony-arkui/<slug>`), arriving tablet first here on purpose.
+  const shot = (device, w, h) => ({ src: `gallery/harmony-arkui/${device}/default/home.png`, width: w, height: h });
+  const manifest = {
+    themes: ['default'], locales: ['default'],
+    platforms: ['harmony-arkui/tablet', 'harmony-arkui/phone'],
+    shots: [{ id: 'home', title: { en: 'Home' }, byPlatform: {
+      'harmony-arkui/tablet': { default: shot('tablet', 1280, 800) },
+      'harmony-arkui/phone': { default: shot('phone', 360, 720) },
+    } }],
+  };
+  writeFileSync(join(site, 'gallery-manifest.json'), JSON.stringify(manifest));
+  const index = await generateAppIndex(project, site, { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true });
+  const harmony = index.apps[0].platforms.harmony.assets;
+  assert.deepEqual(harmony.screenshotRows.map((r) => r.device), ['phone', 'tablet']);
+  assert.equal(harmony.screenshotRows[0].screenshots.en[0].location, 'gallery/harmony-arkui/phone/default/home.png');
+  assert.equal(harmony.screenshotRows[1].screenshots.en[0].location, 'gallery/harmony-arkui/tablet/default/home.png');
+  // `screenshots` stays the first row, for readers that know only the schema.
+  assert.equal(harmony.screenshots.en[0].location, 'gallery/harmony-arkui/phone/default/home.png');
+});
