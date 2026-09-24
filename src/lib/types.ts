@@ -143,6 +143,12 @@ export interface PlatformEntry {
     iconVector?: AssetFile;
     featureGraphic?: LocalizedAsset;
     screenshots?: LocalizedAssetList;
+    /**
+     * Day extension: the landing page's screenshot rows, one per device profile the walkthrough
+     * captured on (`iphone`, `ipad`, `phone`, `tablet`), each its own locale-keyed list;
+     * `screenshots` above is the first row, for readers that know only the schema.
+     */
+    screenshotRows?: { device?: string; screenshots: LocalizedAssetList }[];
   };
   permissions?: PermissionEntry[];
   /**
@@ -244,12 +250,20 @@ export interface PlatformView {
   iconURL?: string;
   featureGraphicURL?: string;
   screenshots: AssetView[];
+  /** One carousel per device profile; a target captured on one device has a single unlabelled row. */
+  screenshotRows: ScreenshotRow[];
   permissions: PermissionView[];
   privacyURL?: string;
   supportURL?: string;
   dependencyCount: number;
   rawTitleLocaleUsed: string;
   rawDescriptionLocaleUsed: string;
+}
+
+export interface ScreenshotRow {
+  /** The capture's device profile slug (`iphone`, `ipad`, `phone`, `tablet`), when it had one. */
+  device?: string;
+  screenshots: AssetView[];
 }
 
 export interface AssetView {

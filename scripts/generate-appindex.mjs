@@ -4,16 +4,16 @@
 // a store-release pipeline; a Day repository already CONTAINS everything it records, so this
 // script derives it instead of asking anyone to maintain a second copy:
 //
-//   Day.toml                → app id, title, target list
-//   Day.toml [store]        → the live App Store / Google Play listings (badge + link)
-//   store/app.toml          → bundle id, copyright, contact
-//   store/<locale>/*.txt    → localized name, subtitle, description, keywords, release notes,
-//                             privacy/support/marketing URLs (the store-submission texts)
-//   --metadata FILE         → `day metadata --json` (the CLI's own view of the project: the
-//                             declared permissions with their native keys per platform and their
-//                             reasons per locale, docs/permissions.md). Read from the file when
-//                             the workflow wrote one, else from `${DAY_BIN:-day} metadata --json`
-//                             run here, else the site shows no permissions.
+//   --storefront FILE       → `day store export` (docs/store.md "Exporting"): the app's identity
+//                             (id, title, version, build, targets), the live App Store / Google
+//                             Play listings (badge + link), the listing text resolved per
+//                             locale (name, subtitle, description, keywords, release notes,
+//                             privacy/support/marketing URLs), each target's store records
+//                             (bundle id), and the declared permissions with their native keys
+//                             per platform and their reasons per locale. Read from the file
+//                             when the workflow wrote one, else from `${DAY_BIN:-day} store
+//                             export` run here; without either there is no site to generate,
+//                             because everything it says about the app comes from this document.
 //   --release-assets FILE   → the latest release's assets ([{name, size}], as the CI workflow
 //                             writes them from `gh api …/releases/latest`), each mapped to its
 //                             target and its /releases/download/<tag>/ URL. The script
@@ -33,15 +33,14 @@
 // there, because a branch build has no release to link.
 //
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
-//            [--repo owner/name] [--release-assets FILE] [--tag vX.Y.Z] [--metadata FILE]
+//            [--repo owner/name] [--release-assets FILE] [--tag vX.Y.Z] [--storefront FILE]
 //            [--out NAME] [--gallery NAME] [--downloads DIR] [--download-prefix PATH]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse as parseTOML } from 'smol-toml';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -199,20 +198,14 @@ function findAppIcon(projectRoot) {
   return undefined;
 }
 
-const localizedFileKeys = {
-  'name.txt': 'title',
-  'subtitle.txt': 'subtitle',
-  'description.txt': 'description',
-  'release-notes.txt': 'releaseNotes',
+// The storefront's text fields → the appindex's locale-keyed keys.
+const TEXT_KEYS = {
+  name: 'title',
+  subtitle: 'subtitle',
+  description: 'description',
+  'release-notes': 'releaseNotes',
 };
-
-function readText(path) {
-  try {
-    return readFileSync(path, 'utf8').trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
+const LINK_KEYS = { 'privacy-url': 'privacy', 'support-url': 'support', 'marketing-url': 'marketing' };
 
 /**
  * The latest release's assets as `[{ name, size }]`, read from the file the CI workflow writes
@@ -236,45 +229,60 @@ export function readReleaseAssets(path, log = () => {}) {
 }
 
 /**
- * The project's `day metadata --json` document: from `path` when given (the workflow writes one
- * right after installing the CLI), else by running `${DAY_BIN:-day} metadata --json` in the
- * project, so a local preview shows what CI shows. Undefined when neither is available — the
- * site then lists no permissions, and says so in the log.
+ * The project's storefront document (`day store export`): from `path` when given (the
+ * workflow writes one right after installing the CLI), else by running `${DAY_BIN:-day} store
+ * export` in the project, so a local preview shows what CI shows. Throws when neither is
+ * available: everything the site says about the app comes from this document, so there is
+ * nothing to generate without it.
  */
-export function readDayMetadata(projectRoot, path, log = () => {}) {
+export function readStorefront(projectRoot, path, log = () => {}) {
   if (path) {
+    let doc;
     try {
-      return JSON.parse(readFileSync(path, 'utf8'));
+      doc = JSON.parse(readFileSync(path, 'utf8'));
     } catch (e) {
-      log(`no day metadata (${path}: ${e.message}) — the site lists no permissions`);
-      return undefined;
+      throw new Error(`generate-appindex: the storefront document ${path} could not be read (${e.message})`);
     }
+    return checkStorefront(doc, path);
   }
   const bin = process.env.DAY_BIN || 'day';
+  let out;
   try {
-    const out = execFileSync(bin, ['--project', projectRoot, 'metadata', '--json'], {
-      stdio: ['ignore', 'pipe', 'ignore'],
-      maxBuffer: 16 * 1024 * 1024,
+    out = execFileSync(bin, ['--project', projectRoot, 'store', 'export'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
     });
-    log(`day metadata: from \`${bin} metadata --json\``);
-    return JSON.parse(out.toString());
   } catch (e) {
-    log(`no day metadata (\`${bin} metadata --json\`: ${e.message.split('\n')[0]}) — the site lists no permissions`);
-    return undefined;
+    const why = String(e.stderr || e.message).trim().split('\n').pop();
+    throw new Error(
+      `generate-appindex: \`${bin} store export\` failed (${why}); the site is generated from that document — ` +
+        'set DAY_BIN to a day CLI, or pass --storefront FILE written by `day store export --out FILE`',
+    );
   }
+  log(`storefront: from \`${bin} store export\``);
+  return checkStorefront(JSON.parse(out.toString()), `${bin} store export`);
+}
+
+/** The document has to be a storefront export, not, say, `day metadata --json`. */
+function checkStorefront(doc, from) {
+  if (!doc || typeof doc !== 'object' || !doc.project || !doc.storefront || !Array.isArray(doc.locales)) {
+    throw new Error(`generate-appindex: ${from} is not a \`day store export\` document (schema 1: project, locales, storefront)`);
+  }
+  return doc;
 }
 
 // The appindex platform key each of the CLI's permission columns belongs to.
 const PERMISSION_PLATFORMS = { android: 'android', ios: 'ios', macos: 'macos', ohos: 'harmony' };
 
 /**
- * The per-platform `permissions` arrays for the app index from a `day metadata --json`
- * document: every declared permission's native keys on each platform, and the raw ones, each
- * with its reason as a locale-keyed description. Android takes no reason, so its entries carry
- * none; the site's own catalog describes them.
+ * The per-platform `permissions` arrays for the app index from a storefront export (or a
+ * `day metadata --json` document, which carries the same two lists under `project`): every
+ * declared permission's native keys on each platform, and the raw ones, each with its reason
+ * as a locale-keyed description. Android takes no reason, so its entries carry none; the
+ * site's own catalog describes them.
  */
 export function permissionsByPlatform(metadata) {
-  const project = metadata?.project ?? {};
+  const project = metadata?.project?.permissions ? metadata.project : (metadata ?? {});
   const out = {};
   const add = (platform, key, reasons) => {
     const list = (out[platform] ??= []);
@@ -336,14 +344,25 @@ export function storeListing(table) {
   return out;
 }
 
-/** App workspaces can inherit the package version from workspace.package. */
-export function cargoVersion(cargo) {
-  const version = cargo.package?.version;
-  if (typeof version === 'string') return version;
-  if (version?.workspace === true && typeof cargo.workspace?.package?.version === 'string') {
-    return cargo.workspace.package.version;
+/**
+ * The appindex's localized text and links from the storefront's shared-level text: one map per
+ * field, keyed by locale, holding only what a locale resolves to (the default locale's text
+ * where a locale sets none of its own, the way the stores see it).
+ */
+export function localizedText(storefront) {
+  const out = { title: {}, subtitle: {}, description: {}, releaseNotes: {}, keywords: {}, links: { privacy: {}, support: {}, marketing: {} } };
+  for (const [locale, fields] of Object.entries(storefront?.storefront?.metadata ?? {})) {
+    if (!fields || typeof fields !== 'object') continue;
+    for (const [key, target] of Object.entries(TEXT_KEYS)) {
+      if (typeof fields[key] === 'string' && fields[key].trim()) out[target][locale] = fields[key].trim();
+    }
+    if (Array.isArray(fields.keywords) && fields.keywords.length) out.keywords[locale] = fields.keywords.map(String);
+    for (const [key, target] of Object.entries(LINK_KEYS)) {
+      if (typeof fields[key] === 'string' && fields[key].trim()) out.links[target][locale] = fields[key].trim();
+    }
   }
-  return undefined;
+  for (const k of Object.keys(out.links)) if (!Object.keys(out.links[k]).length) delete out.links[k];
+  return out;
 }
 
 export async function generateAppIndex(projectRoot, outDir, opts = {}) {
@@ -352,63 +371,25 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   // test suite points it at a temp directory so a run does not clobber a working preview.
   const publicDir = opts.publicDir ?? join(TEMPLATE_ROOT, 'public');
 
-  const dayToml = parseTOML(readFileSync(join(projectRoot, 'Day.toml'), 'utf8'));
-  const app = dayToml.app ?? {};
-  const cargo = existsSync(join(projectRoot, 'Cargo.toml'))
-    ? parseTOML(readFileSync(join(projectRoot, 'Cargo.toml'), 'utf8'))
-    : {};
+  // Everything the site says about the app comes from the CLI's storefront export: the
+  // project's identity, its locales, the listing text resolved per locale, the store records
+  // and the permissions. The generator reads no project file of its own.
+  const storefront = readStorefront(projectRoot, opts.storefront ?? process.env.DAYSITE_STOREFRONT, log);
+  const app = storefront.project ?? {};
   // A release channel describes the release, not the checkout: the site is generated from the
   // newest commit, which may already be a version ahead of what has been released. The tag is
   // the released version, so it wins where there is one; a development channel has none and
   // keeps the version the source carries.
   const releaseTag = opts.tag ?? process.env.DAYSITE_RELEASE_TAG ?? undefined;
-  const sourceVersion = cargoVersion(cargo);
+  const sourceVersion = typeof app.version === 'string' ? app.version : undefined;
   const version = releaseTag ? releaseTag.replace(/^v/, '') : sourceVersion;
   // The build number is the source tree's, so it describes the version reported here only while
   // the two agree. A release channel generated from a newer commit leaves it out rather than
   // pairing a released version with a build it never had.
   const buildNumber = !releaseTag || version === sourceVersion ? app.build : undefined;
 
-  const storeDir = join(projectRoot, 'store');
-  const storeApp = existsSync(join(storeDir, 'app.toml'))
-    ? parseTOML(readFileSync(join(storeDir, 'app.toml'), 'utf8'))
-    : {};
-
-  // Localized store texts: one directory per locale, one file per field.
-  const title = {};
-  const subtitle = {};
-  const description = {};
-  const releaseNotes = {};
-  const keywords = {};
-  const links = { privacy: {}, support: {}, marketing: {} };
-  const locales = existsSync(storeDir)
-    ? readdirSync(storeDir).filter((d) => {
-        try {
-          return readdirSync(join(storeDir, d)).length > 0;
-        } catch {
-          return false;
-        }
-      })
-    : [];
-  for (const locale of locales) {
-    const dir = join(storeDir, locale);
-    const fieldMaps = { title, subtitle, description, releaseNotes };
-    for (const [file, field] of Object.entries(localizedFileKeys)) {
-      const v = readText(join(dir, file));
-      if (v) fieldMaps[field][locale] = v;
-    }
-    const kw = readText(join(dir, 'keywords.txt'));
-    if (kw) keywords[locale] = kw.split(',').map((s) => s.trim()).filter(Boolean);
-    for (const [key, file] of [
-      ['privacy', 'privacy-url.txt'],
-      ['support', 'support-url.txt'],
-      ['marketing', 'marketing-url.txt'],
-    ]) {
-      const v = readText(join(dir, file));
-      if (v) links[key][locale] = v;
-    }
-  }
-  for (const k of Object.keys(links)) if (!Object.keys(links[k]).length) delete links[k];
+  const locales = storefront.locales;
+  const { title, subtitle, description, releaseNotes, keywords, links } = localizedText(storefront);
 
   // App icon → served from the site, so the appindex needs no external asset host. It becomes the
   // landing page's app mark and the social image, both of which want the biggest source
@@ -532,40 +513,101 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   } catch {
     galleryShots = undefined;
   }
-  function screenshotsFor(target) {
-    if (!galleryShots) return undefined;
+  /** The theme and locale of a manifest capture: the fields the index resolved (stamped by the
+   *  runner), or, for a manifest an older CLI wrote, decoded from the variant name
+   *  (`light-fr` → light, fr; `fr` → fr; `default`/`light` → the default locale). */
+  function captureParts(variant, cap) {
+    if (cap?.theme || cap?.locale) {
+      return { theme: cap.theme ?? 'default', locale: cap.locale ?? 'default' };
+    }
+    if (variant === 'default') return { theme: 'default', locale: 'default' };
+    const [head, ...rest] = variant.split('-');
+    if (head === 'light' || head === 'dark') {
+      return { theme: head, locale: rest.length ? rest.join('-') : 'default' };
+    }
+    return { theme: 'default', locale: variant };
+  }
+  /** The device kind a column captures on: `ios-uikit/ipad` → ipad; a bare target → what a
+   *  profile-less capture on it is (iphone, phone), the way the day CLI files it. */
+  function columnKind(target, column) {
+    if (column !== target) return column.slice(target.length + 1);
+    if (target === 'ios-uikit') return 'iphone';
+    if (target === 'android-mdc') return 'phone';
+    return 'default';
+  }
+  /** One column's captures as a locale-keyed asset list: the declared list for the column's
+   *  device kind (store/storefront.toml [storefront.<target>.screenshots], resolved by `day screenshot
+   *  index` into the manifest's `listings`), in its order and themes; without one, every titled
+   *  light capture, as the carousel always showed. */
+  function columnScreenshots(target, column) {
     const byLocale = {};
-    for (const shot of galleryShots.shots) {
-      const caps = shot.byPlatform[target];
-      if (!caps) continue;
-      for (const [variant, cap] of Object.entries(caps)) {
-        // `dark…` variants stay out of the carousel; the gallery page offers them.
-        if (variant.startsWith('dark')) continue;
-        const locale = variant === 'default' || variant === 'light'
-          ? 'default'
-          : variant.replace(/^light-/, '');
-        // Only locale-SHAPED keys become appindex locales: variant names are data, and a
-        // local capture run's ad-hoc set (`ipad`, `uicheck`) must not mint a site locale —
-        // an invalid tag takes the whole build down at the first Intl call.
-        if (locale !== 'default' && !/^[a-z]{2,3}(-[A-Za-z0-9]+)*$/.test(locale)) continue;
-        (byLocale[locale] ??= []).push({ location: cap.src, width: cap.width, height: cap.height });
+    const kind = columnKind(target, column);
+    const defaultLocale = locales.includes('en') ? 'en' : locales[0];
+    // `website.<kind>` is resolved per locale by the CLI (a locale's own list first, then the
+    // general one), keyed by the capture locale; `default` is a capture with no locale at all.
+    const declared = galleryShots.listings?.[target]?.website?.[kind];
+    const push = (locale, cap) => {
+      if (locale !== 'default' && !/^[a-z]{2,3}(-[A-Za-z0-9]+)*$/.test(locale)) return;
+      (byLocale[locale] ??= []).push({ location: cap.src, width: cap.width, height: cap.height });
+    };
+    // The capture of a shot in a theme and locale, by the fields the manifest carries; a
+    // locale with no capture of its own takes the default locale's, the way the stores see it.
+    const find = (caps, theme, locale) => {
+      const parts = Object.entries(caps).map(([v, cap]) => ({ cap, ...captureParts(v, cap) }));
+      const match = (l) =>
+        parts.find((c) => c.locale === l && c.theme === theme) ??
+        parts.find((c) => c.locale === l && c.theme === 'default');
+      return match(locale) ?? (locale === defaultLocale ? match('default') : undefined);
+    };
+    if (declared && typeof declared === 'object' && Object.keys(declared).length) {
+      for (const [locale, list] of Object.entries(declared)) {
+        if (!Array.isArray(list)) continue;
+        // `default` and the default locale resolve to the same captures; one list, not two.
+        if (locale === 'default' && Array.isArray(declared[defaultLocale])) continue;
+        const want = locale === 'default' ? defaultLocale : locale;
+        for (const item of list) {
+          const shot = galleryShots.shots.find((s) => s.id === item.shot);
+          const caps = shot?.byPlatform[column];
+          if (!caps) continue;
+          const found = find(caps, item.theme ?? 'light', want);
+          if (found) push(want, found.cap);
+        }
+      }
+    } else {
+      for (const shot of galleryShots.shots) {
+        const caps = shot.byPlatform[column];
+        if (!caps) continue;
+        for (const [variant, cap] of Object.entries(caps)) {
+          const parts = captureParts(variant, cap);
+          if (parts.theme !== 'default' && parts.theme !== 'light') continue;
+          push(parts.locale === 'default' ? defaultLocale : parts.locale, cap);
+        }
       }
     }
     if (!Object.keys(byLocale).length) return undefined;
-    // The schema wants real locale keys; alias the default-variant set under the store's
-    // default locale (en when present) so pickAssetList's ladder finds it.
-    if (byLocale['default']) {
-      const def = locales.includes('en') ? 'en' : locales[0];
-      if (def && !byLocale[def]) byLocale[def] = byLocale['default'];
-      delete byLocale['default'];
+    return byLocale;
+  }
+  /** The landing page's screenshot rows for a target: one per column (device profile) the
+   *  manifest has for it, in the manifest's column order (the phone before the tablet). */
+  function screenshotRowsFor(target) {
+    if (!galleryShots) return [];
+    const columns = (galleryShots.platforms ?? []).filter((c) => c === target || c.startsWith(`${target}/`));
+    const rows = [];
+    for (const column of columns) {
+      const screenshots = columnScreenshots(target, column);
+      if (!screenshots) continue;
+      rows.push(column === target ? { screenshots } : { device: columnKind(target, column), screenshots });
     }
-    return Object.keys(byLocale).length ? byLocale : undefined;
+    // Phones before tablets, whatever order the captures arrived in; anything else after, as
+    // it came.
+    const ORDER = ['iphone', 'phone', 'ipad', 'tablet'];
+    const rank = (r) => (r.device && ORDER.includes(r.device) ? ORDER.indexOf(r.device) : ORDER.length);
+    return rows.map((r, i) => [r, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([r]) => r);
   }
 
-  const listing = storeListing(dayToml.store);
-  const metadata = readDayMetadata(projectRoot, opts.metadata ?? process.env.DAYSITE_METADATA, log);
-  const permissions = permissionsByPlatform(metadata);
-  if (metadata) {
+  const listing = storeListing(app.store);
+  const permissions = permissionsByPlatform(storefront);
+  {
     const n = Object.values(permissions).reduce((a, l) => a + l.length, 0);
     log(`permissions: ${n} native declaration(s) across ${Object.keys(permissions).length} platform(s)`);
   }
@@ -580,7 +622,12 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     if (version) entry.version = version;
     if (buildNumber != null) entry.buildNumber = String(buildNumber);
     if (permissions[key]?.length) entry.permissions = permissions[key];
-    if (key === 'ios' && (storeApp['bundle-id'] ?? app.id)) entry.bundleIdentifier = storeApp['bundle-id'] ?? app.id;
+    // The App Store record's id: the store's resolved submission info, else the app's own id.
+    if (key === 'ios') {
+      entry.bundleIdentifier =
+        storefront.storefront?.targets?.[target]?.stores?.['apple-app-store']?.['submission-info']?.['bundle-id']
+        ?? app.id;
+    }
     if (key === 'android' && app.id) entry.applicationId = app.id;
     // Live store listings (Day.toml `[store]`, docs/store.md "Listed apps"): the conventional
     // appindex channel keys, which the site turns into the store's localized badge.
@@ -590,12 +637,16 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     if (key === 'android' && listing.google) {
       entry.channels = { googleplaystore: { id: listing.google.id, url: listing.google.url } };
     }
-    const shots = screenshotsFor(target);
+    // `screenshots` is the first row, for readers that know only the schema; `screenshotRows`
+    // (a Day extension) is every device profile's own list, which the landing page shows as
+    // one carousel each.
+    const rows = screenshotRowsFor(target);
+    const shots = rows[0]?.screenshots;
     if (iconLocation || iconVectorLocation || shots) {
       entry.assets = {
         ...(iconLocation ? { icon: { location: iconLocation } } : {}),
         ...(iconVectorLocation ? { iconVector: { location: iconVectorLocation } } : {}),
-        ...(shots ? { screenshots: shots } : {}),
+        ...(shots ? { screenshots: shots, screenshotRows: rows } : {}),
       };
     }
     // The web build is hosted (the site's own webapp/ directory), not downloaded — its dist
@@ -652,7 +703,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!projectRoot || !outDir) {
     console.error(
       'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] ' +
-        '[--release-assets FILE] [--tag vX.Y.Z] [--metadata FILE] [--out NAME] [--gallery NAME] ' +
+        '[--release-assets FILE] [--tag vX.Y.Z] [--storefront FILE] [--out NAME] [--gallery NAME] ' +
         '[--downloads DIR] [--download-prefix PATH]',
     );
     process.exit(2);
@@ -661,7 +712,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     repo: flags.repo,
     releaseAssets: flags['release-assets'],
     tag: flags.tag,
-    metadata: flags.metadata,
+    storefront: flags.storefront,
     out: flags.out,
     gallery: flags.gallery,
     downloads: flags.downloads && resolve(flags.downloads),

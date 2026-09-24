@@ -4,10 +4,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseGithubRepo, permissionsByPlatform, readReleaseAssets, storeListing } from './generate-appindex.mjs';
+import { generateAppIndex, localizedText, parseGithubRepo, permissionsByPlatform, readReleaseAssets, readStorefront, storeListing } from './generate-appindex.mjs';
 
 test('an unlisted app has no store links', () => {
   assert.deepEqual(storeListing(undefined), {});
@@ -96,10 +96,85 @@ test('permissions fan out to each platform with their reasons per locale', () =>
   assert.deepEqual(permissionsByPlatform(undefined), {});
 });
 
-// Day app scaffolds share one version across all workspace crates.
-test('inherited package versions render as a version string, never an object', async () => {
-  const { cargoVersion } = await import('./generate-appindex.mjs');
-  assert.equal(cargoVersion({ package: { version: '1.2.3' } }), '1.2.3');
-  assert.equal(cargoVersion({ package: { version: { workspace: true } }, workspace: { package: { version: '2.0.1' } } }), '2.0.1');
-  assert.equal(cargoVersion({ package: { version: { workspace: true } } }), undefined);
+/** A `day store export` document, trimmed to what the generator reads. */
+function storefrontDoc() {
+  return {
+    schema: 1,
+    project: {
+      name: 'demo', id: 'dev.example.demo', title: 'Demo', version: '1.2.3', build: 7,
+      targets: ['ios-uikit', 'android-mdc', 'macos-appkit'],
+      store: { 'apple-app-id': '42', 'google-play-id': 'dev.example.demo' },
+    },
+    'default-locale': 'en',
+    locales: ['en', 'fr'],
+    storefront: {
+      file: 'store/storefront.toml',
+      metadata: {
+        en: { name: 'Demo', subtitle: 'A demo', description: 'What it does.', keywords: ['a', 'b'], 'release-notes': 'First.', 'privacy-url': 'https://x/p', 'support-url': 'https://x/s' },
+        fr: { name: 'Démo', subtitle: 'A demo', description: 'Ce que ça fait.', keywords: ['a', 'b'], 'release-notes': 'First.', 'privacy-url': 'https://x/p', 'support-url': 'https://x/s' },
+      },
+      targets: {
+        'ios-uikit': {
+          stores: { 'apple-app-store': { 'submission-info': { 'bundle-id': 'com.example.store' }, metadata: {}, screenshots: {} } },
+        },
+      },
+    },
+    permissions: [{ name: 'camera', android: ['android.permission.CAMERA'], ios: ['NSCameraUsageDescription'], macos: [], ohos: [], reasons: { en: 'Scan.' } }],
+    rawPermissions: {},
+  };
+}
+
+test('the localized text comes from the storefront export, one map per field', () => {
+  const text = localizedText(storefrontDoc());
+  assert.deepEqual(text.title, { en: 'Demo', fr: 'Démo' });
+  assert.deepEqual(text.description, { en: 'What it does.', fr: 'Ce que ça fait.' });
+  assert.deepEqual(text.keywords.fr, ['a', 'b']);
+  assert.deepEqual(text.links, { privacy: { en: 'https://x/p', fr: 'https://x/p' }, support: { en: 'https://x/s', fr: 'https://x/s' } });
+  assert.deepEqual(localizedText({}).title, {});
+});
+
+test('the storefront document is read from a file, and anything else is refused by name', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'daysite-storefront-'));
+  const good = join(dir, 'storefront.json');
+  writeFileSync(good, JSON.stringify(storefrontDoc()));
+  assert.equal(readStorefront(dir, good).project.id, 'dev.example.demo');
+  const metadata = join(dir, 'metadata.json');
+  writeFileSync(metadata, JSON.stringify({ project: { permissions: [] } }));
+  assert.throws(() => readStorefront(dir, metadata), /not a `day store export` document/);
+  assert.throws(() => readStorefront(dir, join(dir, 'absent.json')), /could not be read/);
+  // No file and no CLI: the site cannot be generated, and the message says what to set.
+  const bin = process.env.DAY_BIN;
+  process.env.DAY_BIN = join(dir, 'no-such-day');
+  try {
+    assert.throws(() => readStorefront(dir, undefined), /DAY_BIN|--storefront/);
+  } finally {
+    if (bin === undefined) delete process.env.DAY_BIN;
+    else process.env.DAY_BIN = bin;
+  }
+});
+
+test('the appindex is generated from the storefront export alone', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-appindex-'));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const doc = join(root, 'storefront.json');
+  writeFileSync(doc, JSON.stringify(storefrontDoc()));
+  const index = await generateAppIndex(project, site, { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true });
+  const app = index.apps[0];
+  assert.deepEqual(app.title, { en: 'Demo', fr: 'Démo' });
+  assert.deepEqual(app.keywords, { en: ['a', 'b'], fr: ['a', 'b'] });
+  assert.equal(app.links.privacy.fr, 'https://x/p');
+  assert.equal(app.platforms.ios.bundleIdentifier, 'com.example.store', 'the store record\'s id');
+  assert.equal(app.platforms.android.applicationId, 'dev.example.demo');
+  assert.equal(app.platforms.ios.version, '1.2.3');
+  assert.equal(app.platforms.ios.buildNumber, '7');
+  assert.equal(app.platforms.ios.channels.appleappstore.url, 'https://apps.apple.com/app/id42');
+  assert.deepEqual(app.platforms.ios.permissions, [{ key: 'NSCameraUsageDescription', description: { en: 'Scan.' } }]);
+  assert.equal(app.platforms.macos.permissions, undefined);
+  assert.equal(JSON.parse(readFileSync(join(site, 'appindex.json'), 'utf8')).apps[0].name, 'Demo');
+  // A tag names the released version; the build number stays only while it is the source's.
+  const tagged = await generateAppIndex(project, site, { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true, tag: 'v1.3.0' });
+  assert.equal(tagged.apps[0].platforms.ios.version, '1.3.0');
+  assert.equal(tagged.apps[0].platforms.ios.buildNumber, undefined);
 });

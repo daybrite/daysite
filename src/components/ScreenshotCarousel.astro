@@ -9,10 +9,24 @@ interface Props {
 
 const { view } = Astro.props;
 const ui = uiStrings(Astro.props.locale ?? 'en');
-const shots = view.screenshots;
+// One lane per device profile the walkthrough captured on (`iphone` and `ipad`, `phone` and
+// `tablet`), each scrolled on its own; a target captured on one device has a single lane
+// with no label. Apple's device names are proper nouns; the Android ones are localized.
+const rows = view.screenshotRows.length ? view.screenshotRows : (view.screenshots.length ? [{ screenshots: view.screenshots }] : []);
+const deviceLabel = (device?: string): string | undefined => {
+  switch (device) {
+    case 'iphone': return 'iPhone';
+    case 'ipad': return 'iPad';
+    case 'phone': return ui.deviceHandset;
+    case 'tablet': return ui.deviceTablet;
+    case undefined: return undefined;
+    default: return device;
+  }
+};
+const labelled = rows.length > 1 || rows.some((r) => r.device && r.device !== 'default');
 ---
 
-{shots.length > 0 && (
+{rows.length > 0 && (
   <section class="space-y-4">
     <header class="flex items-end justify-between gap-4">
       <h2 class="text-xl sm:text-2xl font-semibold tracking-tight">{ui.galleryHeading}</h2>
@@ -21,6 +35,14 @@ const shots = view.screenshots;
       </p>
     </header>
 
+    {rows.map((row) => {
+      const shots = row.screenshots;
+      const label = labelled ? deviceLabel(row.device) : undefined;
+      return (
+    <div class="space-y-2">
+    {label && (
+      <h3 class="text-sm font-medium tracking-wide text-[color:var(--color-text-muted)]">{label}</h3>
+    )}
     <div
       class="relative -mx-4 sm:mx-0 group"
       data-carousel-root
@@ -29,23 +51,26 @@ const shots = view.screenshots;
         class="shot-lane carousel flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-0 pb-4"
         data-carousel-track
         tabindex="0"
-        aria-label={`${view.displayName} screenshots`}
+        aria-label={label ? `${view.displayName} ${label} screenshots` : `${view.displayName} screenshots`}
       >
         {shots.map((s, i) => {
-          // A desktop capture is landscape; framing it in the phone tile crops it to a
-          // portrait sliver. Landscape tiles keep the capture's OWN aspect ratio, so nothing
-          // is cropped; portrait — and captures whose dimensions the appindex doesn't carry
-          // (store-listing uploads) — keep the phone frame. Every tile shares the lane's
-          // height either way, so the ratio decides the WIDTH alone (see the style below).
-          const portrait = !s.width || !s.height || s.height >= s.width;
+          // Every tile takes the capture's OWN aspect ratio, so nothing is cropped: a 9:16
+          // handset, a 20:9 one, a 16:10 tablet, a folding screen, a desktop window each
+          // frame at their true shape, and the rounding says portrait phone or not. Only a
+          // capture whose dimensions the appindex doesn't carry (a store-listing upload) is
+          // guessed at a phone's 9:19.5, where the frame may crop. Every tile shares the
+          // lane's height, so the ratio decides the WIDTH alone (see the style below).
+          const known = !!(s.width && s.height);
+          const portrait = !known || s.height! >= s.width!;
+          const ratio = known ? s.width! / s.height! : 9 / 19.5;
           return (
             <figure class="shrink-0" data-carousel-item data-index={i}>
               <div
                 class:list={[
                   'shot-frame relative overflow-hidden bg-[color:var(--color-surface-2)] ring-1 ring-[color:var(--color-border)] shadow-xl',
-                  portrait ? 'aspect-[9/19.5] rounded-3xl' : 'rounded-xl',
+                  portrait ? 'rounded-3xl' : 'rounded-xl',
                 ]}
-                style={portrait ? undefined : `aspect-ratio: ${s.width} / ${s.height}`}
+                style={`--ar: ${ratio.toFixed(6)}`}
               >
                 <img
                   src={s.url}
@@ -107,6 +132,9 @@ const shots = view.screenshots;
           ))}
       </div>
     </div>
+    </div>
+      );
+    })}
   </section>
 )}
 
@@ -124,9 +152,15 @@ const shots = view.screenshots;
   .shot-lane { --shot-h: 20rem; }
   @media (min-width: 640px) { .shot-lane { --shot-h: 24rem; } }
   @media (min-width: 1024px) { .shot-lane { --shot-h: 28rem; } }
-  /* The max-width keeps an ultra-wide capture from outgrowing a narrow viewport; there the
-     aspect ratio yields and `object-cover` trims the sides, rather than the lane shrinking. */
-  .shot-frame { height: var(--shot-h); width: auto; max-width: 92vw; }
+  /* Each tile carries its capture's ratio (`--ar`, width / height) and takes it as its shape,
+     so the image inside is never trimmed. The height is the lane's, unless that would push a
+     wide capture past the viewport: then the tile is width-bound at 92vw and its height
+     follows the ratio down, which keeps the whole capture in view on a narrow screen. */
+  .shot-frame {
+    aspect-ratio: var(--ar);
+    height: min(var(--shot-h), calc(92vw / var(--ar)));
+    width: auto;
+  }
 </style>
 
 <script>

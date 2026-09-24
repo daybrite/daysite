@@ -1,7 +1,7 @@
 {
   "$schema": "https://appfair.org/schemas/appindex/v1.json",
   "generator": "daysite/generate-appindex",
-  "generated": "2026-09-10T23:17:42.194Z",
+  "generated": "2026-09-24T18:24:29.513Z",
   "apps": [
     {
       "name": "daysite",
@@ -111,40 +111,16 @@
           "buildNumber": "2",
           "permissions": [
             {
-              "key": "NSBluetoothAlwaysUsageDescription",
-              "description": {
-                "ar": "عرض كيفية طلب Day لبلوتوث — لا يتصل العرض التوضيحي بأي جهاز أبدًا.",
-                "en": "Show how Day asks for Bluetooth — the showcase never connects to a device.",
-                "fr": "Montrer comment Day demande le Bluetooth — la vitrine ne se connecte jamais à un appareil.",
-                "zh-CN": "演示 Day 如何请求蓝牙权限——展示应用从不连接任何设备。"
-              }
+              "key": "NSBluetoothAlwaysUsageDescription"
             },
             {
-              "key": "NSCameraUsageDescription",
-              "description": {
-                "ar": "عرض كيفية طلب Day للإذن — لا يفتح العرض التوضيحي الكاميرا أبدًا.",
-                "en": "Show how Day asks for a permission — the showcase never opens the camera.",
-                "fr": "Montrer comment Day demande une autorisation — la vitrine n'ouvre jamais l'appareil photo.",
-                "zh-CN": "演示 Day 如何请求权限——展示应用从不打开相机。"
-              }
+              "key": "NSCameraUsageDescription"
             },
             {
-              "key": "NSLocationWhenInUseUsageDescription",
-              "description": {
-                "ar": "عرض إحداثياتك مباشرةً في صفحة الجهاز والمستشعرات.",
-                "en": "Show your coordinates live on the Device & sensors page.",
-                "fr": "Afficher vos coordonnées en direct sur la page Appareil et capteurs.",
-                "zh-CN": "在“设备与传感器”页面实时显示您的坐标。"
-              }
+              "key": "NSLocationWhenInUseUsageDescription"
             },
             {
-              "key": "NSMotionUsageDescription",
-              "description": {
-                "ar": "عرض قراءات مقياس التسارع والجيروسكوب والمغناطيسية مباشرةً في صفحة الجهاز والمستشعرات.",
-                "en": "Show live accelerometer, gyroscope and magnetometer traces on the Device & sensors page.",
-                "fr": "Afficher en direct les courbes de l'accéléromètre, du gyroscope et du magnétomètre sur la page Appareil et capteurs.",
-                "zh-CN": "在“设备与传感器”页面实时显示加速度计、陀螺仪和磁力计曲线。"
-              }
+              "key": "NSMotionUsageDescription"
             }
           ],
           "bundleIdentifier": "dev.daybrite.showcase",
@@ -160,20 +136,6 @@
             },
             "iconVector": {
               "location": "app/icon.svg"
-            },
-            "screenshots": {
-              "en": [
-                {
-                  "location": "gallery/ios-uikit/default/controls.png",
-                  "width": 414,
-                  "height": 900
-                },
-                {
-                  "location": "gallery/ios-uikit/default/home.png",
-                  "width": 414,
-                  "height": 900
-                }
-              ]
             }
           }
         },
@@ -211,20 +173,6 @@
             },
             "iconVector": {
               "location": "app/icon.svg"
-            },
-            "screenshots": {
-              "en": [
-                {
-                  "location": "gallery/android-mdc/default/controls.png",
-                  "width": 506,
-                  "height": 900
-                },
-                {
-                  "location": "gallery/android-mdc/default/home.png",
-                  "width": 506,
-                  "height": 900
-                }
-              ]
             }
           }
         },
@@ -238,20 +186,6 @@
             },
             "iconVector": {
               "location": "app/icon.svg"
-            },
-            "screenshots": {
-              "en": [
-                {
-                  "location": "gallery/web-dom/default/anchors.png",
-                  "width": 900,
-                  "height": 648
-                },
-                {
-                  "location": "gallery/web-dom/default/interaction.png",
-                  "width": 900,
-                  "height": 648
-                }
-              ]
             }
           }
         }

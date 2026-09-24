@@ -12,7 +12,7 @@
 // what a developer previews locally is assembled by the same code that publishes.
 //
 //   node scripts/generate-site.mjs <project-root> <site-toml-dir> --channels SPEC.json \
-//        [--repo owner/name] [--metadata FILE]
+//        [--repo owner/name] [--storefront FILE]
 //
 // SPEC.json is an array of channels, in picker order:
 //
@@ -44,7 +44,7 @@ const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * @param {string} projectRoot the Day project (holds Day.toml)
  * @param {string} siteDir     the directory holding site.toml
  * @param {object[]} specs     the channels, in picker order (see the header)
- * @param {{ repo?: string, metadata?: string, publicDir?: string, quiet?: boolean }} [opts]
+ * @param {{ repo?: string, storefront?: string, publicDir?: string, quiet?: boolean }} [opts]
  * @returns the channels.json document that was written
  */
 export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
@@ -96,7 +96,7 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
     }
     await generateAppIndex(projectRoot, siteDir, {
       repo: opts.repo,
-      metadata: opts.metadata,
+      storefront: opts.storefront,
       out: `${p}appindex.json`,
       gallery: `${p}gallery-manifest.json`,
       releaseAssets: spec.releaseAssets ? resolve(spec.releaseAssets) : undefined,
@@ -157,7 +157,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!projectRoot || !siteDir || !flags.channels) {
     console.error(
       'usage: generate-site.mjs <project-root> <site-toml-dir> --channels SPEC.json ' +
-        '[--repo owner/name] [--metadata FILE]',
+        '[--repo owner/name] [--storefront FILE]',
     );
     process.exit(2);
   }
@@ -169,6 +169,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     resolve(projectRoot),
     resolve(siteDir),
     JSON.parse(readFileSync(flags.channels, 'utf8')),
-    { repo: flags.repo, metadata: flags.metadata },
+    { repo: flags.repo, storefront: flags.storefront },
   );
 }

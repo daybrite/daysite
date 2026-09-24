@@ -170,6 +170,20 @@ test('the page manifest keeps device columns and the index metadata', (t) => {
   assert.deepEqual(a.manifest.platforms, ['linux-gtk', 'ios-uikit/ipad']);
 });
 
+test('the listings ride from the index into the manifest and the republished index', (t) => {
+  // store/storefront.toml [screenshots], resolved by `day screenshot index`: the landing carousel
+  // reads a target's `default` from the manifest, and other sites read the index's copy.
+  const f = fixture();
+  t.after(() => rmSync(f.root, { recursive: true, force: true }));
+  const src = JSON.parse(readFileSync(join(f.shots, 'gallery.json'), 'utf8'));
+  src.listings = { 'linux-gtk': { default: [{ shot: 'home', theme: 'dark' }], stores: {} } };
+  writeFileSync(join(f.shots, 'gallery.json'), JSON.stringify(src));
+  const manifest = assembleGallery(f.shots, f.site, { quiet: true, outImages: f.out });
+  assert.deepEqual(manifest.listings['linux-gtk'].default, [{ shot: 'home', theme: 'dark' }]);
+  const index = JSON.parse(readFileSync(join(f.out, 'gallery.json'), 'utf8'));
+  assert.deepEqual(index.listings, src.listings);
+});
+
 test('an all-untitled index publishes every shot as a row', (t) => {
   // No shot carries a title, so nothing is curated and the page shows everything — the shape
   // every app that has not written `title:` metadata yet produces.

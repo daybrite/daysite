@@ -77,8 +77,15 @@ if (!flag('ci')) {
   // The file is removed rather than left behind, so a plain run after a `--ci` one is not served
   // a stale second channel whose data this run did not refresh.
   rmSync(join(siteDir, 'channels.json'), { force: true });
+  // The gallery first, as the workflow's website job orders it: the appindex reads the
+  // manifest the assembler writes (each platform's landing carousel comes from it), so the
+  // other way round served the previous run's manifest. The CLI's index resolves the
+  // store/storefront.toml [screenshots] listings the carousel follows; without a CLI the assembler
+  // scans the tree.
+  const shots = join(projectRoot, 'build', 'day', 'screenshots');
+  if (existsSync(shots)) indexCaptures(shots);
+  assembleGallery(shots, siteDir);
   await generateAppIndex(projectRoot, siteDir);
-  assembleGallery(join(projectRoot, 'build', 'day', 'screenshots'), siteDir);
 } else {
   const cache = join(projectRoot, 'build', 'day', 'daysite');
   mkdirSync(cache, { recursive: true });

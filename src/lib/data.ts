@@ -16,6 +16,7 @@ import type {
   PermissionView,
   PlatformEntry,
   PlatformView,
+  ScreenshotRow,
   SiteData,
   SiteInfo,
 } from './types.ts';
@@ -47,8 +48,8 @@ import { siteHref } from './routes.ts';
 
 // Where a project's site lands when its index names no locale at all: a piece's demo app, which
 // has UI strings but no store listing to localize. `en` rather than `en-US` because that is the
-// code the rest of the system already uses — every `store/<locale>/` listing in the ecosystem is
-// `en`, and so is every app's `resource/locales/` directory — so a project with a listing and one
+// code the rest of the system already uses — every store listing's default locale in the ecosystem
+// is `en`, and so is every app's `resource/locales/` directory — so a project with a listing and one
 // without answer at the same path instead of differing by a region tag nobody wrote.
 const FALLBACK_DEFAULT_LOCALE = 'en';
 
@@ -271,6 +272,26 @@ function buildPlatformView(
     height: s.height,
     alt: `${title.value ?? app.name} screenshot ${i + 1} (${screenshotsLocale})`,
   }));
+  // The rows: each device profile's own list through the same locale ladder. Without rows the
+  // flat list is the one row, which is every appindex from before rows existed.
+  const rowsIn = platform.assets?.screenshotRows;
+  const screenshotRows: ScreenshotRow[] = (rowsIn && rowsIn.length ? rowsIn : [{ screenshots: platform.assets?.screenshots ?? {} }])
+    .map((row) => {
+      const asked = pickAssetList(row.screenshots, locale);
+      const used = asked.value ? asked : pickAssetList(row.screenshots, defaultLocale);
+      const rowLocale = used.localeUsed ?? locale;
+      const what = row.device ? `${row.device} screenshot` : 'screenshot';
+      return {
+        device: row.device,
+        screenshots: (used.value ?? []).map((s, i) => ({
+          url: resolveAssetURL(s.location, app) ?? '',
+          width: s.width,
+          height: s.height,
+          alt: `${title.value ?? app.name} ${what} ${i + 1} (${rowLocale})`,
+        })),
+      };
+    })
+    .filter((row) => row.screenshots.length > 0);
 
   // Permissions: filter Android plumbing, attach localized descriptions. A platform with no
   // permission gate of its own (the web, desktop Linux, Windows) lists none, which is true.
@@ -329,6 +350,7 @@ function buildPlatformView(
     iconURL,
     featureGraphicURL,
     screenshots,
+    screenshotRows,
     permissions: sortedPerms,
     privacyURL,
     supportURL,

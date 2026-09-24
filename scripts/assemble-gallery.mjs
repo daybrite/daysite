@@ -132,11 +132,16 @@ function fromIndex(index, shotsDir, outImages, prefix, log) {
     // From here on it is the page's turn, and the page shows the curated set only.
     if (!shownIds.has(e.shot)) continue;
     if (!columns.includes(rel)) columns.push(rel);
+    // Keyed by the variant directory (the served path), with the theme and locale the index
+    // resolved for the capture carried as fields: a reader selects on those and never decodes
+    // the directory name.
     const plat = (byShot.get(e.shot)[rel] ??= {});
     plat[e.variant] = {
       src: `${prefix}${rel}/${e.variant}/${e.file}`,
       width: e.width ?? undefined,
       height: e.height ?? undefined,
+      theme: e.theme ?? undefined,
+      locale: e.locale ?? undefined,
     };
   }
   // An index entry with no file behind it means a capture that never arrived — an artifact that
@@ -145,16 +150,17 @@ function fromIndex(index, shotsDir, outImages, prefix, log) {
   if (missing.length) {
     log(`${missing.length} indexed capture(s) had no file and were left out: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ', …' : ''}`);
   }
-  // Theme/locale vocabularies re-derived from the variants actually copied, in the same
-  // spelling the switchers use ('default' included) rather than the index's resolved tags.
+  // Theme/locale vocabularies re-derived from the captures actually copied, from the fields
+  // the index resolved (an older index without them falls back to the variant name), in the
+  // spelling the switchers use ('default' for a capture that has neither).
   const themes = new Set();
   const locales = new Set();
   for (const caps of byShot.values()) {
     for (const variants of Object.values(caps)) {
-      for (const v of Object.keys(variants)) {
-        const { theme, locale } = parseVariant(v);
-        themes.add(theme);
-        locales.add(locale);
+      for (const [v, cap] of Object.entries(variants)) {
+        const parsed = parseVariant(v);
+        themes.add(cap.theme ?? parsed.theme);
+        locales.add(cap.locale ?? parsed.locale);
       }
     }
   }
@@ -168,6 +174,11 @@ function fromIndex(index, shotsDir, outImages, prefix, log) {
     copied: published.length,
     index: republish(index, published),
     manifest: {
+      // The listings `day screenshot index` resolved from store/storefront.toml [screenshots]: per
+      // target, `default` is the list its landing page shows, `stores` what each store's
+      // listing shows per device kind. Passed through as the CLI wrote them; the landing
+      // carousel reads `default`, the gallery page shows everything regardless.
+      ...(index.listings ? { listings: index.listings } : {}),
       themes: [...themes].sort((a, b) => (a === 'light' ? -1 : b === 'light' ? 1 : a.localeCompare(b))),
       locales: [...locales].sort((a, b) => (a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))),
       // Column order: the index's target order, each target followed by its own devices in

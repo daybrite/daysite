@@ -14,9 +14,8 @@ An app repository adds a `website/` directory holding only its site-specific cho
 ```
 your-app/
 ├── Day.toml               # already there — id, title, targets
-├── store/                 # already there — localized store listings
-│   ├── app.toml
-│   └── <locale>/…         # name.txt, subtitle.txt, description.txt, *-url.txt, …
+├── store/                 # already there — the store listing, text per locale included
+│   └── storefront.toml
 └── website/
     ├── site.toml          # host + styling knobs (see below)
     └── theme.css          # optional CSS overrides
@@ -144,7 +143,7 @@ copies land under its own segment (`main/appindex.json`, `main/gallery-manifest.
 | File | Written by | From |
 | --- | --- | --- |
 | `channels.json` | `scripts/generate-site.mjs` | the channel list the workflow hands it: which build each channel describes, its label, its URL segment, and where its data and web build live |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `Day.toml` (`[app]`, and `[store]` for the live App Store / Google Play listings), `store/app.toml`, `store/<locale>/`, the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`) or a directory of packed artifacts to serve from the site (`--downloads DIR`), `day metadata --json` (`--metadata FILE`, or run through `DAY_BIN`) for the declared permissions with their native keys per platform and reasons per locale, the icon family under `build/day/host/png/` or `resource/icons/` |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `day store export` (`--storefront FILE`, or run through `DAY_BIN`): the app's id, title, version, build and targets, the live App Store / Google Play listings, the listing text resolved per locale, each store record's bundle id, and the declared permissions with their native keys per platform and reasons per locale; the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`) or a directory of packed artifacts to serve from the site (`--downloads DIR`); the icon family under `build/day/host/png/` or `resource/icons/` |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 
@@ -277,6 +276,7 @@ what the CLI generates, and the deployed artifact is browsable at
 ## Template development
 
 `npm install && npm run sample && npm run dev` in a bare checkout serves the bundled sample
-(`samples/`, a trimmed copy of Day Showcase: `Day.toml`, `store/`, the icon master, a few
-screenshots; `npm run sample` generates its data the way CI does for a real repository). Point
+(`samples/`, a trimmed copy of Day Showcase: `Day.toml`, `store/storefront.toml`, its exported
+storefront, the icon master, a few screenshots; `npm run sample` generates its data the way CI
+does for a real repository). Point
 `DAYSITE_CONFIG` at any `site.toml` to build against real app data.

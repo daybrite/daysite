@@ -29,12 +29,21 @@ function fixture() {
   const project = join(root, 'app');
   const site = join(project, 'website');
   mkdirSync(site, { recursive: true });
-  writeFileSync(
-    join(project, 'Day.toml'),
-    '[app]\nid = "dev.example.demo"\ntitle = "Demo"\nbuild = 7\ntargets = ["macos-appkit", "ios-uikit"]\n',
-  );
-  writeFileSync(join(project, 'Cargo.toml'), '[package]\nname = "demo"\nversion = "1.2.3"\n');
   writeFileSync(join(site, 'site.toml'), 'host = "https://example.test/Demo"\n');
+  // What `day store export` says about the project; the generators read no project file.
+  const storefront = join(root, 'storefront.json');
+  writeFileSync(
+    storefront,
+    JSON.stringify({
+      schema: 1,
+      project: { name: 'demo', id: 'dev.example.demo', title: 'Demo', version: '1.2.3', build: 7, targets: ['macos-appkit', 'ios-uikit'], store: {} },
+      'default-locale': 'en',
+      locales: ['en'],
+      storefront: { metadata: { en: { name: 'Demo', description: 'A demo.' } }, targets: {} },
+      permissions: [],
+      rawPermissions: {},
+    }),
+  );
 
   const shot = (tree, target, name) => {
     mkdirSync(join(root, tree, target, 'default'), { recursive: true });
@@ -65,6 +74,7 @@ function fixture() {
     project,
     site,
     pub,
+    storefront,
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }
@@ -93,7 +103,7 @@ test('the release owns the locale root and main lives one segment deeper', async
   t.after(f.cleanup);
   const out = await generateSite(f.project, f.site, bothChannels(f), {
     repo: 'example/Demo',
-    publicDir: f.pub,
+    publicDir: f.pub, storefront: f.storefront,
     quiet: true,
   });
   assert.equal(out.default, 'release');
@@ -110,7 +120,7 @@ test('the release owns the locale root and main lives one segment deeper', async
 test("each channel's data files and served images stay under its own prefix", async (t) => {
   const f = fixture();
   t.after(f.cleanup);
-  await generateSite(f.project, f.site, bothChannels(f), { repo: 'example/Demo', publicDir: f.pub, quiet: true });
+  await generateSite(f.project, f.site, bothChannels(f), { repo: 'example/Demo', publicDir: f.pub, storefront: f.storefront, quiet: true });
 
   for (const name of ['appindex.json', 'gallery-manifest.json']) {
     assert.ok(existsSync(join(f.site, name)), `the release channel must write ${name}`);
@@ -133,7 +143,7 @@ test("each channel's data files and served images stay under its own prefix", as
 test('a release links its assets on GitHub; a branch build serves packages from the site', async (t) => {
   const f = fixture();
   t.after(f.cleanup);
-  await generateSite(f.project, f.site, bothChannels(f), { repo: 'example/Demo', publicDir: f.pub, quiet: true });
+  await generateSite(f.project, f.site, bothChannels(f), { repo: 'example/Demo', publicDir: f.pub, storefront: f.storefront, quiet: true });
 
   const arts = (file) => {
     const idx = JSON.parse(readFileSync(join(f.site, file), 'utf8'));
@@ -163,10 +173,13 @@ test('the release channel reports the released version, not the checkout it was 
   // released.
   const f = fixture();
   t.after(f.cleanup);
-  writeFileSync(join(f.project, 'Cargo.toml'), '[package]\nname = "demo"\nversion = "1.3.0"\n');
+  // The checkout's own version, as the storefront export reports it, is already past the tag.
+  const doc = JSON.parse(readFileSync(f.storefront, 'utf8'));
+  doc.project.version = '1.3.0';
+  writeFileSync(f.storefront, JSON.stringify(doc));
   await generateSite(f.project, f.site, bothChannels(f), {
     repo: 'example/Demo',
-    publicDir: f.pub,
+    publicDir: f.pub, storefront: f.storefront,
     quiet: true,
   });
   const versions = (file) => {
@@ -192,7 +205,7 @@ test('with no release, main owns the locale root and keeps its segment as an ali
   t.after(f.cleanup);
   const out = await generateSite(f.project, f.site, [bothChannels(f)[1]], {
     repo: 'example/Demo',
-    publicDir: f.pub,
+    publicDir: f.pub, storefront: f.storefront,
     quiet: true,
   });
   assert.equal(out.default, 'main');
@@ -212,14 +225,14 @@ test('the first release moves the branch build, and its old prefix stops being s
   t.after(f.cleanup);
   await generateSite(f.project, f.site, [bothChannels(f)[1]], {
     repo: 'example/Demo',
-    publicDir: f.pub,
+    publicDir: f.pub, storefront: f.storefront,
     quiet: true,
   });
   assert.ok(existsSync(join(f.pub, 'downloads/demo-macos-appkit.dmg')));
 
   await generateSite(f.project, f.site, bothChannels(f), {
     repo: 'example/Demo',
-    publicDir: f.pub,
+    publicDir: f.pub, storefront: f.storefront,
     quiet: true,
   });
   assert.ok(existsSync(join(f.pub, 'main/downloads/demo-macos-appkit.dmg')));
