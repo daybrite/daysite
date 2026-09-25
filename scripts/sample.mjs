@@ -26,6 +26,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
+import { parseGithubRepo } from './generate-appindex.mjs';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SAMPLES = join(TEMPLATE_ROOT, 'samples');
@@ -46,8 +47,14 @@ const project = process.env.SHOWCASE_DIR ? resolve(process.env.SHOWCASE_DIR) : j
 if (!process.env.SHOWCASE_DIR) {
   run('git', ['clone', '--quiet', '--depth', '1', '--branch', REF, REPO, project]);
 }
-const rev = execFileSync('git', ['-C', project, 'rev-parse', '--short', 'HEAD']).toString().trim();
+const git = (...args) => execFileSync('git', ['-C', project, ...args]).toString().trim();
+const rev = git('rev-parse', '--short', 'HEAD');
 log(`Day Showcase at ${rev} (${process.env.SHOWCASE_DIR ? project : `${REPO} ${REF}`})`);
+// Named outright: the generator prefers GITHUB_REPOSITORY to the clone's remote, and in this
+// repository's CI that is daysite itself, which would name the app and link its source there.
+const repo = parseGithubRepo(git('remote', 'get-url', 'origin'));
+if (!repo) throw new Error(`${project}: its origin remote is not a GitHub repository`);
+writeFileSync(join(WORK, 'source.json'), JSON.stringify({ repo, rev }, null, 2));
 
 // 2. What the CLI knows about it.
 const storefront = join(WORK, 'storefront.json');
@@ -88,5 +95,13 @@ writeFileSync(join(shotsDir, 'gallery.json'), JSON.stringify(index, null, 2));
 log(`${index.screenshots.length} screenshot(s) of ${[...keep].join(', ')} from ${indexUrl}`);
 
 // 4. The generators, as CI runs them for a real repository.
-run('node', [join(TEMPLATE_ROOT, 'scripts', 'generate-appindex.mjs'), project, SAMPLES, '--storefront', storefront]);
+run('node', [
+  join(TEMPLATE_ROOT, 'scripts', 'generate-appindex.mjs'),
+  project,
+  SAMPLES,
+  '--storefront',
+  storefront,
+  '--repo',
+  repo,
+]);
 run('node', [join(TEMPLATE_ROOT, 'scripts', 'assemble-gallery.mjs'), shotsDir, SAMPLES]);

@@ -39,26 +39,11 @@ jobs:
         run: npm run sample
       - run: npx astro build
       - name: The sample rendered
-        run: |
-          set -euo pipefail
-          test -f dist/index.html
-          grep -q "Day Showcase" dist/index.html
-          # Both store badges, the favicon set from the icon family, and the gallery.
-          grep -q 'badges/en/apple-app-store.svg' dist/en/index.html
-          grep -q 'badges/en/google-play-store.svg' dist/en/index.html
-          test -f dist/app/apple-touch-icon.png
-          test -f dist/en/gallery/index.html
-          # The permissions card, from the CLI's export: the camera row, with its French reason
-          # on the French page. The reason is read from the export rather than written here,
-          # since it is whatever the Showcase says today; the page escapes an apostrophe.
-          grep -q 'NSCameraUsageDescription' dist/en/index.html
-          reason="$(node -e '
-            const p = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
-              .permissions.find((p) => p.name === "camera");
-            if (!p?.reasons?.fr) throw new Error("the export has no French camera reason");
-            console.log(p.reasons.fr);
-          ' samples/.showcase/storefront.json)"
-          grep -qF "$reason" dist/fr/index.html || grep -qF "${reason//\'/&#39;}" dist/fr/index.html
+        # Every check runs, and a failure says what was expected and what the page has instead,
+        # in the log, as an annotation, and in the job summary. The expectations come from the
+        # sample's own export (scripts/check-sample.mjs), since the sample is the Showcase's
+        # main branch as it is today.
+        run: node scripts/check-sample.mjs
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run this checkout of the template over the
