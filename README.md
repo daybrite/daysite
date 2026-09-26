@@ -42,17 +42,22 @@ directory, so the generator itself never touches the network.
 
 ## Build channels
 
-The site publishes the app twice, and a version picker above the platform picker switches between
-them. The two are assembled from deliberately different sources.
+The site publishes the app up to three times, and a version picker above the platform picker
+switches between them. They are assembled from deliberately different sources.
 
-| | `/<locale>/` — the release | `/<locale>/main/` — the branch |
-| --- | --- | --- |
-| picker label | the release's version, `1.2.3` | the default branch, `main` |
-| downloads | the release's own packages, at their `releases/download/<tag>/` URLs | this run's packages, served from the site under `main/downloads/` |
-| version | the released tag, so a checkout that has moved on does not change what the release pages report | the version in `Cargo.toml`, with the build number beside it |
-| screenshots | the release's `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the captures this run's dayscripts took |
-| web app | the release's own `web-dom` dist, at `/webapp/` | this run's, at `/main/webapp/` |
-| page | as published | carries a development-build notice and a link to the release |
+| | `/<locale>/` — the release | `/<locale>/prerelease/` — a pending pre-release | `/<locale>/main/` — the branch |
+| --- | --- | --- | --- |
+| picker label | the release's version, `1.2.3` | the pre-release's version, `1.3.0-beta.1` | the default branch, `main` |
+| downloads | the release's own packages, at their `releases/download/<tag>/` URLs | the pre-release's own packages, the same way | this run's packages, served from the site under `main/downloads/` |
+| version | the released tag, so a checkout that has moved on does not change what the release pages report | the pre-release's tag | the version in `Cargo.toml`, with the build number beside it |
+| screenshots | the release's `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the pre-release's, the same way | the captures this run's dayscripts took |
+| web app | the release's own `web-dom` dist, at `/webapp/` | the pre-release's, at `/prerelease/webapp/` | this run's, at `/main/webapp/` |
+| page | as published | carries a pre-release notice and a link to the release | carries a development-build notice and a link to the release |
+
+A pre-release is pending when it was published after the latest release: a beta of the next
+version, waiting to be marked Latest. The workflow's `tab-release`, `tab-pre-release` and
+`tab-main` inputs turn each tab off; all three are on by default, and the pre-release tab appears
+only while a pre-release is pending.
 
 The point of the split is that the release channel is built from **assets the release already
 carries** and nothing else, so what a visitor downloads is the version the page names. The
@@ -65,9 +70,9 @@ A repository with no release publishes main at the locale root instead, the pick
 and is not drawn, and `/<locale>/main/` redirects there — so a link made before the first release
 still resolves after it.
 
-The development notice is one line rather than a banner, and it is placed in layout the page
+The development and pre-release notice is one line rather than a banner, and it is placed in layout the page
 already has: inside the hero's text block, which from `sm` up is shorter than the app mark beside
-it, and under the gallery's version picker. Both channels' pages are then the same height, so the
+it, and under the gallery's version picker. Every channel's pages are then the same height, so the
 picker a visitor just clicked, and everything below it, stays exactly where it was. Give the
 notice a block of its own and the release and development pages differ by its height, which is a
 jump on every switch.

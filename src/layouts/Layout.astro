@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import type { FaviconPaths, LocaleInfo, LocaleLink, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
+import { isUnstable, stableChannel } from '../lib/channels.ts';
 import { pickText } from '../lib/i18n.ts';
 import { localeIndexHref } from '../lib/routes.ts';
 import { uiStrings } from '../lib/uistrings.ts';
@@ -78,10 +79,10 @@ const accent = site.accentColor ?? '#3B82F6';
 // and whether this channel has a web build hosted, which decides if the page carries the site
 // manifest.
 const { themeCss, hasWebApp, channels } = await loadSite(channel?.id);
-// Keep a development channel out of search results ONLY when a release channel is there to be
-// found instead. A project before its first release publishes the branch build at the locale
-// root, and noindexing that would hide the whole site.
-const noindex = !!channel?.development && channels.some((c) => !c.development);
+// Keep a development or pre-release channel out of search results ONLY when a stable release
+// channel is there to be found instead. A project before its first release publishes the branch
+// build (or a pre-release) at the locale root, and noindexing that would hide the whole site.
+const noindex = isUnstable(channel) && !!stableChannel(channels);
 
 // Site title appears in the sticky top-bar and as a hreflang anchor; it's
 // localized via pickText so siteinfo.yaml can carry either a plain string

@@ -505,10 +505,18 @@ export async function loadSite(channelId?: string): Promise<LoadedSite> {
   const site = await loadSiteInfo();
   const index = await loadAppIndex(site, channel);
 
-  // Locale union across every app in the index
+  // Locale union across every app in EVERY channel's index, not just this one's. A channel's own
+  // locales include the ones its screenshots were captured in, so two channels can differ: Day
+  // Trader's v0.1.2 captured ar/fr/zh-CN and its v0.1.3 pre-release only the default, and the
+  // routes, which lay every channel out in the default channel's locales, then asked the
+  // pre-release for an Arabic page it did not have and the build failed. One list for the whole
+  // site also means switching version or language never lands on a page that does not exist.
   const localeUnion = new Set<string>();
-  for (const app of index.apps) {
-    for (const c of collectLocales(app)) localeUnion.add(c);
+  for (const c of channelFile.channels) {
+    const each = c.id === channel.id ? index : await loadAppIndex(site, c);
+    for (const app of each.apps) {
+      for (const code of collectLocales(app)) localeUnion.add(code);
+    }
   }
   if (localeUnion.size === 0) localeUnion.add(FALLBACK_DEFAULT_LOCALE);
 

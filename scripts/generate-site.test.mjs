@@ -50,6 +50,7 @@ function fixture() {
     writeFileSync(join(root, tree, target, 'default', `${name}.png`), PNG);
   };
   shot('rel-shots', 'macos-appkit', 'home');
+  shot('pre-shots', 'macos-appkit', 'beta');
   shot('main-shots', 'macos-appkit', 'home');
   shot('main-shots', 'ios-uikit', 'scratch');
 
@@ -67,6 +68,10 @@ function fixture() {
   writeFileSync(
     join(root, 'release-assets.json'),
     JSON.stringify([{ name: 'demo-macos-appkit.dmg', size: 10 }]),
+  );
+  writeFileSync(
+    join(root, 'prerelease-assets.json'),
+    JSON.stringify([{ name: 'demo-macos-appkit.dmg', size: 11 }]),
   );
 
   return {
@@ -198,6 +203,57 @@ test('the release channel reports the released version, not the checkout it was 
   };
   assert.equal(builds('appindex.json'), undefined);
   assert.equal(builds('main/appindex.json'), '7');
+});
+
+const preRelease = (f) => ({
+  id: 'prerelease',
+  label: '1.3.0',
+  tag: 'v1.3.0',
+  prerelease: true,
+  screenshots: join(f.root, 'pre-shots'),
+  releaseAssets: join(f.root, 'prerelease-assets.json'),
+});
+
+test('a pending pre-release sits between the release and main, built from its own assets', async (t) => {
+  const f = fixture();
+  t.after(f.cleanup);
+  const [release, main] = bothChannels(f);
+  const out = await generateSite(f.project, f.site, [release, preRelease(f), main], {
+    repo: 'example/Demo',
+    publicDir: f.pub, storefront: f.storefront,
+    quiet: true,
+  });
+  // The release keeps the locale root; the pre-release is one segment deeper, in picker order.
+  assert.equal(out.default, 'release');
+  assert.deepEqual(out.channels.map((c) => [c.id, c.path]), [
+    ['release', ''],
+    ['prerelease', 'prerelease'],
+    ['main', 'main'],
+  ]);
+  const pre = out.channels[1];
+  assert.equal(pre.prerelease, true);
+  assert.equal(pre.development, false);
+  assert.equal(pre.webapp, 'prerelease/webapp');
+  assert.equal(pre.releaseURL, 'https://github.com/example/Demo/releases/tag/v1.3.0');
+  // Neither of the others is marked a pre-release.
+  assert.ok(!out.channels[0].prerelease && !out.channels[2].prerelease);
+  // Its gallery and its downloads are its own release's, under its own prefix.
+  assert.ok(existsSync(join(f.pub, 'prerelease/gallery/macos-appkit/default/beta.png')));
+  const index = JSON.parse(readFileSync(join(f.site, 'prerelease/appindex.json'), 'utf8'));
+  assert.match(JSON.stringify(index), /releases\/download\/v1\.3\.0\/demo-macos-appkit\.dmg/);
+});
+
+test('with the release tab off, a pre-release owns the locale root', async (t) => {
+  const f = fixture();
+  t.after(f.cleanup);
+  const out = await generateSite(f.project, f.site, [preRelease(f), bothChannels(f)[1]], {
+    repo: 'example/Demo',
+    publicDir: f.pub, storefront: f.storefront,
+    quiet: true,
+  });
+  assert.equal(out.default, 'prerelease');
+  assert.deepEqual(out.channels.map((c) => c.path), ['', 'main']);
+  assert.equal(out.channels[0].prerelease, true);
 });
 
 test('with no release, main owns the locale root and keeps its segment as an alias', async (t) => {

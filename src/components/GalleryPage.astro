@@ -15,6 +15,7 @@ import DeviceShell from './DeviceShell.astro';
 import PlatformIcon from './PlatformIcon.astro';
 import ChannelPicker from './ChannelPicker.astro';
 import DevBuildNote from './DevBuildNote.astro';
+import { isUnstable, stableChannel } from '../lib/channels.ts';
 import { localizedText, shotLabel, columnParts, deviceLabel } from '../lib/gallery.ts';
 import { localeInfo } from '../lib/i18n.ts';
 import { dayTarget, DAY_TARGETS } from '../lib/day-targets.ts';
@@ -40,7 +41,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 // The gallery keeps the version picker too: a channel's captures are its own, so switching
 // version here lands on the other channel's gallery rather than back on its landing page.
 const channels = data.channels;
-const releaseChannel = channels.find((c) => !c.development);
+const releaseChannel = stableChannel(channels);
 const channelHref = (c: (typeof channels)[number]) => galleryHref(locale.code, c.path);
 
 // Platform column order: the curation's when site.toml pinned one (assemble-gallery carries it
@@ -117,7 +118,7 @@ const captureLocaleName = (code: string) =>
           row would then centre the pair rather than the picker, sliding the control 260px out
           from under the pointer that just clicked it — a worse motion than the line it saves.
           The gallery has no hero to hide the notice in, so this one line is what it costs. */}
-      {data.channel.development && (
+      {isUnstable(data.channel) && (
         <DevBuildNote
           channel={data.channel}
           release={releaseChannel}

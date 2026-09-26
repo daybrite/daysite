@@ -1,15 +1,18 @@
 // The site's build channels: one published version of the app per channel, each with its own
 // appindex, gallery, hosted web build, and downloads.
 //
-// A Day repository publishes two of them. The RELEASE channel describes the newest GitHub
-// release and is assembled entirely from assets that release already carries — the packages, the
-// screenshots zip, the web-dom dist. The MAIN channel describes the newest build of the default
-// branch and is assembled from the artifacts the CI run just produced, which is why its pages
-// carry a development-build notice and its downloads are served from the site itself rather than
-// from a release that does not exist yet.
+// A Day repository publishes up to three of them, in this order. The RELEASE channel describes
+// the newest GitHub release and is assembled entirely from assets that release already carries —
+// the packages, the screenshots zip, the web-dom dist. The PRE-RELEASE channel, when a
+// pre-release newer than that release is waiting to be marked Latest, is assembled the same way
+// from the pre-release's own assets, and its pages carry a pre-release notice. The MAIN channel
+// describes the newest build of the default branch and is assembled from the artifacts the CI
+// run just produced, which is why its pages carry a development-build notice and its downloads
+// are served from the site itself rather than from a release that does not exist yet.
 //
 // The default channel owns the locale root (`/en/`); every other channel lives one segment
-// deeper (`/en/main/`) with a full duplicate of the pages, screenshots, and download links. A
+// deeper (`/en/prerelease/`, `/en/main/`) with a full duplicate of the pages, screenshots, and
+// download links. A
 // repository with no release at all publishes main as the default, and the version picker,
 // having one entry, is not drawn.
 //
@@ -23,7 +26,7 @@ import { dirname, join } from 'node:path';
 
 /** One channel, as scripts/generate-site.mjs records it in channels.json. */
 export interface ChannelRecord {
-  /** Stable identifier: `release` or `main`. */
+  /** Stable identifier: `release`, `prerelease` or `main`. */
   id: string;
   /** Picker label: the release's version (`0.4.1`) or the branch name (`main`). */
   label: string;
@@ -39,6 +42,11 @@ export interface ChannelRecord {
   alias?: string;
   /** True for a build of a branch rather than a published release. */
   development: boolean;
+  /**
+   * True for a published pre-release: built from its release assets like the release channel,
+   * but its pages say it may be unstable and point at the stable release.
+   */
+  prerelease?: boolean;
   /** appindex.json for this channel, relative to site.toml. */
   appindex: string;
   /** gallery-manifest.json for this channel, relative to site.toml. */
@@ -100,6 +108,16 @@ export async function loadChannels(
       },
     ],
   };
+}
+
+/** The stable release channel: published, and neither a branch build nor a pre-release. */
+export function stableChannel<T extends ChannelRecord>(channels: T[]): T | undefined {
+  return channels.find((c) => !c.development && !c.prerelease);
+}
+
+/** Whether a channel's pages carry the may-be-unstable notice: a branch build or a pre-release. */
+export function isUnstable(channel?: ChannelRecord): boolean {
+  return !!channel && (channel.development || !!channel.prerelease);
 }
 
 /** The channel a page renders, by id; the default channel when the id is unknown or absent. */

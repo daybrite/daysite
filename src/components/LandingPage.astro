@@ -1,6 +1,7 @@
 ---
 import type { AppView, IconEffect, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
+import { isUnstable, stableChannel } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { localeIndexHref } from '../lib/routes.ts';
 
@@ -32,9 +33,9 @@ const {
   site, appView, locale, hasGallery, channel, channels = [], iconEffect, iconMarkup,
 } = Astro.props;
 const ui = uiStrings(locale.code);
-// The picker's other stop, and the notice's call to action: the newest release, when there is
-// one. A single-channel site (no channels.json, or a repository with no release) draws neither.
-const releaseChannel = channels.find((c) => !c.development);
+// The notice's call to action: the newest stable release, when there is one. A pre-release is
+// not it, which is the whole point of the notice on the pre-release's own pages.
+const releaseChannel = stableChannel(channels);
 const channelHref = (c: ChannelView) => localeIndexHref(locale.code, c.path);
 // The screenshots read best after the words that say what they show, so they sit under the
 // description and the About card unless site.toml asks for them first (`screenshot-placement`).
@@ -47,10 +48,10 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  {/* The development notice rides inside the hero rather than above it, so the release page and
-      the development page are the same height and switching version moves nothing. */}
+  {/* The development and pre-release notice rides inside the hero rather than above it, so the
+      release page and the others are the same height and switching version moves nothing. */}
   <Hero hero={hero} iconEffect={iconEffect} iconMarkup={iconMarkup}>
-    {channel?.development && (
+    {isUnstable(channel) && channel && (
       <DevBuildNote
         slot="notice"
         channel={channel}

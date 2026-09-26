@@ -44,6 +44,39 @@ jobs:
         # sample's own export (scripts/check-sample.mjs), since the sample is the Showcase's
         # main branch as it is today.
         run: node scripts/check-sample.mjs
+      - name: Channels captured in different locales still build
+        # The release, a pending pre-release and main, split the way Day Trader's were
+        # (2026-09-26): its listing was English only, its v0.1.2 release was captured in ar, fr and
+        # zh-CN too, and its v0.1.3 pre-release in English alone. Those languages reach the site
+        # only through the release's screenshots, and every channel is laid out in the site's
+        # languages, so the pre-release must still render an Arabic page: before it did, the build
+        # died on the first one.
+        run: |
+          set -euo pipefail
+          W="$RUNNER_TEMP/channels"
+          mkdir -p "$W/site"
+          cp samples/site.toml "$W/site/"
+          # The listing without Arabic, so only the release's captures bring it in.
+          jq 'walk(if type == "object" then del(.ar) else . end) | .locales -= ["ar"]' \
+            samples/.showcase/storefront.json > "$W/storefront.json"
+          # Both channels' captures without the index's store listings, which name screens the
+          # sample does not fetch: each carousel then shows every capture, in every locale it was
+          # taken in. The pre-release's are indexed without their Arabic ones.
+          for c in rel pre; do cp -R samples/.showcase/screenshots "$W/$c-shots"; done
+          jq 'del(.listings)' samples/.showcase/screenshots/gallery.json > "$W/rel-shots/gallery.json"
+          jq 'del(.listings) | .screenshots |= map(select(.locale != "ar")) | .locales -= ["ar"]' \
+            samples/.showcase/screenshots/gallery.json > "$W/pre-shots/gallery.json"
+          echo '[]' > "$W/assets.json"
+          jq -n --arg all "$W/rel-shots" --arg pre "$W/pre-shots" --arg a "$W/assets.json" \
+            '[{id: "release", label: "1.0.0", tag: "v1.0.0", screenshots: $all, releaseAssets: $a},
+              {id: "prerelease", label: "1.1.0", tag: "v1.1.0", prerelease: true, screenshots: $pre, releaseAssets: $a},
+              {id: "main", label: "main", ref: "main", commit: "0000000", development: true, screenshots: $pre}]' \
+            > "$W/channels.json"
+          node scripts/generate-site.mjs samples/.showcase/app "$W/site" --channels "$W/channels.json" \
+            --storefront "$W/storefront.json" --repo daybrite/Day-Showcase
+          DAYSITE_CONFIG="$W/site/site.toml" npx astro build
+          test -f dist/ar/prerelease/gallery/index.html
+          grep -q 'Pre-release' dist/en/prerelease/index.html
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run this checkout of the template over the

@@ -1,6 +1,6 @@
 ---
-// The notice a development channel's pages carry: which branch the build came from, that it
-// moves, and the one link to the released version.
+// The notice a development or pre-release channel's pages carry: which branch or pre-release the
+// build came from, that it may be unstable, and the one link to the stable released version.
 //
 // One line, placed inside layout the page already has, rather than a banner across the top. The
 // pages this appears on are exactly the pages the version picker switches between, so a block
@@ -24,7 +24,9 @@ interface Props {
 
 const { channel, release, releaseHref, locale, class: className } = Astro.props;
 const ui = uiStrings(locale);
-const line = ui.devBuildInline.replace('[BRANCH]', channel.ref || channel.label);
+const line = channel.prerelease
+  ? ui.preReleaseInline.replace('[VERSION]', channel.tag || channel.label)
+  : ui.devBuildInline.replace('[BRANCH]', channel.ref || channel.label);
 const cta = release ? ui.devBuildReleaseLink.replace('[VERSION]', release.label) : undefined;
 ---
 
