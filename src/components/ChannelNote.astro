@@ -1,0 +1,49 @@
+---
+// The line under the version picker, which every channel's page carries in the same place: on a
+// pre-release or the branch build, the notice that it may be unstable (DevBuildNote); on the
+// stable release, when it was released. One line on every channel is what keeps switching version
+// from moving anything below the picker.
+//
+// The date is GitHub's `published_at` for the release (channels.json `published`), written in
+// the page's language at build time. A release without one, or a site without channels, gets no
+// line.
+import type { ChannelView } from '../lib/channels.ts';
+import { isUnstable } from '../lib/channels.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import DevBuildNote from './DevBuildNote.astro';
+
+interface Props {
+  channel?: ChannelView;
+  /** The stable release channel, for the unstable notice's link to it. */
+  release?: ChannelView;
+  releaseHref?: string;
+  locale: string;
+}
+
+const { channel, release, releaseHref, locale } = Astro.props;
+const ui = uiStrings(locale);
+
+/** `published` in the page's language, as a calendar date (the day GitHub recorded, in UTC). */
+function releasedOn(published?: string): string | undefined {
+  const when = published ? new Date(published) : undefined;
+  if (!when || Number.isNaN(when.getTime())) return undefined;
+  try {
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(when);
+  } catch {
+    return when.toISOString().slice(0, 10);
+  }
+}
+const date = channel && !isUnstable(channel) ? releasedOn(channel.published) : undefined;
+---
+
+{channel && isUnstable(channel) ? (
+  <DevBuildNote channel={channel} release={release} releaseHref={releaseHref} locale={locale} class="justify-center" />
+) : date ? (
+  <p class="flex items-center justify-center gap-1.5 text-sm text-[color:var(--color-text-muted)]" data-pagefind-ignore>
+    <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </svg>
+    <span>{ui.releasedOn.replace('[DATE]', date)}</span>
+  </p>
+) : null}

@@ -1,12 +1,14 @@
 ---
 // The per-platform install story: the packages this platform ships, at their stable
-// releases/download/<tag> URLs. Store badges stay in the hero (StoreBadges); this card is the
+// releases/download/<tag> URLs, and on the desktop platforms whose release carries a launcher,
+// the one-line command that downloads and runs this build from a terminal. Store badges stay in the hero (StoreBadges); this card is the
 // direct-download tier every Day target has even before any store listing exists. Hidden for
 // platforms with nothing to download (web is hosted, and an unreleased app has no assets yet).
 import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { dayTarget } from '../lib/day-targets.ts';
 import PlatformIcon from './PlatformIcon.astro';
+import CommandField from './CommandField.astro';
 
 interface Props {
   view: PlatformView;
@@ -56,6 +58,16 @@ function human(size?: number): string | undefined {
         </li>
       ))}
     </ul>
+    {view.installCommand && (
+      <div class="mt-4 border-t border-[color:var(--color-border-soft)] pt-4">
+        <CommandField
+          value={view.installCommand}
+          label={ui.installCommandLabel}
+          copyLabel={ui.copyLabel}
+          copiedLabel={ui.copiedLabel}
+        />
+      </div>
+    )}
     {note && (
       <p class="mt-4 border-t border-[color:var(--color-border-soft)] pt-3 text-xs text-[color:var(--color-text-muted)]">
         {note}

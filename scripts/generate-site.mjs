@@ -27,7 +27,8 @@
 //       "runURL": "https://github.com/owner/name/actions/runs/123" }
 //   ]
 //
-// Keys: `id` and `label` are required. `development` marks a branch build — its pages carry the
+// Keys: `id` and `label` are required. `published` is when a release was published (GitHub's
+// `published_at`), which the release channel's pages show under the version picker. `development` marks a branch build — its pages carry the
 // notice, and its packages are staged on the site from `downloads` instead of linked from a
 // release. `prerelease` marks a published pre-release, linked from its release like the release
 // channel, whose pages carry a pre-release notice. `segment` overrides the URL segment (default:
@@ -132,6 +133,7 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
       gallery: `${p}gallery-manifest.json`,
       webapp: `${p}${webapp}`,
       ...(spec.tag ? { tag: spec.tag } : {}),
+      ...(spec.published ? { published: spec.published } : {}),
       ...(spec.tag && opts.repo
         ? { releaseURL: `https://github.com/${opts.repo}/releases/tag/${spec.tag}` }
         : {}),

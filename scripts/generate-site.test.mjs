@@ -89,6 +89,7 @@ const bothChannels = (f) => [
     id: 'release',
     label: '1.2.3',
     tag: 'v1.2.3',
+    published: '2026-09-26T22:31:41Z',
     screenshots: join(f.root, 'rel-shots'),
     releaseAssets: join(f.root, 'release-assets.json'),
   },
@@ -115,6 +116,10 @@ test('the release owns the locale root and main lives one segment deeper', async
   assert.deepEqual(out.channels.map((c) => c.path), ['', 'main']);
   assert.deepEqual(out.channels.map((c) => c.webapp), ['webapp', 'main/webapp']);
   assert.equal(out.channels[0].releaseURL, 'https://github.com/example/Demo/releases/tag/v1.2.3');
+  // When it was published travels with it, for the line under the version picker; a branch
+  // build has no such date.
+  assert.equal(out.channels[0].published, '2026-09-26T22:31:41Z');
+  assert.equal(out.channels[1].published, undefined);
   // A full sha is recorded short, and linked whole.
   assert.equal(out.channels[1].commit, 'abcdef1');
   assert.equal(out.channels[1].commitURL, 'https://github.com/example/Demo/commit/abcdef1234567890');

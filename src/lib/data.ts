@@ -240,6 +240,27 @@ function pickDefaultLocale(locales: string[]): string {
 
 // Per-platform view ──────────────────────────────────────────────────────────
 
+/**
+ * The command a platform's download card offers: the release's launcher, piped to the shell that
+ * runs it. `launch.sh` picks GNOME or KDE from the desktop it finds, so a Linux tab names its own
+ * build (`--target`) and the command installs what the tab describes. Nothing for platforms the
+ * launchers do not cover (mobile, web) or a release without them.
+ */
+export function installCommand(app: AppEntry, platformId: string): string | undefined {
+  const { sh, ps1 } = app.launch ?? {};
+  switch (platformId) {
+    case 'macos':
+      return sh && `curl -fsSL ${sh} | bash`;
+    case 'linux-gtk':
+    case 'linux-qt':
+      return sh && `curl -fsSL ${sh} | bash -s -- --target ${platformId}`;
+    case 'windows':
+      return ps1 && `irm ${ps1} | iex`;
+    default:
+      return undefined;
+  }
+}
+
 function buildPlatformView(
   app: AppEntry,
   platform: PlatformEntry,
@@ -339,6 +360,7 @@ function buildPlatformView(
     // release to link. `siteHref` passes the first through and puts the second under the
     // deployment base, so the card renders one kind of link either way.
     artifacts: (platform.artifacts ?? []).map((a) => ({ ...a, url: siteHref(a.url) })),
+    installCommand: installCommand(app, platformId),
     version: platform.version,
     buildNumber: platform.buildNumber,
     storeURL,

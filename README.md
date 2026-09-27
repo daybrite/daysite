@@ -192,7 +192,9 @@ record.
 
 - `/<locale>/` — the landing page: version picker and platform picker (first, since between them
   they select what everything below shows), hero, screenshot carousel, localized store description,
-  per-platform download card, and an About card carrying that platform's way to get the app — the
+  per-platform download card (on macOS, Windows and Linux, ending with the release's one-line
+  install command in a field with a copy button; on the web, headed **Open** and holding the web
+  app's address the same way), and an About card carrying that platform's way to get the app — the
   **Open the web app** button when a web build is hosted, the App Store or Google Play badge for a
   listed app (badges vendored under `public/badges/<locale>/`, see the README there), otherwise
   the lead package from the latest GitHub release — then permissions and release notes. One page per store locale, with the same locale-fallback ladder as appland.

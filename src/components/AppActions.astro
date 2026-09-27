@@ -12,6 +12,7 @@ import type { ChannelView } from '../lib/channels.ts';
 import StoreBadge from './StoreBadge.astro';
 import { dayTarget } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
+import { webAppHref } from '../lib/routes.ts';
 
 interface Props {
   view: PlatformView;
@@ -24,7 +25,6 @@ interface Props {
 
 const { view, site, locale, channel } = Astro.props;
 const ui = uiStrings(locale.code);
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const p = view.id;
 
 // The store's badge (StoreBadge.astro), for the two platforms that have a store listing.
@@ -37,18 +37,10 @@ const badge =
         : undefined
     : undefined;
 
-const webappDir = channel?.webapp ?? site.webapp ?? 'webapp';
-const webappHref = p === 'web' ? `${BASE}/${webappDir}/?locale=${encodeURIComponent(locale.code)}` : undefined;
-// The app's full address, printed under the button so it can be read, copied, or typed on
-// another device. Middle-truncated when the card is narrower than the URL: the head shrinks
-// behind an ellipsis, the tail — where the path, the part that tells sites apart, ends — stays.
-// `w-0 min-w-full` keeps the unbroken text out of the card's min-content width, so a narrow
-// phone gets the ellipsis rather than a page that scrolls sideways.
-const webappURL = webappHref ? new URL(webappHref, site.host).toString() : undefined;
-const WEBAPP_TAIL = 14;
-const webappParts = webappURL
-  ? [webappURL.slice(0, -WEBAPP_TAIL), webappURL.slice(-WEBAPP_TAIL)]
-  : undefined;
+// The app's full address, to read, copy, or type on another device, is on the web platform's own
+// card (WebAppCard) beside this one.
+const webappHref =
+  p === 'web' ? webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code) : undefined;
 
 /** The one package this platform leads with, by the target's preference order (.msix before
  *  -setup.exe, .apk before .aab), falling back to whatever the release shipped first. */
@@ -79,17 +71,6 @@ const BUTTON =
       <a href={webappHref} class={BUTTON}>
         {ui.openWebApp}
         <span aria-hidden="true">&rarr;</span>
-      </a>
-    )}
-    {webappHref && webappParts && (
-      <a
-        href={webappHref}
-        title={webappURL}
-        class="-mt-1 flex w-0 min-w-full justify-center font-mono text-xs text-[color:var(--color-text-soft)] transition hover:text-[color:var(--color-accent)]"
-        dir="ltr"
-      >
-        <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{webappParts[0]}</span>
-        <span class="shrink-0 whitespace-nowrap">{webappParts[1]}</span>
       </a>
     )}
     {badge && view.storeURL && (

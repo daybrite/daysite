@@ -179,6 +179,34 @@ test('the appindex is generated from the storefront export alone', async () => {
   assert.equal(tagged.apps[0].platforms.ios.buildNumber, undefined);
 });
 
+test("a release's launchers are recorded pinned to its tag, and a release without them has none", async () => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-appindex-'));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const doc = join(root, 'storefront.json');
+  writeFileSync(doc, JSON.stringify(storefrontDoc()));
+  const assets = join(root, 'release-assets.json');
+  writeFileSync(assets, JSON.stringify([
+    { name: 'demo-macos-appkit.dmg', size: 1 },
+    { name: 'launch.sh', size: 1 },
+    { name: 'launch.ps1', size: 1 },
+  ]));
+  const opts = { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true, tag: 'v1.3.0' };
+  const index = await generateAppIndex(project, site, { ...opts, releaseAssets: assets });
+  assert.deepEqual(index.apps[0].launch, {
+    sh: 'https://github.com/example/Demo/releases/download/v1.3.0/launch.sh',
+    ps1: 'https://github.com/example/Demo/releases/download/v1.3.0/launch.ps1',
+  });
+  // The launchers are not packages: no platform lists them as a download.
+  const listed = Object.values(index.apps[0].platforms).flatMap((p) => (p.artifacts ?? []).map((a) => a.name));
+  assert.ok(!listed.some((n) => n.startsWith('launch.')), listed.join(', '));
+
+  writeFileSync(assets, JSON.stringify([{ name: 'demo-macos-appkit.dmg', size: 1 }]));
+  const without = await generateAppIndex(project, site, { ...opts, releaseAssets: assets });
+  assert.equal(without.apps[0].launch, undefined);
+});
+
 test('a declaration whose lists are all empty is treated as none, so every capture shows', async () => {
   const root = mkdtempSync(join(tmpdir(), 'daysite-empty-listing-'));
   const project = join(root, 'app');

@@ -1,13 +1,14 @@
 ---
 import type { AppView, IconEffect, LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
-import { isUnstable, stableChannel } from '../lib/channels.ts';
+import { stableChannel } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { localeIndexHref } from '../lib/routes.ts';
 
 import Hero from './Hero.astro';
 import ChannelPicker from './ChannelPicker.astro';
-import DevBuildNote from './DevBuildNote.astro';
+import ChannelNote from './ChannelNote.astro';
+import WebAppCard from './WebAppCard.astro';
 import PlatformPicker from './PlatformPicker.astro';
 import PlatformShots from './PlatformShots.astro';
 import DescriptionBlock from './DescriptionBlock.astro';
@@ -48,19 +49,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 ---
 
 <div class="space-y-12 sm:space-y-16">
-  {/* The development and pre-release notice rides inside the hero rather than above it, so the
-      release page and the others are the same height and switching version moves nothing. */}
-  <Hero hero={hero} iconEffect={iconEffect} iconMarkup={iconMarkup}>
-    {isUnstable(channel) && channel && (
-      <DevBuildNote
-        slot="notice"
-        channel={channel}
-        release={releaseChannel}
-        releaseHref={releaseChannel && channelHref(releaseChannel)}
-        locale={locale.code}
-      />
-    )}
-  </Hero>
+  <Hero hero={hero} iconEffect={iconEffect} iconMarkup={iconMarkup} />
 
   {/* The per-platform content is split around the picker. By default the screenshots go BELOW
       with the description; `screenshot-placement = "above-about"` puts them here instead, first
@@ -82,6 +71,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
   {(channels.length > 1 || appView.platforms.length > 1) && (
     <div class="flex flex-col items-center gap-3">
       <ChannelPicker channels={channels} locale={locale.code} hrefFor={channelHref} />
+      <ChannelNote channel={channel} release={releaseChannel} releaseHref={releaseChannel && channelHref(releaseChannel)} locale={locale.code} />
       {appView.platforms.length > 1 && (
         <PlatformPicker
           locale={locale.code}
@@ -123,6 +113,7 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
             }}
           />
           <DownloadCard view={views[p]!} site={site} locale={locale} note={channel?.development ? ui.devBuildDownloadNote : undefined} />
+          <WebAppCard view={views[p]!} site={site} locale={locale} channel={channel} />
           </div>
         </div>
 

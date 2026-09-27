@@ -2,12 +2,9 @@
 // The notice a development or pre-release channel's pages carry: which branch or pre-release the
 // build came from, that it may be unstable, and the one link to the stable released version.
 //
-// One line, placed inside layout the page already has, rather than a banner across the top. The
-// pages this appears on are exactly the pages the version picker switches between, so a block
-// that exists on one channel and not the other pushes everything below it down — switching
-// version made the whole page jump. Both hosts have slack to spend instead: the hero's text
-// block is shorter than the app mark beside it, and the gallery's picker row has room to its
-// side. Below `sm` the hero stacks and this does cost a line; there is no slack there to use.
+// One line under the version picker (ChannelNote), rather than a banner across the top: the
+// stable release's pages carry a line in the same place (when it was released), so switching
+// version moves nothing below the picker.
 import type { ChannelView } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 

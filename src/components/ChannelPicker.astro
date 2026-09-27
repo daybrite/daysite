@@ -33,6 +33,7 @@ const ui = uiStrings(locale);
       <a
         href={hrefFor(c)}
         data-channel-link
+        data-unstable={c.development ? 'development' : c.prerelease ? 'prerelease' : undefined}
         aria-current={c.current ? 'page' : undefined}
         title={c.development ? (c.commit ? `${c.ref ?? c.label} · ${c.commit}` : c.label) : c.tag}
         class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[color:var(--color-text-soft)] no-underline transition ring-1 ring-inset ring-transparent hover:text-[color:var(--color-text)] hover:ring-[color:var(--color-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] aria-[current=page]:bg-[color:var(--color-accent)] aria-[current=page]:text-[color:var(--color-accent-fg)] aria-[current=page]:shadow aria-[current=page]:ring-transparent"
@@ -68,5 +69,40 @@ const ui = uiStrings(locale);
   }
   .ch-picker::-webkit-scrollbar {
     display: none;
+  }
+
+  /* A pre-release and the branch build say "may be unstable" before they are opened, each in a
+     colour of its own where the stable release keeps the brand accent: the pre-release a muted,
+     greyish amber (a published build, just not the latest), the branch build a saturated orange
+     (a build of whatever was last pushed). Unlayered, so these win over the picker's utility
+     classes. Selected, each fills with its colour, dark enough under white text in the light
+     theme and light enough under dark text in the dark one. */
+  .ch-picker a[data-unstable='prerelease'] {
+    color: oklch(50% 0.05 70);
+  }
+  .ch-picker a[data-unstable='prerelease'][aria-current='page'] {
+    background: oklch(50% 0.05 70);
+    color: #fff;
+  }
+  .ch-picker a[data-unstable='development'] {
+    color: oklch(55% 0.17 45);
+  }
+  .ch-picker a[data-unstable='development'][aria-current='page'] {
+    background: oklch(53% 0.17 45);
+    color: #fff;
+  }
+  :global(html[data-theme='dark']) .ch-picker a[data-unstable='prerelease'] {
+    color: oklch(80% 0.05 80);
+  }
+  :global(html[data-theme='dark']) .ch-picker a[data-unstable='prerelease'][aria-current='page'] {
+    background: oklch(78% 0.05 80);
+    color: oklch(22% 0.02 70);
+  }
+  :global(html[data-theme='dark']) .ch-picker a[data-unstable='development'] {
+    color: oklch(76% 0.15 55);
+  }
+  :global(html[data-theme='dark']) .ch-picker a[data-unstable='development'][aria-current='page'] {
+    background: oklch(74% 0.15 55);
+    color: oklch(20% 0.04 50);
   }
 </style>

@@ -14,8 +14,8 @@ import type { LoadedSite } from '../lib/data.ts';
 import DeviceShell from './DeviceShell.astro';
 import PlatformIcon from './PlatformIcon.astro';
 import ChannelPicker from './ChannelPicker.astro';
-import DevBuildNote from './DevBuildNote.astro';
-import { isUnstable, stableChannel } from '../lib/channels.ts';
+import ChannelNote from './ChannelNote.astro';
+import { stableChannel } from '../lib/channels.ts';
 import { localizedText, shotLabel, columnParts, deviceLabel } from '../lib/gallery.ts';
 import { localeInfo } from '../lib/i18n.ts';
 import { dayTarget, DAY_TARGETS } from '../lib/day-targets.ts';
@@ -118,15 +118,12 @@ const captureLocaleName = (code: string) =>
           row would then centre the pair rather than the picker, sliding the control 260px out
           from under the pointer that just clicked it — a worse motion than the line it saves.
           The gallery has no hero to hide the notice in, so this one line is what it costs. */}
-      {isUnstable(data.channel) && (
-        <DevBuildNote
-          channel={data.channel}
-          release={releaseChannel}
-          releaseHref={releaseChannel && channelHref(releaseChannel)}
-          locale={locale.code}
-          class="justify-center"
-        />
-      )}
+      <ChannelNote
+        channel={data.channel}
+        release={releaseChannel}
+        releaseHref={releaseChannel && channelHref(releaseChannel)}
+        locale={locale.code}
+      />
       {(showThemes.length > 1 || showLocales.length > 1) && (
         <div class="flex flex-wrap items-center justify-center gap-3" data-gallery-switchers data-pagefind-ignore>
           {showThemes.length > 1 && (

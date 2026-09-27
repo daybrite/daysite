@@ -30,6 +30,15 @@ export function localeIndexHref(locale: string, channel?: string): string {
 }
 
 /** Gallery page: {base}{locale}/{channel}/gallery/ */
+/**
+ * A channel's hosted web app (`webapp/`, `main/webapp/`), opened in this page's language. The
+ * "Open the web app" button links it; the web platform's card prints it whole, against the
+ * site's host, so it can be copied or typed on another device.
+ */
+export function webAppHref(webappDir: string, locale: string): string {
+  return `${BASE}${webappDir.replace(/^\/+|\/+$/g, '')}/?locale=${encodeURIComponent(locale)}`;
+}
+
 export function galleryHref(locale: string, channel?: string): string {
   return `${BASE}${locale}/${seg(channel)}gallery/`;
 }

@@ -1,0 +1,85 @@
+---
+// A line to copy: a read-only text field and a copy button to its right. The download card uses
+// it for the command that installs the release from a terminal, and the web card for the web
+// app's address.
+//
+// A text field rather than a code block: it scrolls horizontally inside its own box, so a long
+// command never widens the card, and focusing it selects the whole line, so copying by hand
+// takes one gesture. The button copies through the Clipboard API; where that is refused (an
+// insecure context, a browser that asks), it selects the text instead, and the visitor copies.
+interface Props {
+  /** The text to copy. */
+  value: string;
+  /** What the line is, shown above it and given to the field as its accessible name. */
+  label: string;
+  /** The copy button's accessible name. */
+  copyLabel: string;
+  /** Announced briefly once the text is on the clipboard. */
+  copiedLabel: string;
+}
+
+const { value, label, copyLabel, copiedLabel } = Astro.props;
+---
+
+<div class="command-field" data-command-field data-pagefind-ignore>
+  <p class="mb-1.5 text-xs text-[color:var(--color-text-muted)]">{label}</p>
+  <div class="flex items-stretch gap-2">
+    <input
+      type="text"
+      readonly
+      value={value}
+      aria-label={label}
+      spellcheck="false"
+      dir="ltr"
+      data-command-text
+      class="min-w-0 flex-1 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] px-3 py-2 font-mono text-xs text-[color:var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
+    />
+    <button
+      type="button"
+      data-command-copy
+      data-copied-label={copiedLabel}
+      aria-label={copyLabel}
+      title={copyLabel}
+      class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-[color:var(--color-text-soft)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
+    >
+      <svg data-icon-copy viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="11" height="11" rx="2" />
+        <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+      </svg>
+      <svg data-icon-done viewBox="0 0 24 24" class="hidden size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m5 12.5 4.5 4.5L19 7.5" />
+      </svg>
+    </button>
+  </div>
+  <span class="sr-only" role="status" data-command-status></span>
+</div>
+
+<script>
+  for (const field of document.querySelectorAll<HTMLElement>('[data-command-field]')) {
+    const input = field.querySelector<HTMLInputElement>('[data-command-text]');
+    const button = field.querySelector<HTMLButtonElement>('[data-command-copy]');
+    const status = field.querySelector<HTMLElement>('[data-command-status]');
+    if (!input || !button || !status) continue;
+    input.addEventListener('focus', () => input.select());
+    let reset: number | undefined;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(input.value);
+      } catch {
+        // No clipboard access here: leave the whole line selected for the visitor to copy.
+        input.focus();
+        input.select();
+        return;
+      }
+      button.querySelector('[data-icon-copy]')?.classList.add('hidden');
+      button.querySelector('[data-icon-done]')?.classList.remove('hidden');
+      status.textContent = button.dataset.copiedLabel ?? '';
+      window.clearTimeout(reset);
+      reset = window.setTimeout(() => {
+        button.querySelector('[data-icon-copy]')?.classList.remove('hidden');
+        button.querySelector('[data-icon-done]')?.classList.add('hidden');
+        status.textContent = '';
+      }, 1600);
+    });
+  }
+</script>

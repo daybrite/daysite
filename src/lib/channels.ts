@@ -55,6 +55,8 @@ export interface ChannelRecord {
   webapp: string;
   /** Release tag, for a release channel (`v0.4.1`). */
   tag?: string;
+  /** When the release was published (ISO 8601, GitHub's `published_at`), when known. */
+  published?: string;
   /** The GitHub release page. */
   releaseURL?: string;
   /** Branch name, for a development channel. */

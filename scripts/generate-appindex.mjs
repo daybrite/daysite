@@ -455,6 +455,8 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
 
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? repoFromGit(projectRoot, log);
   const assetsByTarget = new Map();
+  /** The release's launch scripts, by kind (`sh`, `ps1`), when it carries them. */
+  const launch = {};
   const addArtifact = (target, entry) => {
     if (!assetsByTarget.has(target)) assetsByTarget.set(target, []);
     assetsByTarget.get(target).push(entry);
@@ -490,8 +492,6 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     const assets = readReleaseAssets(opts.releaseAssets ?? process.env.DAYSITE_RELEASE_ASSETS, log);
     assetCount = assets.length;
     for (const a of assets) {
-      const t = assetTarget(a.name);
-      if (!t) continue;
       // Pinned to the tag rather than `releases/latest/download/…`: the pages describe one
       // release, and `latest` answers with whatever is newest when a visitor clicks, which is a
       // different build as soon as the next one goes out. Without a tag (a preview run reading a
@@ -499,6 +499,12 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
       const url = releaseTag
         ? `https://github.com/${repo}/releases/download/${encodeURIComponent(releaseTag)}/${encodeURIComponent(a.name)}`
         : `https://github.com/${repo}/releases/latest/download/${encodeURIComponent(a.name)}`;
+      // The one-line launchers (daybrite/actions launch-script) that each desktop platform's
+      // download card offers as a command. A release that shipped nothing they can run has none.
+      if (a.name === 'launch.sh') launch.sh = url;
+      else if (a.name === 'launch.ps1') launch.ps1 = url;
+      const t = assetTarget(a.name);
+      if (!t) continue;
       addArtifact(t, { name: a.name, url, size: a.size });
     }
   }
@@ -680,6 +686,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
         ...(Object.keys(description).length ? { description } : {}),
         ...(Object.keys(keywords).length ? { keywords } : {}),
         ...(Object.keys(releaseNotes).length ? { releaseNotes } : {}),
+        ...(Object.keys(launch).length ? { launch } : {}),
         platforms,
       },
     ],

@@ -86,6 +86,9 @@ export interface AppIndex {
 
 export interface AppEntry {
   name: string;
+  /** The release's one-line launchers, when it carries them: `launch.sh` (macOS and Linux) and
+   *  `launch.ps1` (Windows), at their releases/download/<tag> URLs. */
+  launch?: { sh?: string; ps1?: string };
   source?: { url?: string; release?: string; assets?: string; license?: string };
   /**
    * App-level localized URLs for ancillary pages. Conventional keys are
@@ -241,6 +244,9 @@ export interface PlatformView {
   storeBadge?: 'apple-app-store' | 'google-play-store';
   /** Day packages to download (releases/download/<tag> URLs). */
   artifacts: ArtifactEntry[];
+  /** The terminal command that downloads and runs this platform's build from the release, for
+   *  the desktop platforms whose release carries a launcher; the download card shows it. */
+  installCommand?: string;
   /** Day target id this entry was built from (e.g. "ios-uikit"). */
   target?: string;
   title: string;

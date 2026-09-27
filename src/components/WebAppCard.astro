@@ -1,0 +1,41 @@
+---
+// The web platform's counterpart of the download card: there is nothing to download, so it holds
+// the web app's full address instead, in the same copyable field the desktop platforms use for
+// their install command, to read, copy, or type on another device. The address is this build
+// channel's own web app (`webapp/`, `main/webapp/`) in this page's language.
+import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
+import type { ChannelView } from '../lib/channels.ts';
+import { uiStrings } from '../lib/uistrings.ts';
+import { dayTarget } from '../lib/day-targets.ts';
+import { webAppHref } from '../lib/routes.ts';
+import PlatformIcon from './PlatformIcon.astro';
+import CommandField from './CommandField.astro';
+
+interface Props {
+  view: PlatformView;
+  site: SiteInfo;
+  locale: LocaleInfo;
+  channel?: ChannelView;
+}
+
+const { view, site, locale, channel } = Astro.props;
+const ui = uiStrings(locale.code);
+const day = dayTarget(view.id);
+const url =
+  view.id === 'web'
+    ? new URL(webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code), site.host).toString()
+    : undefined;
+---
+
+{url && (
+  <section
+    class="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-sm"
+    aria-label={`${ui.webAppHeading} — ${view.displayName}`}
+  >
+    <h2 class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[color:var(--color-text-soft)]">
+      <PlatformIcon id={day?.icon ?? view.id} class="size-4" />
+      {ui.webAppHeading} — {day?.displayName ?? view.displayName}
+    </h2>
+    <CommandField value={url} label={ui.webAppAddressLabel} copyLabel={ui.copyLabel} copiedLabel={ui.copiedLabel} />
+  </section>
+)}
