@@ -29,14 +29,15 @@ const initial =
  *
  * Only platforms this app actually ships appear, so a visitor on an OS the app skips falls
  * through to Web (and, failing that, to `initial`). Linux lists both desktop toolkits because a
- * user agent cannot say GNOME or KDE; whichever the app ships wins, GTK first.
+ * user agent cannot say GNOME or KDE; whichever the app ships wins, GTK first. Windows lists
+ * WinUI 3 first and the deprecated XAML build after it, for an app that still ships only that.
  */
 const OS_PLATFORMS: Record<string, string[]> = {
   harmony: ['harmony'],
   android: ['android'],
   ios: ['ios'],
   macos: ['macos'],
-  windows: ['windows'],
+  windows: ['windows', 'windows-xaml'],
   linux: ['linux-gtk', 'linux-qt'],
   web: ['web'],
 };

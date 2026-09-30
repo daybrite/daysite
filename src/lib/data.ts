@@ -243,8 +243,11 @@ function pickDefaultLocale(locales: string[]): string {
 /**
  * The command a platform's download card offers: the release's launcher, piped to the shell that
  * runs it. `launch.sh` picks GNOME or KDE from the desktop it finds, so a Linux tab names its own
- * build (`--target`) and the command installs what the tab describes. Nothing for platforms the
- * launchers do not cover (mobile, web) or a release without them.
+ * build (`--target`) and the command installs what the tab describes. `launch.ps1` takes no
+ * target: it installs the release's WinUI 3 build, or its XAML build when that is the only
+ * Windows build the release has — so the XAML card offers it only in that case, never beside a
+ * WinUI card whose build the command would install instead. Nothing for platforms the launchers
+ * do not cover (mobile, web) or a release without them.
  */
 export function installCommand(app: AppEntry, platformId: string): string | undefined {
   const { sh, ps1 } = app.launch ?? {};
@@ -256,6 +259,8 @@ export function installCommand(app: AppEntry, platformId: string): string | unde
       return sh && `curl -fsSL ${sh} | bash -s -- --target ${platformId}`;
     case 'windows':
       return ps1 && `irm ${ps1} | iex`;
+    case 'windows-xaml':
+      return app.platforms.windows ? undefined : ps1 && `irm ${ps1} | iex`;
     default:
       return undefined;
   }

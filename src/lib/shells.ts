@@ -13,6 +13,7 @@
 
 const CHROME: Record<string, string> = {
   'macos-appkit': 'macos',
+  'windows-winui': 'windows',
   'windows-xaml': 'windows',
   'linux-gtk': 'gnome',
   'linux-qt': 'kde',

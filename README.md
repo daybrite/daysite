@@ -181,10 +181,11 @@ screen and offline"). Without a staged web build the manifest is still emitted b
 so the site never installs as an app of its own.
 
 `appindex.json` conforms to the appindex schema — `platforms.ios` / `platforms.android` mean what
-they mean there — plus Day's additive extension: entries under `macos`, `windows`, `linux-gtk`,
-`linux-qt`, `harmony`, and `web` keys, and a per-platform `artifacts` array carrying the
-`releases/download/<tag>/` URLs of the release the channel describes (`src/lib/day-targets.ts` is
-the vocabulary). An appindex consumer
+they mean there — plus Day's additive extension: entries under `macos`, `windows` (the WinUI 3
+build), `windows-xaml` (the deprecated system-XAML build, its own entry so a release that ships
+both shows both), `linux-gtk`, `linux-qt`, `harmony`, and `web` keys, and a per-platform
+`artifacts` array carrying the `releases/download/<tag>/` URLs of the release the channel
+describes (`src/lib/day-targets.ts` is the vocabulary). An appindex consumer
 reads the subset it understands; the document doubles as the app's machine-readable publication
 record.
 

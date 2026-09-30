@@ -257,3 +257,48 @@ test('a target captured on two device panels gets one row per panel, the phone f
   // `screenshots` stays the first row, for readers that know only the schema.
   assert.equal(harmony.screenshots.en[0].location, 'gallery/harmony-arkui/phone/default/home.png');
 });
+
+test('the two Windows targets are two platform entries, each with its own captures and packages', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-windows-'));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const doc = join(root, 'storefront.json');
+  const storefront = storefrontDoc();
+  storefront.project.targets.push('windows-winui', 'windows-xaml');
+  writeFileSync(doc, JSON.stringify(storefront));
+  const shot = (target) => ({ src: `gallery/${target}/default/home.png`, width: 1280, height: 800 });
+  const manifest = {
+    themes: ['default'], locales: ['default'],
+    platforms: ['windows-winui', 'windows-xaml'],
+    shots: [{ id: 'home', title: { en: 'Home' }, byPlatform: {
+      'windows-winui': { default: shot('windows-winui') },
+      'windows-xaml': { default: shot('windows-xaml') },
+    } }],
+  };
+  writeFileSync(join(site, 'gallery-manifest.json'), JSON.stringify(manifest));
+  const assets = join(root, 'release-assets.json');
+  writeFileSync(assets, JSON.stringify([
+    { name: 'demo-windows-winui-setup.exe', size: 1 },
+    { name: 'demo-windows-winui.msix', size: 2 },
+    { name: 'demo-windows-xaml-setup.exe', size: 3 },
+    { name: 'launch.ps1', size: 1 },
+  ]));
+  const opts = { storefront: doc, repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true, tag: 'v2.0.0' };
+  const index = await generateAppIndex(project, site, { ...opts, releaseAssets: assets });
+  const { windows, 'windows-xaml': xaml } = index.apps[0].platforms;
+  // WinUI 3 holds the conventional `windows` key; the deprecated build has one of its own.
+  assert.equal(windows.platform, 'windows-winui');
+  assert.equal(xaml.platform, 'windows-xaml');
+  assert.equal(windows.assets.screenshots.en[0].location, 'gallery/windows-winui/default/home.png');
+  assert.equal(xaml.assets.screenshots.en[0].location, 'gallery/windows-xaml/default/home.png');
+  assert.deepEqual(windows.artifacts.map((a) => a.name).sort(), ['demo-windows-winui-setup.exe', 'demo-windows-winui.msix']);
+  assert.deepEqual(xaml.artifacts.map((a) => a.name), ['demo-windows-xaml-setup.exe']);
+
+  // An app that still ships only the XAML build appears under `windows-xaml` alone.
+  storefront.project.targets = ['windows-xaml'];
+  writeFileSync(doc, JSON.stringify(storefront));
+  const only = await generateAppIndex(project, site, { ...opts, releaseAssets: assets });
+  assert.deepEqual(Object.keys(only.apps[0].platforms), ['windows-xaml']);
+  assert.equal(only.apps[0].platforms['windows-xaml'].artifacts.length, 1);
+});

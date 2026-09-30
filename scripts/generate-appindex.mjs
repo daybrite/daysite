@@ -45,12 +45,15 @@ import { fileURLToPath } from 'node:url';
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Day target id → appindex platforms key. `ios`/`android` are the App Fair schema's
-// conventional names; the rest are Day's extension (mirrors src/lib/day-targets.ts).
+// conventional names; the rest are Day's extension (mirrors src/lib/day-targets.ts). The two
+// Windows targets get two keys: WinUI 3 is `windows`, and the deprecated system-XAML build keeps
+// its own, so a release carrying both lists both.
 const TARGET_KEYS = {
   'ios-uikit': 'ios',
   'android-mdc': 'android',
   'macos-appkit': 'macos',
-  'windows-xaml': 'windows',
+  'windows-winui': 'windows',
+  'windows-xaml': 'windows-xaml',
   'linux-gtk': 'linux-gtk',
   'linux-qt': 'linux-qt',
   'harmony-arkui': 'harmony',
@@ -66,6 +69,7 @@ const TARGET_PACKAGES = {
   'ios-uikit': ['.ipa'],
   'android-mdc': ['.apk', '.aab'],
   'macos-appkit': ['.dmg'],
+  'windows-winui': ['.msix', '-setup.exe'],
   'windows-xaml': ['.msix', '-setup.exe'],
   'linux-gtk': ['.appimage', '.flatpak'],
   'linux-qt': ['.appimage', '.flatpak'],
