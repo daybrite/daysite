@@ -84,6 +84,14 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           node scripts/check-portability.mjs
+      - name: Build without search or development dependencies
+        # App deployments omit devDependencies when pagefind is disabled. A full install
+        # hides accidental imports of optional build tools from astro.config.mjs.
+        run: |
+          npm ci --no-audit --no-fund --omit=dev
+          test ! -d node_modules/pagefind
+          DAYSITE_CONFIG="$PWD/samples/site.toml" npm run build
+          test ! -d dist/pagefind
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run this checkout of the template over the

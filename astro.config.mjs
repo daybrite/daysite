@@ -5,11 +5,14 @@ import { relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import { createIndex } from 'pagefind';
 import { loadSite, siteChannels } from './src/lib/data.ts';
 import { portableURLsIntegration } from './scripts/portable-urls.mjs';
 
 const data = await loadSite();
+// Deployments without search omit devDependencies, including Pagefind. Resolve it only
+// when enabled, while the config's Vite module runner is still available (not in a
+// build:done hook, after another integration may have closed the runner).
+const pagefind = data.site.pagefind === true ? await import('pagefind') : undefined;
 // Every channel stages its own web-dom build (`webapp/`, `main/webapp/`); all of them are the
 // app's own output rather than the template's, so none is walked by the self-contained check.
 const channels = (await siteChannels()).channels;
@@ -35,21 +38,20 @@ const basePath = hostURL.pathname || '/';
 
 /**
  * Run Pagefind over the built `dist/` directory once Astro is done. Only
- * activated when siteinfo.yaml has `pagefind: true` — opted-out sites
+ * activated when site.toml has `pagefind = true` — opted-out sites
  * never spawn the indexer or ship the index files.
  *
- * @param {boolean} enabled
  * @returns {import('astro').AstroIntegration}
  */
-function pagefindIntegration(enabled) {
+function pagefindIntegration() {
   return {
     name: 'pagefind',
     hooks: {
       'astro:build:done': async ({ dir, logger }) => {
-        if (!enabled) return;
+        if (!pagefind) return;
         const sitePath = fileURLToPath(dir);
         logger.info(`indexing ${sitePath}`);
-        const { index } = await createIndex({});
+        const { index } = await pagefind.createIndex({});
         if (!index) throw new Error('pagefind: createIndex returned no handle');
         await index.addDirectory({ path: sitePath });
         await index.writeFiles({ outputPath: `${sitePath}/pagefind` });
@@ -186,7 +188,7 @@ export default defineConfig({
       },
     }),
     portableURLsIntegration(basePath, webappDirs),
-    pagefindIntegration(data.site.pagefind === true),
+    pagefindIntegration(),
     selfContainedIntegration(
       webappDirs,
       data.apps.flatMap((a) => {
