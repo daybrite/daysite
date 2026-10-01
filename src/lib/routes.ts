@@ -2,10 +2,12 @@
  * URL helpers for the localized routes. The single-app site only renders the locale-index
  * routes, so it never invokes appPageHref().
  *
- * Every href is prefixed with `import.meta.env.BASE_URL`, which Astro derives
+ * Build-time hrefs are prefixed with `import.meta.env.BASE_URL`, which Astro derives
  * from the `base:` config. For a root-deployed site this is `/`; for a
  * subpath deployment such as `https://example.github.io/Fair-Skies/` it is
  * `/Fair-Skies/`, so `localeIndexHref('en')` yields `/Fair-Skies/en/`.
+ * The portable-urls build integration converts local output URLs to document-relative
+ * references. Keeping the prefix here also preserves canonical metadata and dev-server URLs.
  *
  * A non-default build channel adds one segment after the locale (lib/channels.ts): the release
  * channel owns `/en/`, the development channel lives at `/en/main/`, and every route below takes

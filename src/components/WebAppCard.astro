@@ -36,6 +36,6 @@ const url =
       <PlatformIcon id={day?.icon ?? view.id} class="size-4" />
       {ui.webAppHeading} — {day?.displayName ?? view.displayName}
     </h2>
-    <CommandField value={url} label={ui.webAppAddressLabel} copyLabel={ui.copyLabel} copiedLabel={ui.copiedLabel} />
+    <CommandField value={url} siteURL={webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code)} label={ui.webAppAddressLabel} copyLabel={ui.copyLabel} copiedLabel={ui.copiedLabel} />
   </section>
 )}

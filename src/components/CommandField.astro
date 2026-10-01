@@ -16,9 +16,11 @@ interface Props {
   copyLabel: string;
   /** Announced briefly once the text is on the clipboard. */
   copiedLabel: string;
+  /** A site URL whose displayed/copyable address follows the current deployment. */
+  siteURL?: string;
 }
 
-const { value, label, copyLabel, copiedLabel } = Astro.props;
+const { value, label, copyLabel, copiedLabel, siteURL } = Astro.props;
 ---
 
 <div class="command-field" data-command-field data-pagefind-ignore>
@@ -32,6 +34,7 @@ const { value, label, copyLabel, copiedLabel } = Astro.props;
       spellcheck="false"
       dir="ltr"
       data-command-text
+      data-site-url={siteURL}
       class="min-w-0 flex-1 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] px-3 py-2 font-mono text-xs text-[color:var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
     />
     <button
@@ -57,6 +60,7 @@ const { value, label, copyLabel, copiedLabel } = Astro.props;
 <script>
   for (const field of document.querySelectorAll<HTMLElement>('[data-command-field]')) {
     const input = field.querySelector<HTMLInputElement>('[data-command-text]');
+    if (input?.dataset.siteUrl) input.value = new URL(input.dataset.siteUrl, document.baseURI).href;
     const button = field.querySelector<HTMLButtonElement>('[data-command-copy]');
     const status = field.querySelector<HTMLElement>('[data-command-status]');
     if (!input || !button || !status) continue;

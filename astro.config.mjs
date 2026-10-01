@@ -5,7 +5,9 @@ import { relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import { createIndex } from 'pagefind';
 import { loadSite, siteChannels } from './src/lib/data.ts';
+import { portableURLsIntegration } from './scripts/portable-urls.mjs';
 
 const data = await loadSite();
 // Every channel stages its own web-dom build (`webapp/`, `main/webapp/`); all of them are the
@@ -47,7 +49,6 @@ function pagefindIntegration(enabled) {
         if (!enabled) return;
         const sitePath = fileURLToPath(dir);
         logger.info(`indexing ${sitePath}`);
-        const { createIndex } = await import('pagefind');
         const { index } = await createIndex({});
         if (!index) throw new Error('pagefind: createIndex returned no handle');
         await index.addDirectory({ path: sitePath });
@@ -184,6 +185,7 @@ export default defineConfig({
         ),
       },
     }),
+    portableURLsIntegration(basePath, webappDirs),
     pagefindIntegration(data.site.pagefind === true),
     selfContainedIntegration(
       webappDirs,
@@ -198,6 +200,9 @@ export default defineConfig({
     cnameIntegration(),
   ],
   vite: {
+    // JS chunks resolve lazy imports/assets relative to import.meta.url, independent of
+    // the hosting prefix. HTML links are made relative after Astro has injected its assets.
+    experimental: { renderBuiltUrl: () => ({ relative: true }) },
     plugins: [/** @type {any} */ (tailwindcss())],
   },
 });

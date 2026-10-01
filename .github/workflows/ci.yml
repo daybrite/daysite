@@ -56,6 +56,9 @@ jobs:
           W="$RUNNER_TEMP/channels"
           mkdir -p "$W/site"
           cp samples/site.toml "$W/site/"
+          # Build once for an old project path, then serve the exact output at other roots.
+          sed -i 's|^host = .*|host = "https://old.example/Old-Project"|' "$W/site/site.toml"
+          echo 'pagefind = true' >> "$W/site/site.toml"
           # The listing without Arabic, so only the release's captures bring it in.
           jq 'walk(if type == "object" then del(.ar) else . end) | .locales -= ["ar"]' \
             samples/.showcase/storefront.json > "$W/storefront.json"
@@ -77,6 +80,10 @@ jobs:
           DAYSITE_CONFIG="$W/site/site.toml" npx astro build
           test -f dist/ar/prerelease/gallery/index.html
           grep -q 'Pre-release' dist/en/prerelease/index.html
+      - name: The same artifact works at unrelated deployment roots
+        run: |
+          npx playwright install --with-deps chromium
+          node scripts/check-portability.mjs
 
   # The real thing: scaffold a brand-new Day project with the day CLI (whose `day new app`
   # ships a website/), build its web-dom target, and run this checkout of the template over the
@@ -189,17 +196,17 @@ jobs:
           # The picker offers both, and each channel's web-app button opens its own build — in
           # the language of the page it sits on (`?locale=`), so a reader who came to the French
           # page opens the app in French.
-          grep -qF 'href="/daysite/en/main/"' dist/en/index.html
-          grep -qF 'href="/daysite/en/"' dist/en/main/index.html
-          grep -qF 'href="/daysite/main/webapp/?locale=en"' dist/en/main/index.html
-          grep -qF 'href="/daysite/webapp/?locale=en"' dist/en/index.html
+          grep -qF 'href="./main/"' dist/en/index.html
+          grep -qF 'href="../"' dist/en/main/index.html
+          grep -qF 'href="../../main/webapp/?locale=en"' dist/en/main/index.html
+          grep -qF 'href="../webapp/?locale=en"' dist/en/index.html
           # A second language, so the locale is the page's own rather than a constant. Which one
           # is whichever the scaffold's locale list sorts first, since the site publishes a page
           # tree per language and any of them makes the point.
           other=$(find dist -mindepth 1 -maxdepth 1 -type d -exec basename {} \; \
             | grep -vxE 'en|main|webapp|gallery|app|apps|icons|badges|_astro' | sort | head -1)
           [ -n "$other" ] || { echo 'the scaffold built no second language' >&2; exit 1; }
-          grep -qF "href=\"/daysite/webapp/?locale=$other\"" "dist/$other/index.html" || {
+          grep -qF "href=\"../webapp/?locale=$other\"" "dist/$other/index.html" || {
             echo "dist/$other/index.html: the web-app button does not open the app in $other" >&2
             exit 1
           }
@@ -253,7 +260,7 @@ jobs:
           grep -q 'rel="icon" type="image/svg+xml"' dist/en/index.html
           grep -q 'app/icon.svg' dist/en/index.html
           test -f dist/app/apple-touch-icon.png
-          # Under the deploy's base path (/daysite/), so the href is matched past it.
+          # Relative to the locale page, independent of the deploy's /daysite/ prefix.
           grep -q 'rel="apple-touch-icon" href="[^"]*/app/apple-touch-icon.png"' dist/en/index.html
       - name: The picker offers every scaffolded locale
         run: |

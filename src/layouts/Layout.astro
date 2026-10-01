@@ -112,14 +112,12 @@ const alternates = localeLinks.map((l) => ({
 // sites; '/Fair-Skies/' (etc.) for subpath/project-page deployments.
 const baseURL = import.meta.env.BASE_URL;
 
-// Payload for the auto-redirect script. The locales list is deliberately
-// the whole-site set; the inline script needs to be parser-friendly. `base`
-// is included so the redirect target stays under the deployed subpath.
+// Payload for the auto-redirect script. The deployment root comes from the page's relative
+// daysite-root metadata, not this build-time payload.
 const localeCodes = localeLinks.map((l) => l.code);
 const redirectPayload = JSON.stringify({
   locales: localeCodes,
   defaultLocale: current.code,
-  base: baseURL,
 });
 
 // Favicon paths are root-relative (`/app/…`); rebase them onto the deployed base so they
@@ -138,6 +136,9 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content={accent} />
     <meta name="generator" content={Astro.generator} />
+    {/* The build makes this relative to this page. Runtime features resolve it against the
+        document URL, so they follow the actual deployment rather than site.toml's host. */}
+    <meta name="daysite-root" content={baseURL} />
 
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
@@ -272,8 +273,8 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
             }
             if (target) {
               var loc = window.location;
-              var base = cfg.base || '/';
-              loc.replace(base + target + '/' + (loc.search || '') + (loc.hash || ''));
+              var base = new URL(document.querySelector('meta[name="daysite-root"]').content, loc.href);
+              loc.replace(new URL(target + '/' + (loc.search || '') + (loc.hash || ''), base).href);
             }
           } catch (_) { /* never block rendering */ }
         })();
@@ -336,7 +337,7 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
           <div class="qr-img" set:html={qrLarge}></div>
           <figcaption class="qr-cap">
             <b>{qrTitle}</b>
-            <span dir="ltr">{qrURL}</span>
+            <span dir="ltr" data-qr-url>{qrURL}</span>
             <small>{ui.qrHint}</small>
           </figcaption>
         </figure>
@@ -349,11 +350,19 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
       releaseURL={releaseURL}
     />
     <script>
+      import { svg as qrSvg } from '../lib/qr.mjs';
       // The QR overlay: open from the toolbar icon, close from the ✕, the backdrop, or Esc;
       // focus goes to the ✕ while it is up and back to the icon after.
       const qrBox = document.querySelector<HTMLElement>('[data-qr-box]');
       const qrOpen = document.querySelector<HTMLElement>('[data-qr-open]');
       if (qrBox && qrOpen) {
+        const root = document.querySelector<HTMLMetaElement>('meta[name="daysite-root"]');
+        const url = new URL(root?.content ?? './', document.baseURI).href;
+        const title = qrOpen.getAttribute('aria-label') ?? '';
+        const options = { quiet: 0, color: 'currentColor', background: 'none' };
+        qrOpen.innerHTML = qrSvg(url, '', options);
+        qrBox.querySelector<HTMLElement>('.qr-img')!.innerHTML = qrSvg(url, title, options);
+        qrBox.querySelector<HTMLElement>('[data-qr-url]')!.textContent = url;
         const close = () => {
           qrBox.hidden = true;
           qrBox.setAttribute('aria-hidden', 'true');

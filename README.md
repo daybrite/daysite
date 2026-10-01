@@ -40,6 +40,42 @@ not something the template loads. Build time still needs the npm registry for th
 asset list, its screenshots, its web build — and hands each to the generator as a file or a
 directory, so the generator itself never touches the network.
 
+## Moving a built site
+
+The generated site uses document-relative URLs. The same `dist/` directory can be served at
+`https://example.org/`, `https://example.github.io/Project/`, or a nested preview path without
+rebuilding. Copy the entire directory, including `_astro/`, `app/`, `gallery/`, and any staged
+web builds and downloads. The server must serve directory indexes and redirect directory URLs
+without a trailing slash to their slash form; GitHub Pages does this.
+
+Navigation, styles, scripts, screenshots, favicons, channel aliases, and install-manifest
+resources follow the directory where the site is served. Search, QR codes, and copyable web-app
+addresses resolve the current deployment at runtime. Basic navigation and presentation also
+work with JavaScript disabled. No `<base>` element or client-side link repair is required.
+
+`host` still declares the **canonical public URL** for search engines, social metadata,
+sitemaps, robots.txt, and the generated GitHub Pages `CNAME`. Change it when adopting a new
+domain and rebuild to update those declarations. Relative links do not configure DNS or GitHub
+Pages settings. Explicit external links and externally hosted assets keep their supplied URLs.
+The template does not rewrite the internals of a separately built web app; that app must use
+portable resource paths itself. Browser storage, installed PWAs, and service workers remain
+bound to their original origin/scope and are not migrated by moving the website.
+
+The build converts HTML and CSS URLs after Astro emits its assets, before Pagefind indexes the
+pages. Vite emits relative URLs inside JavaScript chunks. A page's relative `daysite-root` meta
+value supplies the root for runtime features. Tests exercise the same build at three mounts,
+with requests outside each mount returning 404:
+
+```sh
+npm test
+npm run build
+npx playwright install chromium
+node scripts/check-portability.mjs dist
+```
+
+The browser check expects the sample's English and French pages. CI also enables search and
+multiple channels so deep gallery pages and channel redirects are covered.
+
 ## Build channels
 
 The site publishes the app up to three times, and a version picker above the platform picker
@@ -84,7 +120,7 @@ channel, which is the layout every daysite had before channels existed.
 ## site.toml
 
 ```toml
-# Required — the canonical URL. A path component becomes the Astro base,
+# Required — the canonical URL. A path component sets the preferred public location,
 # so a GitHub project page just works:
 host = "https://daybrite.github.io/Day-Skies"
 
@@ -171,8 +207,8 @@ PNG at all gets the SVG master alone, or no app mark; the generator says so.
 ### Home screen
 
 A site that hosts the web build (`public/<webapp>/`, staged by the workflow) is installable from
-its landing page: `src/pages/site.webmanifest.ts` emits a web app manifest whose `start_url` and
-`id` are the hosted app, whose scope is the whole site, whose icons are the favicon set above,
+its landing page: `src/pages/site.webmanifest.ts` emits a web app manifest whose `start_url`
+is the hosted app, whose identity defaults to that URL, whose scope is the whole site, whose icons are the favicon set above,
 and whose screenshots are the gallery's phone captures (narrow) and desktop captures (wide), and
 `Layout.astro` links it from every page. "Add to Home Screen" from the site then installs the
 app itself, with the same name and icon the app's own manifest declares (`day build -p web-dom`
