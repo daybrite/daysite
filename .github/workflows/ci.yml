@@ -123,7 +123,7 @@ jobs:
           # en-US would stand up a second en-US/ tree beside en/.
           "$DAY_BIN" new app day-sample --no-input \
             --toolkit macos-appkit,ios-uikit,android-mdc,linux-gtk \
-            --toolkit linux-qt,windows-xaml,harmony-arkui,web-dom \
+            --toolkit linux-qt,windows-winui,harmony-arkui,web-dom \
             --locales zh-Hans-CN,es-ES,pt-BR,fr-FR,de-DE,ja-JP,ko-KR,it-IT,ru-RU,ar-SA \
             --locales id-ID,tr-TR,vi-VN,th-TH,pl-PL,nl-NL,zh-Hant-TW,uk-UA,cs-CZ,ms-MY
           test -f day-sample/website/site.toml
@@ -226,7 +226,7 @@ jobs:
           # Each platform is bookmarkable as `#<target>`, which the picker resolves from the map
           # the server writes. The map is the whole contract between the URL and the selection,
           # so a target missing from it is a fragment that silently does nothing.
-          for target in ios-uikit android-mdc harmony-arkui macos-appkit linux-gtk linux-qt windows-xaml web-dom; do
+          for target in ios-uikit android-mdc harmony-arkui macos-appkit linux-gtk linux-qt windows-winui web-dom; do
             grep -o 'data-slugs="[^"]*"' dist/en/index.html | grep -qF "$target" || {
               echo "no #$target fragment: the picker's slug map is missing it" >&2
               exit 1
