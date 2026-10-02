@@ -86,7 +86,7 @@ switches between them. They are assembled from deliberately different sources.
 | picker label | the release's version, `1.2.3` | the pre-release's version, `1.3.0-beta.1` | the default branch, `main` |
 | downloads | the release's own packages, at their `releases/download/<tag>/` URLs | the pre-release's own packages, the same way | this run's packages, served from the site under `main/downloads/` |
 | version | the released tag, so a checkout that has moved on does not change what the release pages report | the pre-release's tag | the version in `Cargo.toml`, with the build number beside it |
-| screenshots | the release's `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the pre-release's, the same way | the captures this run's dayscripts took |
+| screenshots | the release's `screenshots.frames.zst`, unpacked by the day CLI, or its `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the pre-release's, the same way | the captures this run's dayscripts took |
 | web app | the release's own `web-dom` dist, at `/webapp/` | the pre-release's, at `/prerelease/webapp/` | this run's, at `/main/webapp/` |
 | page | as published | carries a pre-release notice and a link to the release | carries a development-build notice and a link to the release |
 
@@ -140,7 +140,24 @@ show-qr-code = true            # the toolbar QR code of the landing page, full s
 show-source-link = true
 footer = "© {year} Daybrite" # optional, prints under the Day attribution; {year} interpolates
 pagefind = false               # site search index
+optimize-png = false           # recompress the built PNG files with oxipng (true, or a level 0-6)
 ```
+
+### optimize-png
+
+With `optimize-png = true`, the build recompresses every PNG file in the output with
+[oxipng](https://github.com/oxipng/oxipng) after Astro finishes: the screenshots, the icons and
+the badges. The hosted web app's files are left as the app built them. The pixels stay the same.
+On a Day app's captures, level 1 saves 15% and takes 0.6 CPU-seconds per 2752×2064 image; level
+0 saves 7% in a fifth of the time, and level 2 saves 17% in twice the time. `optimize-png = 2`
+names a level.
+
+The published `gallery.json` records each capture's `bytes` and `sha256`, so the build refreshes
+the entries of the files it rewrote.
+
+The build runs the `oxipng` on `PATH`, or the one `DAYSITE_OXIPNG` names. Without one it warns
+and publishes the files as built. The `dayapp.yml` website job installs a pinned oxipng when the
+site sets the option.
 
 ### icon-effect
 

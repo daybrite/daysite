@@ -116,12 +116,23 @@ if (!flag('ci')) {
       // which every Day release has carried since before it existed. Both unzip to the same
       // capture tree, so nothing downstream has to know which one arrived.
       const names = release.assets.map((a) => a.name);
-      const merged = names.includes('screenshots.zip');
-      log(`downloading ${tag} screenshots (${merged ? 'screenshots.zip' : `${names.filter((n) => n.startsWith('screenshots-')).length} per-target zips`})`);
-      gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern',
-        merged ? 'screenshots.zip' : 'screenshots-*.zip');
-      for (const z of readdirSync(dir).filter((n) => n.endsWith('.zip'))) unzipInto(join(dir, z), shots);
-      indexCaptures(shots);
+      if (names.includes('screenshots.frames.zst')) {
+        // A frame archive (the workflow's `screenshot-bundle: frames`): the CLI checks every
+        // capture's pixels against the release's gallery.json and writes the tree and its index.
+        log(`downloading ${tag} screenshots (screenshots.frames.zst)`);
+        gh('release', 'download', tag, '--dir', dir, '--clobber',
+          '--pattern', 'screenshots.frames.zst', '--pattern', 'gallery.json');
+        sh(process.env.DAY_BIN || 'day', ['screenshot', 'unpack', join(dir, 'gallery.json'), '--out', shots], {
+          stdio: ['ignore', 'pipe', 'inherit'],
+        });
+      } else {
+        const merged = names.includes('screenshots.zip');
+        log(`downloading ${tag} screenshots (${merged ? 'screenshots.zip' : `${names.filter((n) => n.startsWith('screenshots-')).length} per-target zips`})`);
+        gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern',
+          merged ? 'screenshots.zip' : 'screenshots-*.zip');
+        for (const z of readdirSync(dir).filter((n) => n.endsWith('.zip'))) unzipInto(join(dir, z), shots);
+        indexCaptures(shots);
+      }
     }
     // The released web build, hosted at the site root so `/webapp/` runs the version the
     // release channel's pages describe. The web-dom target's screenshots-web-dom.zip ends the

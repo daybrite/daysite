@@ -7,6 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { loadSite, siteChannels } from './src/lib/data.ts';
 import { portableURLsIntegration } from './scripts/portable-urls.mjs';
+import { optimizePNGIntegration } from './scripts/optimize-png.mjs';
 
 const data = await loadSite();
 // Deployments without search omit devDependencies, including Pagefind. Resolve it only
@@ -200,6 +201,8 @@ export default defineConfig({
       }),
     ),
     cnameIntegration(),
+    // Last, so every file the other hooks wrote is in place.
+    optimizePNGIntegration(data.site['optimize-png'], webappDirs),
   ],
   vite: {
     // JS chunks resolve lazy imports/assets relative to import.meta.url, independent of

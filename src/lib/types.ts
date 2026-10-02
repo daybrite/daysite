@@ -64,6 +64,11 @@ export interface SiteInfo {
    * sites that opt out have no extra payload.
    */
   pagefind?: boolean;
+  /**
+   * Recompress the built site's PNG files losslessly with `oxipng` after the build
+   * (`scripts/optimize-png.mjs`). `true` is oxipng level 1; a number 0–6 names the level.
+   */
+  'optimize-png'?: boolean | number;
 }
 
 /**
