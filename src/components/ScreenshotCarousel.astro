@@ -1,6 +1,7 @@
 ---
 import { uiStrings } from '../lib/uistrings.ts';
 import type { PlatformView } from '../lib/types.ts';
+import ShotPicture from './ShotPicture.astro';
 
 interface Props {
   locale?: string;
@@ -72,7 +73,7 @@ const labelled = rows.length > 1 || rows.some((r) => r.device && r.device !== 'd
                 ]}
                 style={`--ar: ${ratio.toFixed(6)}`}
               >
-                <img
+                <ShotPicture
                   src={s.url}
                   alt={s.alt}
                   width={s.width}

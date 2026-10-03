@@ -25,7 +25,7 @@ test('HTML resources, navigation, redirects and hidden gallery variants are port
     <meta name="daysite-root" content="/Old/">
     <meta http-equiv="refresh" content="0; url=/Old/fr/?x=1&amp;y=2#part">
     </head><body><a href="/Old/en/main/">Channel</a><img src="/Old/app/icon.png"
-    srcset="/Old/app/a.png 1x, /Old/app/b.png 2x" data-v-dark="/Old/gallery/dark.png">
+    srcset="/Old/app/a.png 1x, /Old/app/b.png 2x" data-v-dark="/Old/gallery/dark.png" data-w-dark="/Old/_astro/dark.webp">
     <template><img src="/Old/gallery/light.png"></template>
     <p>Do not rewrite prose /Old/en/ or external https://original.test/Old/en/</p>
     <script type="module">import {x} from '/Old/_astro/shared.js'; import('/Old/_astro/lazy.js');</script>
@@ -35,6 +35,7 @@ test('HTML resources, navigation, redirects and hidden gallery variants are port
   assert.match(html, /name="daysite-root" content="\.\.\/\.\.\/\.\.\/"/);
   assert.match(html, /url=\.\.\/\.\.\/\.\.\/fr\/\?x=1&amp;y=2#part/);
   assert.match(html, /data-v-dark="\.\.\/\.\.\/\.\.\/gallery\/dark.png"/);
+  assert.match(html, /data-w-dark="\.\.\/\.\.\/\.\.\/_astro\/dark.webp"/);
   assert.match(html, /<template><img src="\.\.\/\.\.\/\.\.\/gallery\/light.png"/);
   assert.match(html, /Do not rewrite prose \/Old\/en\//);
   assert.match(html, /from '\.\.\/\.\.\/\.\.\/_astro\/shared.js'/);

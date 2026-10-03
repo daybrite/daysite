@@ -12,7 +12,7 @@ const root = resolve(process.argv[2] ?? 'dist');
 const exists = async (file) => stat(join(root, file)).then(() => true, () => false);
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.wasm': 'application/wasm' };
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.wasm': 'application/wasm' };
 
 // Check every local page/asset link, including pages not visited by the interactive tour.
 let links = 0;
@@ -21,12 +21,19 @@ for (const entry of await readdir(root, { recursive: true })) {
   const tree = parse(await readFile(join(root, entry), 'utf8'));
   async function walk(node) {
     for (const a of node.attrs ?? []) {
-      if (!['href', 'src', 'data-site-url'].includes(a.name) && !a.name.startsWith('data-v-')) continue;
-      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(a.value)) continue;
-      assert.ok(!a.value.startsWith('/'), `${entry}: nonportable ${a.name}=${a.value}`);
-      const url = new URL(a.value, 'https://test.invalid/' + entry);
-      assert.ok(await exists(decodeURIComponent(url.pathname).slice(1)), `${entry}: missing ${url.pathname}`);
-      links++;
+      if (!['href', 'src', 'srcset', 'data-site-url'].includes(a.name)
+          && !a.name.startsWith('data-v-') && !a.name.startsWith('data-w-')) continue;
+      // A srcset is URLs with optional descriptors; the WebP sources carry one URL each.
+      const values = a.name === 'srcset'
+        ? a.value.split(',').map((c) => c.trim().split(/\s+/)[0]).filter(Boolean)
+        : [a.value];
+      for (const value of values) {
+        if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value)) continue;
+        assert.ok(!value.startsWith('/'), `${entry}: nonportable ${a.name}=${value}`);
+        const url = new URL(value, 'https://test.invalid/' + entry);
+        assert.ok(await exists(decodeURIComponent(url.pathname).slice(1)), `${entry}: missing ${url.pathname}`);
+        links++;
+      }
     }
     for (const child of node.childNodes ?? []) await walk(child);
     if (node.content) await walk(node.content);

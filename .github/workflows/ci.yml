@@ -38,6 +38,8 @@ jobs:
       - name: Generate the sample's data
         run: npm run sample
       - run: npx astro build
+      - name: What the build made of the captures
+        run: node scripts/image-report.mjs
       - name: The sample rendered
         # Every check runs, and a failure says what was expected and what the page has instead,
         # in the log, as an annotation, and in the job summary. The expectations come from the

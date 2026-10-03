@@ -143,6 +143,23 @@ pagefind = false               # site search index
 optimize-png = false           # recompress the built PNG files with oxipng (true, or a level 0-6)
 ```
 
+### Screenshots as WebP
+
+Every capture the carousel and the gallery show is a `<picture>`: a WebP rendition for the
+browsers that take one (all current ones), the published PNG for the rest. Astro's image
+service (`sharp`) encodes the WebP at build time at quality 80, beside the PNG, as
+`gallery/<target>/<variant>/<shot>_<hash>.webp`; on the Showcase's 8,496 shown captures the
+WebP files are 34% of the PNG files' size (396 MB against 1,164 MB). The PNG keeps its URL, which is what the published `gallery.json` names and
+what other sites and the stores read. The gallery's theme and locale switcher swaps the WebP
+source and the PNG together, and the full-size viewer shows whichever the browser chose.
+
+Under `astro dev` the service serves the PNG itself behind each WebP source, so a local preview
+shows the pages without encoding anything; the WebP files come from `astro build`.
+
+`node scripts/image-report.mjs [dist]` lists, after a build, how much PNG the pages offer as
+WebP, the largest captures, and any gallery PNG no page offers as WebP. CI prints it after the
+sample build. The icons and badges stay PNG and SVG.
+
 ### optimize-png
 
 With `optimize-png = true`, the build recompresses every PNG file in the output with

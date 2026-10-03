@@ -13,6 +13,7 @@ import StoreBadge from './StoreBadge.astro';
 import { dayTarget } from '../lib/day-targets.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { webAppHref } from '../lib/routes.ts';
+import { webAppStaged } from '../lib/data.ts';
 
 interface Props {
   view: PlatformView;
@@ -39,8 +40,9 @@ const badge =
 
 // The app's full address, to read, copy, or type on another device, is on the web platform's own
 // card (WebAppCard) beside this one.
-const webappHref =
-  p === 'web' ? webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code) : undefined;
+// Only a staged web app is linked (lib/data.ts `webAppStaged`).
+const webapp = channel?.webapp ?? site.webapp ?? 'webapp';
+const webappHref = p === 'web' && webAppStaged(webapp) ? webAppHref(webapp, locale.code) : undefined;
 
 /** The one package this platform leads with, by the target's preference order (.msix before
  *  -setup.exe, .apk before .aab), falling back to whatever the release shipped first. */

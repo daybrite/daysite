@@ -69,14 +69,22 @@
   }
 }
 
-.sh-win[data-fit] > :not(.sh-chrome) {
+/* A `<picture>` around the screen (components/ShotPicture) is no box of its own: its image is
+   the child every rule below sizes. */
+.sh-win > picture,
+.sh-dev > picture {
+  display: contents;
+}
+.sh-win[data-fit] > :not(.sh-chrome),
+.sh-win[data-fit] > picture > img {
   width: 100%;
   height: auto;
   max-height: none;
 }
 
 /* The screen: whatever was slotted in. It shrinks to fit the space the bar leaves. */
-.sh-win > :not(.sh-chrome) {
+.sh-win > :not(.sh-chrome),
+.sh-win > picture > img {
   flex: 0 1 auto;
   min-height: 0;
   max-width: 100%;
@@ -239,7 +247,8 @@
 /* A hairline at the glass edge, so the screen still reads as a screen when what is behind it is
    dark — a dark-theme capture or the placeholder would otherwise merge with the bezel into one
    featureless slab. */
-.sh-dev > * {
+.sh-dev > *,
+.sh-dev > picture > img {
   min-height: 0;
   max-width: 100%;
   max-height: 100%;
@@ -251,11 +260,11 @@
 .sh-dev:has(.ph) { width: 100%; height: 100%; }
 /* Corner fractions per family (of the screen's short side), with the pixel fallbacks. */
 .sh-dev[data-dev='iphone'] { --k: 0.15; border-radius: 42px; }
-.sh-dev[data-dev='iphone'] > * { border-radius: 33px; }
+.sh-dev[data-dev='iphone'] > *, .sh-dev[data-dev='iphone'] > picture > img { border-radius: 33px; }
 .sh-dev[data-dev='android'] { --k: 0.12; --pad: 7px; border-radius: 30px; }
-.sh-dev[data-dev='android'] > * { border-radius: 23px; }
+.sh-dev[data-dev='android'] > *, .sh-dev[data-dev='android'] > picture > img { border-radius: 23px; }
 .sh-dev[data-dev='harmony'] { --k: 0.1; --pad: 8px; border-radius: 26px; }
-.sh-dev[data-dev='harmony'] > * { border-radius: 18px; }
+.sh-dev[data-dev='harmony'] > *, .sh-dev[data-dev='harmony'] > picture > img { border-radius: 18px; }
 /* Tablets are the same slab with barely rounded glass: an iPad's corner radius is 18pt on an
    834pt-wide screen, a Pixel Tablet's a little rounder. */
 .sh-dev[data-form='tablet'] { --k: 0.022; }
@@ -269,7 +278,8 @@
     calc(var(--gr) * (100% - 2 * var(--pad)) + var(--pad))
     / calc(var(--gr) * var(--ar) * (100% - 2 * var(--pad)) + var(--pad));
 }
-.sh-dev[data-fit] > * {
+.sh-dev[data-fit] > *,
+.sh-dev[data-fit] > picture > img {
   border-radius: calc(var(--gr) * 100%) / calc(var(--gr) * var(--ar) * 100%);
 }
 

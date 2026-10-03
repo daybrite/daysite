@@ -63,7 +63,7 @@ export async function portableHTML(text, file, base) {
     const attr = (name) => attrs.find((a) => a.name === name)?.value;
     for (const a of attrs) {
       if (['href', 'src', 'poster', 'action', 'data-site-url'].includes(a.name)
-          || a.name.startsWith('data-v-')
+          || a.name.startsWith('data-v-') || a.name.startsWith('data-w-')
           || (a.name === 'data' && node.tagName === 'object')
           || (a.name === 'content' && attr('name') === 'daysite-root')) {
         a.value = relativeURL(a.value, file, base);

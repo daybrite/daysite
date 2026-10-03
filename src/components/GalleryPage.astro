@@ -12,6 +12,8 @@
 import type { LocaleInfo } from '../lib/types.ts';
 import type { LoadedSite } from '../lib/data.ts';
 import DeviceShell from './DeviceShell.astro';
+import ShotPicture from './ShotPicture.astro';
+import { webpOf } from '../lib/images.ts';
 import PlatformIcon from './PlatformIcon.astro';
 import ChannelPicker from './ChannelPicker.astro';
 import ChannelNote from './ChannelNote.astro';
@@ -37,6 +39,18 @@ const ui = uiStrings(locale.code);
 const appView = data.apps[0]!;
 const hero = appView.hero(locale.code);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+// Every capture's WebP rendition, by its manifest path, resolved here because the template's
+// expressions cannot await (lib/images.ts).
+const webpBySrc = new Map<string, string>();
+for (const shot of gallery.shots) {
+  for (const caps of Object.values(shot.byPlatform)) {
+    for (const c of Object.values(caps)) {
+      if (webpBySrc.has(c.src)) continue;
+      const webp = await webpOf(`${base}/${c.src}`);
+      if (webp) webpBySrc.set(c.src, webp.src);
+    }
+  }
+}
 
 // The gallery keeps the version picker too: a channel's captures are its own, so switching
 // version here lands on the other channel's gallery rather than back on its landing page.
@@ -208,9 +222,15 @@ const captureLocaleName = (code: string) =>
               const { target, day, name } = columnInfo(column);
               const v = variantFor(caps, initialTheme, initialLocale);
               const cap = caps[v]!;
+              // Every variant's PNG URL, and its WebP where the build holds one, so the switcher
+              // can swap both (the script below).
               const variantAttrs = Object.fromEntries(
                 Object.entries(caps).map(([name, c]) => [`data-v-${name}`, `${base}/${c.src}`]),
               );
+              for (const [name, c] of Object.entries(caps)) {
+                const webp = webpBySrc.get(c.src);
+                if (webp) variantAttrs[`data-w-${name}`] = webp;
+              }
               return (
                 <figure
                   class="w-[15rem] flex-none space-y-2"
@@ -241,7 +261,7 @@ const captureLocaleName = (code: string) =>
                       w={cap.width}
                       h={cap.height}
                     >
-                      <img
+                      <ShotPicture
                         src={`${base}/${cap.src}`}
                         alt={`${titleOf(shot)} — ${name}`}
                         width={cap.width}
@@ -434,6 +454,16 @@ const captureLocaleName = (code: string) =>
         );
         if (key && img.dataset[key]) {
           if (img.src !== img.dataset[key]) img.src = img.dataset[key]!;
+          // The WebP source beside it follows, or empties so the PNG shows when the chosen
+          // variant has none.
+          const source = img.parentElement?.querySelector<HTMLSourceElement>('source[type="image/webp"]');
+          if (source) {
+            const webpKey = Object.keys(img.dataset).find(
+              (k) => k.toLowerCase() === `w${want.replace(/[^a-z0-9]/gi, '').toLowerCase()}`,
+            );
+            const srcset = (webpKey && img.dataset[webpKey]) || '';
+            if (source.srcset !== srcset) source.srcset = srcset;
+          }
           break;
         }
       }

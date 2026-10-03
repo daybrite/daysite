@@ -6,6 +6,7 @@
 import type { LocaleInfo, PlatformView, SiteInfo } from '../lib/types.ts';
 import type { ChannelView } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
+import { webAppStaged } from '../lib/data.ts';
 import { dayTarget } from '../lib/day-targets.ts';
 import { webAppHref } from '../lib/routes.ts';
 import PlatformIcon from './PlatformIcon.astro';
@@ -21,9 +22,11 @@ interface Props {
 const { view, site, locale, channel } = Astro.props;
 const ui = uiStrings(locale.code);
 const day = dayTarget(view.id);
+// Only a staged web app is linked (lib/data.ts `webAppStaged`).
+const webapp = channel?.webapp ?? site.webapp ?? 'webapp';
 const url =
-  view.id === 'web'
-    ? new URL(webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code), site.host).toString()
+  view.id === 'web' && webAppStaged(webapp)
+    ? new URL(webAppHref(webapp, locale.code), site.host).toString()
     : undefined;
 ---
 
@@ -36,6 +39,6 @@ const url =
       <PlatformIcon id={day?.icon ?? view.id} class="size-4" />
       {ui.webAppHeading} — {day?.displayName ?? view.displayName}
     </h2>
-    <CommandField value={url} siteURL={webAppHref(channel?.webapp ?? site.webapp ?? 'webapp', locale.code)} label={ui.webAppAddressLabel} copyLabel={ui.copyLabel} copiedLabel={ui.copiedLabel} />
+    <CommandField value={url} siteURL={webAppHref(webapp, locale.code)} label={ui.webAppAddressLabel} copyLabel={ui.copyLabel} copiedLabel={ui.copiedLabel} />
   </section>
 )}

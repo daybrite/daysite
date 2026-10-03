@@ -485,6 +485,17 @@ async function buildAppView(
 
 // Public entry point ─────────────────────────────────────────────────────────
 
+/**
+ * Whether a channel's web-dom build is staged under `public/<webapp>/`, where the deploy
+ * pipeline unzips it before the build. A page links the web app only when it is: a release
+ * without a web-dom dist, or a fixture build, would otherwise link a 404.
+ */
+export function webAppStaged(webapp: string): boolean {
+  return existsSync(
+    resolve(projectRoot(), 'public', ...webapp.replace(/^\/+|\/+$/g, '').split('/'), 'index.html'),
+  );
+}
+
 export interface LoadedSite extends SiteData {
   /** Screenshot gallery data, when scripts/assemble-gallery.mjs has produced any. */
   gallery?: GalleryManifest;
@@ -577,9 +588,7 @@ export async function loadSite(channelId?: string): Promise<LoadedSite> {
   // The favicon set the generator copied into public/app/ is the primary app's either way.
   const siteFavicons: FaviconPaths | undefined = multiApp ? rasterFavicons() : apps[0]?.favicons;
 
-  const hasWebApp = existsSync(
-    resolve(projectRoot(), 'public', ...channel.webapp.split('/'), 'index.html'),
-  );
+  const hasWebApp = webAppStaged(channel.webapp);
 
   // site.toml's `title` is optional for a Day app: the store listing already names the app in
   // every locale, so an absent value inherits from the (first) app.
