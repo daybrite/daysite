@@ -24,3 +24,8 @@ test('every PNG gets a WebP beside it with the same name, once', async (t) => {
   assert.equal(second.made, 0);
   assert.ok(statSync(webp).mtimeMs < Date.now() - 30_000, 'an existing WebP is left alone');
 });
+
+test('a tree that was never assembled is no error', async () => {
+  const r = await webpTree(join(tmpdir(), 'daysite-webp-nowhere-' + process.pid));
+  assert.deepEqual(r, { made: 0, png: 0, webp: 0 });
+});

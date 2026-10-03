@@ -15,13 +15,15 @@ export const WEBP_QUALITY = 80;
 export async function webpTree(dir, { quality = WEBP_QUALITY, concurrency = cpus().length } = {}) {
   const sharp = (await import('sharp')).default;
   const root = resolve(dir);
+  const result = { made: 0, png: 0, webp: 0 };
+  // A channel with no captures assembles no tree at all (a release without a bundle yet).
+  if (!(await stat(root).then((s) => s.isDirectory(), () => false))) return result;
   const pngs = [];
   for (const entry of await readdir(root, { recursive: true, withFileTypes: true })) {
     if (entry.isFile() && entry.name.toLowerCase().endsWith('.png')) {
       pngs.push(resolve(entry.parentPath, entry.name));
     }
   }
-  const result = { made: 0, png: 0, webp: 0 };
   const queue = pngs.slice();
   await Promise.all(Array.from({ length: Math.max(1, concurrency) }, async () => {
     for (let png = queue.shift(); png; png = queue.shift()) {
