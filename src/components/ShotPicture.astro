@@ -1,6 +1,6 @@
 ---
-// A capture as a `<picture>`: the WebP rendition for browsers that take it, the published PNG
-// for the rest (lib/images.ts). An image the build does not hold is a plain `<img>`.
+// A capture as a `<picture>`: the WebP beside it for browsers that take it, the published PNG
+// for the rest (lib/images.ts). An image with no WebP is a plain `<img>`.
 //
 // The `<img>` keeps every attribute and class the caller gives it, so scripts and styles that
 // address the image (the gallery's variant switcher, the carousel's frame) see what they saw
@@ -15,12 +15,12 @@ interface Props extends HTMLAttributes<'img'> {
 }
 
 const { src, ...rest } = Astro.props;
-const webp = await webpOf(src);
+const webp = webpOf(src);
 ---
 
 {webp ? (
   <picture>
-    <source type="image/webp" srcset={webp.src} width={webp.width} height={webp.height} />
+    <source type="image/webp" srcset={webp} />
     <img src={src} {...rest} />
   </picture>
 ) : (

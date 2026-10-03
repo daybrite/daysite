@@ -43,6 +43,7 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseTOML } from 'smol-toml';
 import { generateAppIndex } from './generate-appindex.mjs';
 import { assembleGallery } from './assemble-gallery.mjs';
+import { webpTree } from './webp.mjs';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -50,7 +51,8 @@ const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * @param {string} projectRoot the Day project (holds Day.toml)
  * @param {string} siteDir     the directory holding site.toml
  * @param {object[]} specs     the channels, in picker order (see the header)
- * @param {{ repo?: string, storefront?: string, publicDir?: string, quiet?: boolean }} [opts]
+ * @param {{ repo?: string, storefront?: string, publicDir?: string, quiet?: boolean, webp?: boolean }} [opts]
+ *        `webp: false` skips the WebP pass over each channel's captures (scripts/webp.mjs)
  * @returns the channels.json document that was written
  */
 export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
@@ -105,6 +107,11 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
         publicDir,
         quiet: opts.quiet,
       });
+      // The WebP beside each published capture (scripts/webp.mjs), unless the caller skips it.
+      if (opts.webp !== false) {
+        const r = await webpTree(join(publicDir, ...`${p}gallery`.split('/')));
+        if (!opts.quiet) console.log(`[webp] ${r.made} file(s) encoded for ${p || 'the root'} channel: ${(r.png / 1e6).toFixed(1)} MB of PNG, ${(r.webp / 1e6).toFixed(1)} MB of WebP`);
+      }
     }
     await generateAppIndex(projectRoot, siteDir, {
       repo: opts.repo,

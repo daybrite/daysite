@@ -39,18 +39,6 @@ const ui = uiStrings(locale.code);
 const appView = data.apps[0]!;
 const hero = appView.hero(locale.code);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-// Every capture's WebP rendition, by its manifest path, resolved here because the template's
-// expressions cannot await (lib/images.ts).
-const webpBySrc = new Map<string, string>();
-for (const shot of gallery.shots) {
-  for (const caps of Object.values(shot.byPlatform)) {
-    for (const c of Object.values(caps)) {
-      if (webpBySrc.has(c.src)) continue;
-      const webp = await webpOf(`${base}/${c.src}`);
-      if (webp) webpBySrc.set(c.src, webp.src);
-    }
-  }
-}
 
 // The gallery keeps the version picker too: a channel's captures are its own, so switching
 // version here lands on the other channel's gallery rather than back on its landing page.
@@ -228,7 +216,7 @@ const captureLocaleName = (code: string) =>
                 Object.entries(caps).map(([name, c]) => [`data-v-${name}`, `${base}/${c.src}`]),
               );
               for (const [name, c] of Object.entries(caps)) {
-                const webp = webpBySrc.get(c.src);
+                const webp = webpOf(`${base}/${c.src}`);
                 if (webp) variantAttrs[`data-w-${name}`] = webp;
               }
               return (

@@ -341,4 +341,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
   assembleGallery(resolve(shotsDir), resolve(siteDir ?? join(TEMPLATE_ROOT, 'samples')));
+  // The WebP beside each published capture (scripts/webp.mjs), as generate-site.mjs does.
+  const { webpTree } = await import('./webp.mjs');
+  const r = await webpTree(join(TEMPLATE_ROOT, 'public', 'gallery'));
+  console.log(`[webp] ${r.made} file(s) encoded: ${(r.png / 1e6).toFixed(1)} MB of PNG, ${(r.webp / 1e6).toFixed(1)} MB of WebP`);
 }

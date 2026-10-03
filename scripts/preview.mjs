@@ -21,6 +21,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generateAppIndex } from './generate-appindex.mjs';
 import { assembleGallery } from './assemble-gallery.mjs';
+import { webpTree } from './webp.mjs';
 import { generateSite } from './generate-site.mjs';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,6 +86,7 @@ if (!flag('ci')) {
   const shots = join(projectRoot, 'build', 'day', 'screenshots');
   if (existsSync(shots)) indexCaptures(shots);
   assembleGallery(shots, siteDir);
+  await webpTree(join(TEMPLATE_ROOT, 'public', 'gallery'));
   await generateAppIndex(projectRoot, siteDir);
 } else {
   const cache = join(projectRoot, 'build', 'day', 'daysite');
@@ -112,26 +114,17 @@ if (!flag('ci')) {
     );
     if (!existsSync(shots)) {
       mkdirSync(dir, { recursive: true });
-      // One merged `screenshots.zip` when the release has it; otherwise the per-target zips,
-      // which every Day release has carried since before it existed. Both unzip to the same
-      // capture tree, so nothing downstream has to know which one arrived.
+      // The release's `screenshots.tar.xz`: the CLI checks every file against the bundle's
+      // SHA256SUMS and writes the tree and its index.
       const names = release.assets.map((a) => a.name);
-      if (names.includes('screenshots.frames.zst')) {
-        // A frame archive (the workflow's `screenshot-bundle: frames`): the CLI checks every
-        // capture's pixels against the release's gallery.json and writes the tree and its index.
-        log(`downloading ${tag} screenshots (screenshots.frames.zst)`);
-        gh('release', 'download', tag, '--dir', dir, '--clobber',
-          '--pattern', 'screenshots.frames.zst', '--pattern', 'gallery.json');
-        sh(process.env.DAY_BIN || 'day', ['screenshot', 'unpack', join(dir, 'gallery.json'), '--out', shots], {
+      if (!names.includes('screenshots.tar.xz')) {
+        log(`${tag} carries no screenshots.tar.xz — the release channel has no screenshots`);
+      } else {
+        log(`downloading ${tag} screenshots (screenshots.tar.xz)`);
+        gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern', 'screenshots.tar.xz');
+        sh(process.env.DAY_BIN || 'day', ['screenshot', 'unpack', join(dir, 'screenshots.tar.xz'), '--out', shots], {
           stdio: ['ignore', 'pipe', 'inherit'],
         });
-      } else {
-        const merged = names.includes('screenshots.zip');
-        log(`downloading ${tag} screenshots (${merged ? 'screenshots.zip' : `${names.filter((n) => n.startsWith('screenshots-')).length} per-target zips`})`);
-        gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern',
-          merged ? 'screenshots.zip' : 'screenshots-*.zip');
-        for (const z of readdirSync(dir).filter((n) => n.endsWith('.zip'))) unzipInto(join(dir, z), shots);
-        indexCaptures(shots);
       }
     }
     // The released web build, hosted at the site root so `/webapp/` runs the version the

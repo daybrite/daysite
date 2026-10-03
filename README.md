@@ -86,7 +86,7 @@ switches between them. They are assembled from deliberately different sources.
 | picker label | the release's version, `1.2.3` | the pre-release's version, `1.3.0-beta.1` | the default branch, `main` |
 | downloads | the release's own packages, at their `releases/download/<tag>/` URLs | the pre-release's own packages, the same way | this run's packages, served from the site under `main/downloads/` |
 | version | the released tag, so a checkout that has moved on does not change what the release pages report | the pre-release's tag | the version in `Cargo.toml`, with the build number beside it |
-| screenshots | the release's `screenshots.frames.zst`, unpacked by the day CLI, or its `screenshots.zip` (or its per-target `screenshots-<target>.zip` assets) | the pre-release's, the same way | the captures this run's dayscripts took |
+| screenshots | the release's `screenshots.tar.xz`, unpacked by the day CLI | the pre-release's, the same way | the captures this run's dayscripts took |
 | web app | the release's own `web-dom` dist, at `/webapp/` | the pre-release's, at `/prerelease/webapp/` | this run's, at `/main/webapp/` |
 | page | as published | carries a pre-release notice and a link to the release | carries a development-build notice and a link to the release |
 
@@ -145,16 +145,16 @@ optimize-png = false           # recompress the built PNG files with oxipng (tru
 
 ### Screenshots as WebP
 
-Every capture the carousel and the gallery show is a `<picture>`: a WebP rendition for the
-browsers that take one (all current ones), the published PNG for the rest. Astro's image
-service (`sharp`) encodes the WebP at build time at quality 80, beside the PNG, as
-`gallery/<target>/<variant>/<shot>_<hash>.webp`; on the Showcase's 8,496 shown captures the
-WebP files are 34% of the PNG files' size (396 MB against 1,164 MB). The PNG keeps its URL, which is what the published `gallery.json` names and
-what other sites and the stores read. The gallery's theme and locale switcher swaps the WebP
-source and the PNG together, and the full-size viewer shows whichever the browser chose.
-
-Under `astro dev` the service serves the PNG itself behind each WebP source, so a local preview
-shows the pages without encoding anything; the WebP files come from `astro build`.
+Every capture the carousel and the gallery show is a `<picture>`: a WebP for the browsers that
+take one (all current ones), the published PNG for the rest. When the gallery is assembled,
+`scripts/webp.mjs` encodes each capture with `sharp` at quality 80 as `<shot>.webp` beside
+`<shot>.png` (`gallery/<target>/<variant>/home.webp` next to `home.png`); a capture that
+already has one is left alone. On the Showcase's 8,496 shown captures the WebP files are 34% of
+the PNG files' size (396 MB against 1,164 MB). The PNG keeps its URL, which is what the
+published `gallery.json` names and what other sites and the stores read. The gallery's theme
+and locale switcher swaps the WebP source and the PNG together, and the full-size viewer shows
+whichever the browser chose. The WebP files live under `public/` with the PNG files, so
+`astro dev` serves them too.
 
 `node scripts/image-report.mjs [dist]` lists, after a build, how much PNG the pages offer as
 WebP, the largest captures, and any gallery PNG no page offers as WebP. CI prints it after the
