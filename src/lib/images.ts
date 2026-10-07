@@ -6,8 +6,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PUBLIC = fileURLToPath(new URL('../../public/', import.meta.url));
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const PUBLIC = process.env.DAYSITE_PUBLIC_DIR ?? fileURLToPath(new URL('../../public/', import.meta.url));
+const BASE = (import.meta.env?.BASE_URL ?? '/').replace(/\/$/, '');
 
 /**
  * The WebP's URL for a capture's site-relative URL (`gallery/…`, `main/gallery/…`, with or

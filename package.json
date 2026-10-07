@@ -31,5 +31,19 @@
     "pagefind": "^1.4.0",
     "playwright": "^1.63.0",
     "typescript": "^5.9.3"
+  },
+  "exports": {
+    "./config": "./src/config.mjs",
+    "./integration": "./src/integration.mjs",
+    "./customization": "./src/customization.mjs",
+    "./data": "./src/lib/data.ts",
+    "./routes": "./src/lib/routes.ts",
+    "./types": "./src/lib/types.ts",
+    "./customization-types": "./src/lib/customization-types.ts",
+    "./i18n": "./src/lib/i18n.ts",
+    "./uistrings": "./src/lib/uistrings.ts",
+    "./components/*": "./src/components/*",
+    "./layouts/*": "./src/layouts/*",
+    "./html": "./src/lib/html.ts"
   }
 }

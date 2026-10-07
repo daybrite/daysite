@@ -255,7 +255,9 @@ function badgeLocales(store: 'apple' | 'google'): Set<string> {
   let set = badgeSets.get(store);
   if (!set) {
     set = new Set();
-    const dir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'badges');
+    const dir = process.env.DAYSITE_PUBLIC_DIR
+      ? resolve(process.env.DAYSITE_PUBLIC_DIR, 'badges')
+      : resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'badges');
     const file = store === 'apple' ? 'apple-app-store.svg' : 'google-play-store.svg';
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory() && existsSync(resolve(dir, entry.name, file))) set.add(entry.name);

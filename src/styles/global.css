@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Reusable components must be scanned even when Astro's root belongs to another project. */
+@source '../';
 
 /* Theme tokens — light is the default; dark variants are gated by [data-theme="dark"]. */
 @theme {

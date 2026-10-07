@@ -1,0 +1,35 @@
+---
+import type { HeaderProps } from '../lib/customization-types.ts';
+import LanguagePicker from '@daysite/components/LanguagePicker';
+import ThemeToggle from '@daysite/components/ThemeToggle';
+import SearchBar from '@daysite/components/SearchBar';
+type Props = HeaderProps;
+const { site, current, localeLinks, localeHomeHref, siteTitleText, showQr, qrTitle, qrIcon } = Astro.props;
+---
+    <header
+      class="sticky top-0 z-30 backdrop-blur-md bg-[color:var(--color-bg)]/70 border-b border-[color:var(--color-border-soft)]"
+      data-pagefind-ignore
+    >
+      <div class:list={['mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center gap-3', { 'flex-wrap': Astro.slots.has('nav') }]}>
+        <slot name="brand"><a
+          href={localeHomeHref}
+          class="font-semibold tracking-tight text-base sm:text-lg shrink-0"
+        >{siteTitleText}</a></slot>
+        <slot name="nav" />
+        <div class="flex-1"></div>
+        {site.pagefind && <SearchBar locale={current} />}
+        {showQr && (
+          <button
+            type="button"
+            data-qr-open
+            aria-label={qrTitle}
+            title={qrTitle}
+            aria-haspopup="dialog"
+            class="qr-icon inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+            set:html={qrIcon}
+          />
+        )}
+        <LanguagePicker locales={localeLinks} current={current} />
+        <ThemeToggle locale={current.code} />
+      </div>
+    </header>

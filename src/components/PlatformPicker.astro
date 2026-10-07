@@ -2,7 +2,7 @@
 import { uiStrings } from '../lib/uistrings.ts';
 import type { PlatformView } from '../lib/types.ts';
 import { dayTarget } from '../lib/day-targets.ts';
-import PlatformIcon from './PlatformIcon.astro';
+import PlatformIcon from '@daysite/components/PlatformIcon';
 
 interface Props {
   locale?: string;
@@ -134,7 +134,9 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
       // strip — a segmented control whose current value is off-screen reads as having none.
       if (on) revealTab(picker, tab);
     }
-    for (const section of document.querySelectorAll<HTMLElement>('[data-platform-section]')) {
+    const scope = picker.closest<HTMLElement>('[data-platform-scope]') ?? document;
+    for (const section of scope.querySelectorAll<HTMLElement>('[data-platform-section]')) {
+      if (scope instanceof HTMLElement && section.closest('[data-platform-scope]') !== scope) continue;
       const wants = section.dataset.platformSection;
       section.classList.toggle('hidden', wants !== p);
     }
@@ -142,7 +144,7 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
       const moved = picker.getBoundingClientRect().top - before;
       if (moved) window.scrollBy(0, moved);
     }
-    try { localStorage.setItem(KEY, p); } catch {}
+    try { localStorage.setItem(storageKey(picker), p); } catch {}
   }
 
   /**
@@ -153,16 +155,23 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
    * Only ever called for an EXPLICIT choice. A visitor who lands on `/en/` and is auto-selected
    * by their own OS keeps the clean URL, which is the one worth sharing.
    */
-  function setHash(slug: string) {
+  function setHash(picker: HTMLElement, slug: string) {
+    if (picker.closest<HTMLElement>('[data-platform-scope]')?.dataset.platformUrl === 'false') return;
     try {
       history.replaceState(null, '', `${location.pathname}${location.search}#${slug}`);
     } catch {}
     // The version picker's links carry the platform across, so switching 0.4.1 ↔ main lands on
     // the platform being read about. The href itself is rewritten rather than the click
     // intercepted, so a copied link and a cmd-click carry it too.
-    for (const a of document.querySelectorAll<HTMLAnchorElement>('a[data-channel-link]')) {
+    const scope = picker.closest<HTMLElement>('[data-platform-scope]') ?? document;
+    for (const a of scope.querySelectorAll<HTMLAnchorElement>('a[data-channel-link]')) {
       a.hash = `#${slug}`;
     }
+  }
+
+  function storageKey(picker: HTMLElement) {
+    const id = picker.closest<HTMLElement>('[data-platform-scope]')?.dataset.platformScope;
+    return id ? `${KEY}:${id}` : KEY;
   }
 
   /**
@@ -198,7 +207,7 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
     if (has(guess)) initial = guess;
     // A choice the visitor made themselves outranks both.
     try {
-      const saved = localStorage.getItem(KEY);
+      const saved = localStorage.getItem(storageKey(picker));
       if (has(saved || '')) initial = saved!;
     } catch {}
 
@@ -210,6 +219,7 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
       slugs = JSON.parse(picker.dataset.slugs || '{}');
     } catch {}
     const fromHash = () => {
+      if (picker.closest<HTMLElement>('[data-platform-scope]')?.dataset.platformUrl === 'false') return '';
       const want = decodeURIComponent(location.hash.slice(1)).toLowerCase();
       if (!want) return '';
       for (const [p, slug] of Object.entries(slugs)) {
@@ -222,14 +232,14 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
     if (initial) applyPlatform(picker, initial);
     // Carry an arriving fragment onto the version picker's links without rewriting the URL the
     // visitor already has.
-    if (has(asked)) setHash(slugs[asked] || asked);
+    if (has(asked)) setHash(picker, slugs[asked] || asked);
 
     picker.addEventListener('click', (e) => {
       const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-platform-tab]');
       if (!tab) return;
       const p = tab.dataset.platformTab!;
       applyPlatform(picker, p, true);
-      setHash(slugs[p] || p);
+      setHash(picker, slugs[p] || p);
     });
 
     // An edited address, a link into the page, or a fragment-only navigation — which is what a
@@ -240,7 +250,7 @@ for (const p of platforms) slugs[p] = dayTarget(p)?.target ?? p;
       const p = fromHash();
       if (!has(p)) return;
       applyPlatform(picker, p);
-      setHash(slugs[p] || p);
+      setHash(picker, slugs[p] || p);
     });
   }
 

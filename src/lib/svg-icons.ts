@@ -20,16 +20,16 @@ import { fileURLToPath } from 'node:url';
 const cache = new Map<string, string>();
 
 function publicIconsDir(): string {
-  // <repo>/site/appland/src/lib/svg-icons.ts → <repo>/site/appland/public/icons/permissions
+  if (process.env.DAYSITE_PUBLIC_DIR) return resolve(process.env.DAYSITE_PUBLIC_DIR, 'icons/permissions');
   const here = dirname(fileURLToPath(import.meta.url));
   return resolve(here, '..', '..', 'public', 'icons', 'permissions');
 }
 
 export async function loadPermissionIcon(name: string): Promise<string> {
-  const cached = cache.get(name);
+  const path = resolve(publicIconsDir(), `${name}.svg`);
+  const cached = cache.get(path);
   if (cached) return cached;
 
-  const path = resolve(publicIconsDir(), `${name}.svg`);
   let svg: string;
   try {
     svg = await readFile(path, 'utf8');
@@ -54,7 +54,7 @@ export async function loadPermissionIcon(name: string): Promise<string> {
     },
   );
 
-  cache.set(name, svg);
+  cache.set(path, svg);
   return svg;
 }
 

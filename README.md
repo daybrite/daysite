@@ -26,7 +26,9 @@ The template is **fetched, not vendored**: the shared
 this repository at build time, synthesizes the site data, builds, and deploys to the repository's
 GitHub Pages. Nothing but the two files above lives in the app repo. Template fixes reach every
 site on its next build (the workflow's `daysite-version` input, default `main`, selects the
-revision; the Day apps build against `main` on purpose).
+revision; the Day apps build against `main` on purpose). The two-file arrangement remains the
+default. Projects that need their own branding, components, or Astro pages can opt into
+[customization](docs/customization.md), without copying or forking the template.
 
 The published site is self-contained: every script, stylesheet, image, and font it loads is
 served from the site itself (system fonts; the store badges, platform icons, and permission
@@ -56,7 +58,10 @@ work with JavaScript disabled. No `<base>` element or client-side link repair is
 `host` still declares the **canonical public URL** for search engines, social metadata,
 sitemaps, robots.txt, and the generated GitHub Pages `CNAME`. Change it when adopting a new
 domain and rebuild to update those declarations. Relative links do not configure DNS or GitHub
-Pages settings. Explicit external links and externally hosted assets keep their supplied URLs.
+Pages settings. For Actions deployments, configure the custom domain in the repository's
+**Settings → Pages**; GitHub ignores the artifact's `CNAME` file. See Day's
+[app website guide](https://daybrite.dev/docs/websites) for Pages and DNS setup.
+Explicit external links and externally hosted assets keep their supplied URLs.
 The template does not rewrite the internals of a separately built web app; that app must use
 portable resource paths itself. Browser storage, installed PWAs, and service workers remain
 bound to their original origin/scope and are not migrated by moving the website.

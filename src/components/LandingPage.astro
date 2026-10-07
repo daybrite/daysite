@@ -5,16 +5,16 @@ import { stableChannel } from '../lib/channels.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { localeIndexHref } from '../lib/routes.ts';
 
-import Hero from './Hero.astro';
-import ChannelPicker from './ChannelPicker.astro';
-import ChannelNote from './ChannelNote.astro';
-import WebAppCard from './WebAppCard.astro';
-import PlatformPicker from './PlatformPicker.astro';
-import PlatformShots from './PlatformShots.astro';
-import DescriptionBlock from './DescriptionBlock.astro';
-import PermissionsList from './PermissionsList.astro';
-import AboutCard from './AboutCard.astro';
-import DownloadCard from './DownloadCard.astro';
+import Hero from '@daysite/components/Hero';
+import ChannelPicker from '@daysite/components/ChannelPicker';
+import ChannelNote from '@daysite/components/ChannelNote';
+import WebAppCard from '@daysite/components/WebAppCard';
+import PlatformPicker from '@daysite/components/PlatformPicker';
+import PlatformShots from '@daysite/components/PlatformShots';
+import DescriptionBlock from '@daysite/components/DescriptionBlock';
+import PermissionsList from '@daysite/components/PermissionsList';
+import AboutCard from '@daysite/components/AboutCard';
+import DownloadCard from '@daysite/components/DownloadCard';
 
 interface Props {
   site: SiteInfo;
@@ -48,13 +48,13 @@ const views: Partial<Record<string, PlatformView | null>> = Object.fromEntries(
 );
 ---
 
-<div class="space-y-12 sm:space-y-16">
+<div class="space-y-12 sm:space-y-16" data-platform-scope>
   <Hero hero={hero} iconEffect={iconEffect} iconMarkup={iconMarkup} />
 
   {/* The per-platform content is split around the picker. By default the screenshots go BELOW
       with the description; `screenshot-placement = "above-about"` puts them here instead, first
       after the hero. The picker hides and shows by `data-platform-section` across the WHOLE
-      document, so every half switches together and none needs to know about the others. */}
+      landing-page scope, so every half switches together and none needs to know about the others. */}
   {shotsAbove &&
     appView.platforms.map((p) =>
       views[p] ? (

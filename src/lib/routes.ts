@@ -19,7 +19,7 @@ import type { LocaleInfo, LocaleLink } from './types.ts';
 
 // Astro always normalizes BASE_URL to end with a slash. The fallback is for the Node side:
 // astro.config.mjs imports lib/data.ts, which imports this module before a base is resolved.
-const BASE = import.meta.env.BASE_URL ?? '/';
+const BASE = import.meta.env?.BASE_URL ?? '/';
 
 /** `main` → `main/`; '' or undefined → ''. */
 function seg(channel?: string): string {

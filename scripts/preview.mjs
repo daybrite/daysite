@@ -49,6 +49,7 @@ const sh = (cmd, args, opts = {}) =>
   execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
 const gh = (...args) => sh('gh', args, { cwd: projectRoot, stdio: ['ignore', 'pipe', 'inherit'] });
 const log = (m) => console.log(`[preview] ${m}`);
+const publicDir = resolve(process.env.DAYSITE_PUBLIC_DIR ?? join(TEMPLATE_ROOT, 'public'));
 
 /** Unzip `zip` into `dir`, merging with whatever is already there. */
 function unzipInto(zip, dir) {
@@ -85,9 +86,9 @@ if (!flag('ci')) {
   // scans the tree.
   const shots = join(projectRoot, 'build', 'day', 'screenshots');
   if (existsSync(shots)) indexCaptures(shots);
-  assembleGallery(shots, siteDir);
-  await webpTree(join(TEMPLATE_ROOT, 'public', 'gallery'));
-  await generateAppIndex(projectRoot, siteDir);
+  assembleGallery(shots, siteDir, { publicDir });
+  await webpTree(join(publicDir, 'gallery'));
+  await generateAppIndex(projectRoot, siteDir, { publicDir });
 } else {
   const cache = join(projectRoot, 'build', 'day', 'daysite');
   mkdirSync(cache, { recursive: true });
@@ -133,7 +134,7 @@ if (!flag('ci')) {
     const webZip = release.assets.find(
       (a) => a.name.endsWith('-web-dom.zip') && !a.name.startsWith('screenshots-'),
     );
-    const webOut = join(TEMPLATE_ROOT, 'public', 'webapp');
+    const webOut = join(publicDir, 'webapp');
     if (webZip && !existsSync(join(webOut, 'index.html'))) {
       gh('release', 'download', tag, '--dir', dir, '--clobber', '--pattern', webZip.name);
       rmSync(webOut, { recursive: true, force: true });
@@ -168,7 +169,7 @@ if (!flag('ci')) {
     }
     indexCaptures(mainShots);
   }
-  const mainWeb = join(TEMPLATE_ROOT, 'public', 'main', 'webapp');
+  const mainWeb = join(publicDir, 'main', 'webapp');
   const webDist = join(runDir, 'dist-web-dom');
   if (existsSync(webDist) && !existsSync(join(mainWeb, 'index.html'))) {
     const zip = readdirSync(webDist).find((n) => n.endsWith('.zip'));
@@ -188,9 +189,11 @@ if (!flag('ci')) {
     runURL: run.html_url,
   });
 
-  await generateSite(projectRoot, siteDir, specs, { repo });
+  await generateSite(projectRoot, siteDir, specs, { repo, publicDir });
 }
 
 if (!flag('no-serve')) {
-  execFileSync('npx', ['astro', 'dev'], { cwd: TEMPLATE_ROOT, stdio: 'inherit' });
+  execFileSync(process.execPath, [join(TEMPLATE_ROOT, 'scripts/build-site.mjs'), 'dev'], {
+    cwd: TEMPLATE_ROOT, stdio: 'inherit', env: { ...process.env, DAYSITE_CONFIG: join(siteDir, 'site.toml'), DAYSITE_PUBLIC_DIR: publicDir },
+  });
 }

@@ -8,10 +8,9 @@ import { localeIndexHref } from '../lib/routes.ts';
 import { uiStrings } from '../lib/uistrings.ts';
 import { svg as qrSvg } from '../lib/qr.mjs';
 import { loadSite } from '../lib/data.ts';
-import LanguagePicker from '../components/LanguagePicker.astro';
-import ThemeToggle from '../components/ThemeToggle.astro';
-import SearchBar from '../components/SearchBar.astro';
-import Footer from '../components/Footer.astro';
+import Header from '@daysite/components/Header';
+import 'virtual:daysite/styles';
+import Footer from '@daysite/components/Footer';
 
 interface Props {
   site: SiteInfo;
@@ -140,6 +139,7 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
         document URL, so they follow the actual deployment rather than site.toml's host. */}
     <meta name="daysite-root" content={baseURL} />
 
+    <slot name="head" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
     <link rel="canonical" href={canonical} />
@@ -298,35 +298,14 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     </script>
   </head>
   <body class="min-h-dvh text-[color:var(--color-text)]">
-    <header
-      class="sticky top-0 z-30 backdrop-blur-md bg-[color:var(--color-bg)]/70 border-b border-[color:var(--color-border-soft)]"
-      data-pagefind-ignore
-    >
-      <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center gap-3">
-        <a
-          href={localeHomeHref}
-          class="font-semibold tracking-tight text-base sm:text-lg shrink-0"
-        >{siteTitleText}</a>
-        <div class="flex-1"></div>
-        {site.pagefind && <SearchBar locale={current} />}
-        {showQr && (
-          <button
-            type="button"
-            data-qr-open
-            aria-label={qrTitle}
-            title={qrTitle}
-            aria-haspopup="dialog"
-            class="qr-icon inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
-            set:html={qrIcon}
-          />
-        )}
-        <LanguagePicker locales={localeLinks} current={current} />
-        <ThemeToggle locale={current.code} />
-      </div>
-    </header>
+    <Header site={site} current={current} localeLinks={localeLinks}
+      localeHomeHref={localeHomeHref} siteTitleText={siteTitleText}
+      showQr={showQr} qrTitle={qrTitle} qrIcon={qrIcon} channel={channel} />
 
     <main class="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
+      <slot name="before-content" />
       <slot />
+      <slot name="after-content" />
     </main>
 
     {showQr && (

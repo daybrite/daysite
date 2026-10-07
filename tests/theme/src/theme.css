@@ -1,0 +1,2 @@
+/* Synthetic theme CSS: assert this custom stylesheet is bundled in every page. */
+html { --theme-fixture: 42; }

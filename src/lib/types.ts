@@ -4,6 +4,8 @@ export interface SiteInfo {
   /** Optional — defaults to the app's localized store name. */
   title?: string | LocalizedText;
   host: string;
+  /** Optional external theme checkout or project-relative theme directory. */
+  theme?: { repository?: string; ref?: string; path?: string };
   /** Path to appindex.json, relative to site.toml. Defaults to "appindex.json". */
   appindex?: string;
   /** Tagline / subtitle. Plain string, or a locale-keyed map. */

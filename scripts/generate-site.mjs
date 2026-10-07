@@ -178,7 +178,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!projectRoot || !siteDir || !flags.channels) {
     console.error(
       'usage: generate-site.mjs <project-root> <site-toml-dir> --channels SPEC.json ' +
-        '[--repo owner/name] [--storefront FILE]',
+        '[--repo owner/name] [--storefront FILE] [--public-dir DIR]',
     );
     process.exit(2);
   }
@@ -190,6 +190,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     resolve(projectRoot),
     resolve(siteDir),
     JSON.parse(readFileSync(flags.channels, 'utf8')),
-    { repo: flags.repo, storefront: flags.storefront },
+    { repo: flags.repo, storefront: flags.storefront,
+      ...(flags['public-dir'] ? { publicDir: resolve(flags['public-dir']) } : {}) },
   );
 }

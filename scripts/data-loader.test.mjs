@@ -1,0 +1,33 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createFixture } from './create-fixture.mjs';
+import { createSiteLoader } from '../src/lib/data.ts';
+
+test('isolated loaders keep projects, channel caches, and asset roots separate', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-data-test-'));
+  t.after(() => rmSync(root, {recursive:true,force:true}));
+  const a = await createFixture(join(root,'a'));
+  const b = await createFixture(join(root,'b'));
+  const indexFile = join(b.siteDir,'appindex.json');
+  const index = JSON.parse(readFileSync(indexFile,'utf8'));
+  index.apps[0].title={en:'Other synthetic app'};
+  writeFileSync(indexFile,JSON.stringify(index));
+  const first = createSiteLoader({...a,baseURL:'/First/'});
+  const second = createSiteLoader({...b,baseURL:'/Second/'});
+  const [one,two,dev] = await Promise.all([first.loadSite(),second.loadSite(),first.loadSite('main')]);
+  assert.notDeepEqual(one.appView.hero('en'),two.appView.hero('en'));
+  assert.equal(one.channel.id,'release');
+  assert.equal(dev.channel.id,'main');
+  assert.equal(one.hasWebApp,true);
+  assert.equal(two.hasWebApp,true);
+  assert.equal(first.resolveAssetURL('gallery/test.png',one.appView.app),'/First/gallery/test.png');
+  assert.equal(second.resolveAssetURL('gallery/test.png',two.appView.app),'/Second/gallery/test.png');
+  assert.equal(await first.loadSite(),one,'one project can cache its own channel');
+  assert.equal(await first.loadSite('main'),dev);
+  second.invalidate();
+  assert.notEqual(await second.loadSite(),two);
+  assert.equal(await first.loadSite(),one,'invalidating another loader cannot clear this cache');
+});

@@ -1,0 +1,8 @@
+---
+import DefaultHero from 'daysite/components/Hero.astro';
+import type { ComponentProps } from 'astro/types';
+type Props = ComponentProps<typeof DefaultHero>;
+---
+<section data-theme-hero class="outline-3 outline-blue-500">
+  <DefaultHero {...Astro.props} />
+</section>

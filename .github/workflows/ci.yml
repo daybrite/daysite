@@ -13,6 +13,34 @@ permissions:
   id-token: write
 
 jobs:
+  # Offline contracts: independent of the Day CLI, published releases, and live app metadata.
+  customization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Build and exercise the unchanged default
+        run: |
+          node scripts/create-fixture.mjs "$RUNNER_TEMP/default"
+          DAYSITE_CONFIG="$RUNNER_TEMP/default/website/site.toml" \
+          DAYSITE_PUBLIC_DIR="$RUNNER_TEMP/default/public" \
+          DAYSITE_OUT_DIR="$RUNNER_TEMP/default/dist" node scripts/build-site.mjs build
+          node scripts/check-customization.mjs "$RUNNER_TEMP/default/dist" default
+      - name: Build and exercise component overrides and project-owned Astro routes
+        run: |
+          node scripts/create-fixture.mjs "$RUNNER_TEMP/custom"
+          DAYSITE_CONFIG="$RUNNER_TEMP/custom/website/site.toml" \
+          DAYSITE_THEME="$GITHUB_WORKSPACE/tests/theme" \
+          DAYSITE_PUBLIC_DIR="$RUNNER_TEMP/custom/public" \
+          DAYSITE_OUT_DIR="$RUNNER_TEMP/custom/dist" node scripts/build-site.mjs build
+          node scripts/check-customization.mjs "$RUNNER_TEMP/custom/dist" theme
+
   # Template self-test: build against the sample, Day Showcase as it is on its main branch right
   # now (samples/site.toml resolves when neither DAYSITE_CONFIG nor a conventional ../site.toml
   # exists), through the same generators CI runs for a real repository. `npm run sample` clones

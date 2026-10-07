@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import Layout from '../../../../layouts/Layout.astro';
-import GalleryPage from '../../../../components/GalleryPage.astro';
+import Layout from '@daysite/components/Layout';
+import GalleryPage from '@daysite/components/GalleryPage';
 import { loadSite, siteChannels } from '../../../../lib/data.ts';
 import { uiStrings } from '../../../../lib/uistrings.ts';
 import { galleryHref, localeLinksFor } from '../../../../lib/routes.ts';

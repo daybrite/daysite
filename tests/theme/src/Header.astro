@@ -1,0 +1,8 @@
+---
+import DefaultHeader from 'daysite/components/Header.astro';
+import type { HeaderProps } from 'daysite/customization-types';
+interface Props extends HeaderProps {}
+---
+<DefaultHeader {...Astro.props}>
+  <a slot="nav" href={`${import.meta.env.BASE_URL}scopes/`} data-theme-fixture>Theme fixture</a>
+</DefaultHeader>

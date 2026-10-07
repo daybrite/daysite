@@ -4,7 +4,7 @@
 // PNG keeps its published URL and the WebP has the same name beside it.
 import { readdir, stat } from 'node:fs/promises';
 import { cpus } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 export const WEBP_QUALITY = 80;
 

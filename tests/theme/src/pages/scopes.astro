@@ -1,0 +1,21 @@
+---
+import Layout from '@daysite/components/Layout';
+import PlatformPicker from '@daysite/components/PlatformPicker';
+import { loadSite } from 'daysite/data';
+import { localeLinksFor, localeIndexHref } from 'daysite/routes';
+const data = await loadSite();
+const locale = data.locales.find((item) => item.code === 'en')!;
+const app = data.appView;
+const views = Object.fromEntries(app.platforms.map((platform) => [platform, app.view(locale.code, platform)]));
+---
+<Layout site={data.site} current={locale} localeLinks={localeLinksFor(data.locales, localeIndexHref)}
+  pagePath={`${import.meta.env.BASE_URL}scopes/`} pageTitle="Synthetic scope fixture" pageDescription="Synthetic test data">
+  <section data-platform-scope="first" data-platform-url="false">
+    <PlatformPicker platforms={app.platforms} views={views} locale={locale.code} />
+    {app.platforms.map((platform) => <p data-platform-section={platform}>{platform}</p>)}
+  </section>
+  <section data-platform-scope="second" data-platform-url="false">
+    <PlatformPicker platforms={app.platforms} views={views} locale={locale.code} />
+    {app.platforms.map((platform) => <p data-platform-section={platform}>{platform}</p>)}
+  </section>
+</Layout>

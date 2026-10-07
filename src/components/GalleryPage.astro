@@ -11,12 +11,12 @@
 // the last CI run took. Both routes hand this the LoadedSite for their own channel.
 import type { LocaleInfo } from '../lib/types.ts';
 import type { LoadedSite } from '../lib/data.ts';
-import DeviceShell from './DeviceShell.astro';
-import ShotPicture from './ShotPicture.astro';
+import DeviceShell from '@daysite/components/DeviceShell';
+import ShotPicture from '@daysite/components/ShotPicture';
 import { webpOf } from '../lib/images.ts';
-import PlatformIcon from './PlatformIcon.astro';
-import ChannelPicker from './ChannelPicker.astro';
-import ChannelNote from './ChannelNote.astro';
+import PlatformIcon from '@daysite/components/PlatformIcon';
+import ChannelPicker from '@daysite/components/ChannelPicker';
+import ChannelNote from '@daysite/components/ChannelNote';
 import { stableChannel } from '../lib/channels.ts';
 import { localizedText, shotLabel, columnParts, deviceLabel } from '../lib/gallery.ts';
 import { localeInfo } from '../lib/i18n.ts';
