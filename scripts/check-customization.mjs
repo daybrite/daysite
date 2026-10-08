@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
+import { expect } from 'playwright/test';
 
 const root = resolve(process.argv[2]);
 const kind = process.argv[3] ?? 'default';
@@ -30,6 +31,12 @@ try {
       for (const width of [1440,390]) {
         const context=await browser.newContext({viewport:{width,height:1000},locale:'en'});
         try {
+          // Exercise the lazy badge with a delayed response so local caches cannot hide
+          // the same image-loading race seen on a fresh CI runner.
+          await context.route('**/badges/en/apple-app-store.svg', async (route) => {
+            await new Promise((done) => setTimeout(done, 250));
+            await route.continue();
+          });
           const page=await context.newPage();const errors=[];
           page.on('pageerror',(e)=>errors.push(e.message));
           page.on('response',(r)=>{if(r.url().startsWith(base)&&r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
@@ -39,8 +46,13 @@ try {
           assert.ok(page.url().endsWith('#macos-appkit'));
           assert.ok(await page.locator('a[href*="releases/download/v1.2.3/"]').count());
           await page.locator('[data-platform-tab="ios"]').click();
-          assert.ok(await page.locator('.store-badge-apple img').isVisible());
-          assert.ok(await page.locator('.store-badge-apple img').evaluate((img)=>img.complete && img.naturalWidth > 0));
+          // Store artwork is lazy-loaded after its platform becomes visible. Wait for the
+          // selected section and image, rather than sampling before layout/network settle.
+          await expect(page.locator('[data-platform-tab="ios"]')).toHaveAttribute('aria-selected', 'true');
+          const storeBadge = page.locator('.store-badge-apple img');
+          await page.locator('[data-platform-section="ios"]').filter({ has: storeBadge }).scrollIntoViewIfNeeded();
+          await expect(storeBadge).toBeVisible();
+          await expect.poll(() => storeBadge.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
           assert.ok(await page.locator('[data-platform-section="ios"] svg[aria-hidden="true"]').count());
           await page.locator('[data-theme-set="dark"]').click();
           assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');

@@ -23,11 +23,16 @@ jobs:
           node-version: 22
       - run: npm ci --no-audit --no-fund
       - run: npm test
-      - run: npm run check
+      - name: Create offline publication data
+        run: node scripts/create-fixture.mjs "$RUNNER_TEMP/default"
+      - name: Check Astro against the offline fixture
+        env:
+          DAYSITE_CONFIG: ${{ runner.temp }}/default/website/site.toml
+          DAYSITE_PUBLIC_DIR: ${{ runner.temp }}/default/public
+        run: npm run check
       - run: npx playwright install --with-deps chromium
       - name: Build and exercise the unchanged default
         run: |
-          node scripts/create-fixture.mjs "$RUNNER_TEMP/default"
           DAYSITE_CONFIG="$RUNNER_TEMP/default/website/site.toml" \
           DAYSITE_PUBLIC_DIR="$RUNNER_TEMP/default/public" \
           DAYSITE_OUT_DIR="$RUNNER_TEMP/default/dist" node scripts/build-site.mjs build
