@@ -13,7 +13,7 @@
 // what a developer previews locally is assembled by the same code that publishes.
 //
 //   node scripts/generate-site.mjs <project-root> <site-toml-dir> --channels SPEC.json \
-//        [--repo owner/name] [--storefront FILE]
+//        [--repo owner/name] [--storefront FILE] [--about FILE]
 //
 // SPEC.json is an array of channels, in picker order:
 //
@@ -51,16 +51,32 @@ const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * @param {string} projectRoot the Day project (holds Day.toml)
  * @param {string} siteDir     the directory holding site.toml
  * @param {object[]} specs     the channels, in picker order (see the header)
- * @param {{ repo?: string, storefront?: string, publicDir?: string, quiet?: boolean, webp?: boolean }} [opts]
- *        `webp: false` skips the WebP pass over each channel's captures (scripts/webp.mjs)
+ * @param {{ repo?: string, storefront?: string, about?: string, publicDir?: string, quiet?: boolean, webp?: boolean }} [opts]
+ *        `webp: false` skips the WebP pass over each channel's captures (scripts/webp.mjs);
+ *        `about` outranks site.toml's `about` (the landing page's Markdown About text)
  * @returns the channels.json document that was written
  */
+/**
+ * The Markdown file the About section renders, relative to the project root (the generator
+ * resolves it): `override` (a CLI flag) outranks the parsed site.toml's `about`. The key has no
+ * kebab-case spelling, so it is the one word. Shared with the preview script's single-channel
+ * path, which calls the generator without going through `generateSite`.
+ */
+export function siteAbout(site, override) {
+  const about = override ?? site?.about;
+  if (about !== undefined && (typeof about !== 'string' || !about.trim())) {
+    throw new Error('site.toml: `about` must be a path to a Markdown file, relative to the project root');
+  }
+  return about;
+}
+
 export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
   const log = (m) => opts.quiet || console.log(`[site] ${m}`);
   if (!specs.length) throw new Error('generate-site: no channels');
 
   const site = parseTOML(readFileSync(join(siteDir, 'site.toml'), 'utf8'));
   const webapp = String(site.webapp ?? 'webapp').replace(/^\/+|\/+$/g, '');
+  const about = siteAbout(site, opts.about);
 
   // The release channel owns the locale root; without one, a pre-release does, and a project with
   // neither publishes main there, which is also what makes its version picker a single entry and
@@ -116,6 +132,7 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
     await generateAppIndex(projectRoot, siteDir, {
       repo: opts.repo,
       storefront: opts.storefront,
+      about,
       out: `${p}appindex.json`,
       gallery: `${p}gallery-manifest.json`,
       releaseAssets: spec.releaseAssets ? resolve(spec.releaseAssets) : undefined,
@@ -178,7 +195,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!projectRoot || !siteDir || !flags.channels) {
     console.error(
       'usage: generate-site.mjs <project-root> <site-toml-dir> --channels SPEC.json ' +
-        '[--repo owner/name] [--storefront FILE] [--public-dir DIR]',
+        '[--repo owner/name] [--storefront FILE] [--about FILE] [--public-dir DIR]',
     );
     process.exit(2);
   }
@@ -191,6 +208,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     resolve(siteDir),
     JSON.parse(readFileSync(flags.channels, 'utf8')),
     { repo: flags.repo, storefront: flags.storefront,
+      // Relative to the working directory, like --storefront; site.toml's key is relative to
+      // the project root.
+      ...(flags.about ? { about: resolve(flags.about) } : {}),
       ...(flags['public-dir'] ? { publicDir: resolve(flags['public-dir']) } : {}) },
   );
 }

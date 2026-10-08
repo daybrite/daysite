@@ -14,11 +14,26 @@ const { view, i18n } = Astro.props;
 // sanitizer renders whitelisted tags as real markup and escapes everything
 // else, so plain-text Apple descriptions and Google's mild markup both
 // render correctly.
-const descriptionHTML = sanitizeDescription(view.description);
+//
+// The About text from a Markdown file (site.toml `about`, or the README of a project whose
+// listing has no description) replaces the description when there is one. It is this build's
+// own rendering of a file in the project's repository (scripts/generate-appindex.mjs,
+// renderAbout), not store text an author typed into a listing, so it is trusted as written
+// and not passed through the sanitizer, whose whitelist would strip its headings, lists, and
+// code blocks.
+const aboutHTML = view.about;
+const descriptionHTML = aboutHTML ? '' : sanitizeDescription(view.description);
 const releaseNotesHTML = sanitizeDescription(view.releaseNotes);
 ---
 
 <section class="space-y-6">
+  {aboutHTML && (
+    <div class="space-y-3">
+      <h2 class="text-xl sm:text-2xl font-semibold tracking-tight">{i18n.aboutHeading}</h2>
+      <div class="prose-md text-base" set:html={aboutHTML}></div>
+    </div>
+  )}
+
   {descriptionHTML && (
     <div class="space-y-3">
       <h2 class="text-xl sm:text-2xl font-semibold tracking-tight">{i18n.aboutHeading}</h2>

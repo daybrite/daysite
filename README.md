@@ -132,6 +132,7 @@ host = "https://daybrite.github.io/Day-Skies"
 # Everything below is optional.
 title = "Day Skies"            # default: the localized store name
 tagline = "Weather, beautifully native"
+about = "README.md"            # a Markdown file for the About section, relative to the project root (see below)
 accent-color = "#4A90D9"
 default-theme = "system"       # light | dark | system
 default-platform = "web"       # platforms key preselected in the picker
@@ -147,6 +148,37 @@ footer = "© {year} Daybrite" # optional, prints under the Day attribution; {yea
 pagefind = false               # site search index
 optimize-png = false           # recompress the built PNG files with oxipng (true, or a level 0-6)
 ```
+
+### about
+
+The landing page's About section shows the store listing's description. `about` names a
+Markdown file to show there instead, relative to the Day project root (the directory holding
+`Day.toml`; `about = "README.md"`, `about = "docs/about.md"`). The path may climb above the
+project (`about = "../../.github/README.md"` for a Day project inside a larger repository),
+because CI checks out the whole repository. Naming a file that does not exist fails the build.
+
+Without the key, a project whose listing has no description text in any locale gets its
+`README.md` when it has one, so the page shows real text rather than an empty section; the
+generator's log names the file it used. A listing with a description keeps it.
+
+The generator renders the file with Astro's own Markdown pipeline (`@astrojs/markdown-remark`,
+GitHub-flavored) into the appindex, under the storefront's default locale; every other locale
+shows the same text, through the ladder the description already uses. Three edits are made on
+the way:
+
+- The leading H1 is dropped, since the hero already shows the app's title. Headings, lists,
+  code blocks, and tables stay.
+- Relative links are resolved against the file's place in its git repository and pointed at
+  GitHub (`https://github.com/<owner>/<repo>/blob/<branch>/<path>`, the checked-out branch, or
+  `main` when the checkout is detached). Anchors and absolute URLs stay. Without a repository
+  (`--repo`, `GITHUB_REPOSITORY`, or the `origin` remote) relative links stay as written.
+- Images become links. The site loads nothing from another origin (the build hook above), and a
+  README's images live elsewhere, on GitHub or on the app's published gallery. Each `<img>` is
+  replaced by a link to the image whose text is the alt text; a relative source is first
+  rewritten to its `raw.githubusercontent.com` URL.
+
+The text is rendered as written (it is a file in the project's own repository), not passed
+through the sanitizer the store description goes through.
 
 ### Screenshots as WebP
 
@@ -223,7 +255,7 @@ copies land under its own segment (`main/appindex.json`, `main/gallery-manifest.
 | File | Written by | From |
 | --- | --- | --- |
 | `channels.json` | `scripts/generate-site.mjs` | the channel list the workflow hands it: which build each channel describes, its label, its URL segment, and where its data and web build live |
-| `appindex.json` | `scripts/generate-appindex.mjs` | `day store export` (`--storefront FILE`, or run through `DAY_BIN`): the app's id, title, version, build and targets, the live App Store / Google Play listings, the listing text resolved per locale, each store record's bundle id, and the declared permissions with their native keys per platform and reasons per locale; the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`) or a directory of packed artifacts to serve from the site (`--downloads DIR`); the icon family under `build/day/host/png/` or `resource/icons/` |
+| `appindex.json` | `scripts/generate-appindex.mjs` | `day store export` (`--storefront FILE`, or run through `DAY_BIN`): the app's id, title, version, build and targets, the live App Store / Google Play listings, the listing text resolved per locale, each store record's bundle id, and the declared permissions with their native keys per platform and reasons per locale; the latest release's asset list (`--release-assets FILE`, written by the workflow with `gh api`) or a directory of packed artifacts to serve from the site (`--downloads DIR`); the icon family under `build/day/host/png/` or `resource/icons/`; the About text rendered from site.toml's `about` file (`--about FILE`), or from `README.md` when the listing has no description |
 | `gallery-manifest.json` | `scripts/assemble-gallery.mjs` | `day screenshot index`'s gallery.json in the capture tree (falling back to scanning the `<target>/<variant>/<shot>.png` trees directly) |
 | `public/gallery/gallery.json` | rebuilt by `scripts/assemble-gallery.mjs` | `day screenshot index`, filtered to the captures this run actually published (see "What renders") |
 

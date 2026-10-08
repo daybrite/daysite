@@ -4,10 +4,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generateAppIndex, localizedText, parseGithubRepo, permissionsByPlatform, readReleaseAssets, readStorefront, storeListing } from './generate-appindex.mjs';
+import { aboutSource, generateAppIndex, localizedText, parseGithubRepo, permissionsByPlatform, readReleaseAssets, readStorefront, renderAbout, storeListing } from './generate-appindex.mjs';
 
 test('an unlisted app has no store links', () => {
   assert.deepEqual(storeListing(undefined), {});
@@ -301,4 +302,114 @@ test('the two Windows targets are two platform entries, each with its own captur
   const only = await generateAppIndex(project, site, { ...opts, releaseAssets: assets });
   assert.deepEqual(Object.keys(only.apps[0].platforms), ['windows-xaml']);
   assert.equal(only.apps[0].platforms['windows-xaml'].artifacts.length, 1);
+});
+
+/** A project whose listing text has no description in any locale, beside a storefront with one. */
+function aboutFixture(prefix) {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  const project = join(root, 'app');
+  const site = join(project, 'website');
+  mkdirSync(site, { recursive: true });
+  const withDescription = join(root, 'storefront.json');
+  writeFileSync(withDescription, JSON.stringify(storefrontDoc()));
+  const bare = storefrontDoc();
+  for (const fields of Object.values(bare.storefront.metadata)) delete fields.description;
+  const withoutDescription = join(root, 'storefront-bare.json');
+  writeFileSync(withoutDescription, JSON.stringify(bare));
+  const opts = { repo: 'example/Demo', publicDir: join(root, 'public'), quiet: true };
+  return { root, project, site, withDescription, withoutDescription, opts };
+}
+
+test('an explicit about file is rendered under the default locale, H1 dropped, relative links on GitHub', async () => {
+  const { root, project, site, withDescription, opts } = aboutFixture('daysite-about-');
+  // A monorepo: the git repository is the temp root, the Day project a subdirectory, and the
+  // about file climbs out of the project to the repository's own README.
+  execFileSync('git', ['-C', root, 'init', '-q', '-b', 'trunk']);
+  mkdirSync(join(root, '.github'));
+  writeFileSync(join(root, '.github', 'README.md'), [
+    '<p align="center"><a href="https://example.test/"><img src="docs/logo.png" alt="The logo"></a></p>',
+    '',
+    '# Demo',
+    '',
+    'What it does, at length. See the [guide](../docs/guide.md#start), the [root file](/LICENSE),',
+    'the [site](https://example.test/) and [below](#details).',
+    '',
+    '## Details',
+    '',
+    '- one',
+    '- two',
+    '',
+    '![A capture](shots/home.png) and <img src="https://cdn.example.test/x.png" alt="">',
+    '',
+    '```rust',
+    'fn main() {}',
+    '```',
+    '',
+    '| a | b |',
+    '|---|---|',
+    '| 1 | 2 |',
+    '',
+  ].join('\n'));
+  const index = await generateAppIndex(project, site, { ...opts, storefront: withDescription, about: '../.github/README.md' });
+  const app = index.apps[0];
+  assert.deepEqual(Object.keys(app.about), ['en'], 'the default locale alone');
+  const html = app.about.en;
+  assert.ok(!/<h1\b/.test(html), 'the leading H1 is dropped');
+  assert.ok(html.includes('<h2 id="details">Details</h2>'), 'later headings stay');
+  assert.ok(html.includes('<li>one</li>'));
+  assert.ok(html.includes('<table>'), 'GFM tables render');
+  assert.ok(html.includes('<pre><code class="language-rust">'), 'code blocks render, without inlined highlight colors');
+  // Links: resolved against the file's directory in the repository, root-relative kept at the root.
+  assert.ok(html.includes('href="https://github.com/example/Demo/blob/trunk/docs/guide.md#start"'), html);
+  assert.ok(html.includes('href="https://github.com/example/Demo/blob/trunk/LICENSE"'), html);
+  assert.ok(html.includes('href="https://example.test/"'), 'absolute links stay');
+  assert.ok(html.includes('href="#details"'), 'anchors stay');
+  // Images: the site loads nothing from another origin, so each becomes a link with its alt text.
+  assert.ok(!/<img\b/.test(html), 'no image element survives');
+  assert.ok(html.includes('<a href="https://raw.githubusercontent.com/example/Demo/trunk/.github/shots/home.png"><em>A capture</em></a>'), html);
+  assert.ok(html.includes('<a href="https://cdn.example.test/x.png"><em>x.png</em></a>'), 'an empty alt falls back to the file name');
+  assert.ok(html.includes('<a href="https://example.test/"><em>The logo</em></a>'), 'an image that is a link keeps the link');
+  // The description still ships beside it; the page decides which to show.
+  assert.equal(app.description.en, 'What it does.');
+});
+
+test('without an about file, a listing with no description text falls back to README.md', async () => {
+  const { project, site, withDescription, withoutDescription, opts } = aboutFixture('daysite-about-readme-');
+  writeFileSync(join(project, 'README.md'), '# Demo\n\nFrom the README.\n');
+  const notes = [];
+  const index = await generateAppIndex(project, site, { ...opts, storefront: withoutDescription });
+  assert.equal(index.apps[0].description, undefined);
+  assert.equal(index.apps[0].about.en, '<p>From the README.</p>');
+  // The source says which file it chose, and why.
+  assert.equal(aboutSource(project, undefined, false, (m) => notes.push(m)).path, join(project, 'README.md'));
+  assert.match(notes[0], /README\.md .*no description/);
+  // A listing with a description keeps it: no README fallback.
+  const kept = await generateAppIndex(project, site, { ...opts, storefront: withDescription });
+  assert.equal(kept.apps[0].about, undefined);
+  assert.equal(kept.apps[0].description.en, 'What it does.');
+  assert.equal(aboutSource(project, undefined, true, (m) => notes.push(m)), undefined);
+  assert.equal(notes.length, 1, 'nothing to say when the listing has its description');
+});
+
+test('no description and no README is no About text, said in the log; a missing explicit file is an error', async () => {
+  const { project, site, withoutDescription, opts } = aboutFixture('daysite-about-none-');
+  const notes = [];
+  assert.equal(aboutSource(project, undefined, false, (m) => notes.push(m)), undefined);
+  assert.match(notes[0], /none/);
+  const index = await generateAppIndex(project, site, { ...opts, storefront: withoutDescription });
+  assert.equal(index.apps[0].about, undefined);
+  await assert.rejects(
+    generateAppIndex(project, site, { ...opts, storefront: withoutDescription, about: 'docs/about.md' }),
+    /about file docs\/about\.md does not exist .*relative to the directory holding Day\.toml/,
+  );
+});
+
+test('an about file outside any repository, or without a known repository, keeps its relative links', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'daysite-about-norepo-'));
+  const file = join(dir, 'about.md');
+  writeFileSync(file, '# T\n\nSee [docs](docs/x.md).\n');
+  const notes = [];
+  const html = await renderAbout(file, { repo: undefined, log: (m) => notes.push(m) });
+  assert.equal(html, '<p>See <a href="docs/x.md">docs</a>.</p>');
+  assert.match(notes[0], /relative links left as they are/);
 });

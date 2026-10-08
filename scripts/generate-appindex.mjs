@@ -21,6 +21,10 @@
 //                             the same degradation the daybrite.dev showcase page uses.
 //   build/day/host/png/     → the size-exact icon family `day icon build` renders (favicons); else
 //   resource/icons/         → the largest PNG there is the app mark, copied into public/
+//   --about FILE            → a Markdown file rendered as the landing page's About text (site.toml
+//                             `about`, relative to the project root). Without one, a project whose
+//                             listing has no description text gets its README.md, when it has one.
+//                             The HTML lands in the appindex under the default locale.
 //
 // `platforms` uses the schema's conventional `ios`/`android` keys for those two targets and
 // Day's additive keys (macos, windows, linux-gtk, linux-qt, harmony, web) for the rest — an
@@ -34,12 +38,12 @@
 //
 // Usage: node scripts/generate-appindex.mjs <project-root> <out-dir>
 //            [--repo owner/name] [--release-assets FILE] [--tag vX.Y.Z] [--storefront FILE]
-//            [--out NAME] [--gallery NAME] [--downloads DIR] [--download-prefix PATH]
+//            [--out NAME] [--gallery NAME] [--downloads DIR] [--download-prefix PATH] [--about FILE]
 //        <out-dir> is the directory holding site.toml; appindex.json lands beside it.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
+import { basename, dirname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -310,6 +314,144 @@ export function permissionsByPlatform(metadata) {
   return out;
 }
 
+/**
+ * The Markdown file the landing page's About text is rendered from, as `{ path, explicit }`, or
+ * undefined when there is none. An explicit file (site.toml `about`, `--about`, DAYSITE_ABOUT)
+ * is relative to the project root and may climb above it (`../../.github/README.md` in a
+ * monorepo whose Day project sits in a subdirectory; CI checks out the whole repository), and
+ * naming one that does not exist is an error, since the author asked for it. Without one, a
+ * project whose listing carries no description in any locale gets `<projectRoot>/README.md`
+ * when it has one, so the page shows real text rather than an empty About section.
+ */
+export function aboutSource(projectRoot, about, hasDescription, log = () => {}) {
+  if (about) {
+    const path = resolve(projectRoot, about);
+    if (!existsSync(path) || !statSync(path).isFile()) {
+      throw new Error(
+        `generate-appindex: the about file ${about} does not exist (resolved against the project root to ${path}); ` +
+          'site.toml `about` names a Markdown file relative to the directory holding Day.toml',
+      );
+    }
+    log(`about: ${about} (site.toml \`about\`)`);
+    return { path, explicit: true };
+  }
+  if (hasDescription) return undefined;
+  const readme = join(projectRoot, 'README.md');
+  if (existsSync(readme) && statSync(readme).isFile()) {
+    log('about: README.md (the listing has no description text)');
+    return { path: readme, explicit: false };
+  }
+  log('about: none (the listing has no description text, and there is no README.md)');
+  return undefined;
+}
+
+/** One processor for every channel's render: constructing it loads the remark/rehype stack. */
+let markdownProcessor;
+
+/**
+ * Where `file` sits in its git repository, as `{ dir, branch }`: the repository-relative
+ * directory of the file (POSIX, '' at the root) and the checked-out branch, `main` when the
+ * checkout is detached (a CI build of a tag) or git does not say. Undefined when git is not
+ * available or the file is outside any repository.
+ */
+function gitLocation(file) {
+  const git = (args) =>
+    execFileSync('git', ['-C', dirname(file), ...args], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  let top;
+  try {
+    top = realpathSync(git(['rev-parse', '--show-toplevel']));
+  } catch {
+    return undefined;
+  }
+  const rel = relative(top, realpathSync(file));
+  if (rel.startsWith('..')) return undefined;
+  let branch;
+  try {
+    branch = git(['symbolic-ref', '--short', 'HEAD']);
+  } catch {
+    branch = '';
+  }
+  return { dir: posix.dirname(rel.split(/[\\/]/).join('/')).replace(/^\.$/, ''), branch: branch || 'main' };
+}
+
+/**
+ * The HTML of a Markdown file for the landing page's About section, rendered the way Astro
+ * renders its own content (`@astrojs/markdown-remark`, GFM on), with three edits for the place
+ * it lands in:
+ *
+ * - The leading H1 is dropped, because the hero already shows the app's title. Everything
+ *   else stays: headings, lists, code blocks, tables.
+ * - Relative links are resolved against the file's place in its repository and pointed at the
+ *   repository's GitHub pages (`blob/<branch>/<path>`), so a README's `docs/guide.md` opens the
+ *   document rather than a 404 on the site. Anchors and absolute URLs stay as they are; so does
+ *   everything when the repository or the file's place in it is unknown, and the log says so.
+ * - Images become links. The site loads nothing from another origin (src/config.mjs,
+ *   `self-contained`, which fails the build on an `<img>` from elsewhere), and a README's
+ *   images live on GitHub or on the app's published gallery, both elsewhere. Each becomes a
+ *   link to the image, its alt text as the link text, so the reader can still open it. A
+ *   relative image source is rewritten to its `raw.githubusercontent.com` URL first.
+ *
+ * Syntax highlighting is off: Astro's default inlines one theme's colors, which the site's
+ * light and dark modes would both have to live with; the site styles `<pre>` itself.
+ */
+export async function renderAbout(path, { repo, log = () => {} } = {}) {
+  const { createMarkdownProcessor } = await import('@astrojs/markdown-remark');
+  markdownProcessor ??= createMarkdownProcessor({ syntaxHighlight: false });
+  const processor = await markdownProcessor;
+  let html = (await processor.render(readFileSync(path, 'utf8'))).code;
+
+  // The leading H1: the first heading in the document, when it is an H1. A logo or badges
+  // before it stay, and an H1 later in the text is a section the author wanted.
+  const heading = /<h([1-6])\b[^>]*>/i.exec(html);
+  if (heading && heading[1] === '1') {
+    const after = html.slice(heading.index).replace(/^<h1\b[^>]*>[\s\S]*?<\/h1>\s*/i, '');
+    html = html.slice(0, heading.index) + after;
+  }
+
+  // Relative URLs → GitHub. `/docs/x` is repository-root-relative on GitHub, as it is here.
+  const where = repo ? gitLocation(path) : undefined;
+  if (!where) {
+    log(`about: relative links left as they are (${repo ? 'the file is not in a git repository' : 'the repository is unknown'})`);
+  }
+  const rewrite = (value, kind) => {
+    if (!where || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value)) return value;
+    const cut = value.search(/[?#]/);
+    const target = cut < 0 ? value : value.slice(0, cut);
+    const suffix = cut < 0 ? '' : value.slice(cut);
+    const rel = target.startsWith('/') ? target.slice(1) : posix.join(where.dir, target);
+    const normalized = posix.normalize(rel);
+    if (normalized.startsWith('../')) return value;
+    const file = normalized.split('/').map(encodeURIComponent).join('/');
+    return kind === 'img'
+      ? `https://raw.githubusercontent.com/${repo}/${where.branch}/${file}${suffix}`
+      : `https://github.com/${repo}/blob/${where.branch}/${file}${suffix}`;
+  };
+  html = html.replace(/<(a|img)\b([^>]*)>/gi, (whole, tag, attrs) => {
+    const name = tag.toLowerCase() === 'a' ? 'href' : 'src';
+    const re = new RegExp(`(\\b${name}\\s*=\\s*)(?:"([^"]*)"|'([^']*)')`, 'i');
+    const edited = attrs.replace(re, (_m, lead, dq, sq) => `${lead}"${rewrite(dq ?? sq ?? '', tag.toLowerCase())}"`);
+    return edited === attrs ? whole : `<${tag}${edited}>`;
+  });
+
+  // Images → links (see above). An image that is the whole content of a link keeps that link
+  // and contributes its alt text, since a link inside a link is not HTML.
+  const attr = (attrs, name) => {
+    const m = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i').exec(attrs);
+    return m ? (m[1] ?? m[2] ?? '') : '';
+  };
+  const text = (attrs) => {
+    const alt = attr(attrs, 'alt').trim();
+    return alt || basename(attr(attrs, 'src').split(/[?#]/)[0]) || 'image';
+  };
+  html = html.replace(/(<a\b[^>]*>)\s*<img\b([^>]*)>\s*(<\/a>)/gi, (_m, open, attrs, close) => `${open}<em>${text(attrs)}</em>${close}`);
+  html = html.replace(/<img\b([^>]*)>/gi, (_m, attrs) => {
+    const src = attr(attrs, 'src');
+    const label = `<em>${text(attrs)}</em>`;
+    return src ? `<a href="${src}">${label}</a>` : label;
+  });
+  return html.trim();
+}
+
 /** `owner/name` from a GitHub remote URL in any of git's spellings, or undefined. */
 export function parseGithubRepo(url) {
   const m = /github\.com[:/]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/i.exec(String(url ?? '').trim());
@@ -393,7 +535,24 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   const buildNumber = !releaseTag || version === sourceVersion ? app.build : undefined;
 
   const locales = storefront.locales;
+  // The export's declared default (`default-locale`, the storefront's own), when it is one of
+  // the locales; else `en`, else the first. The carousel's default captures and the About text
+  // are filed under it.
+  const defaultLocale =
+    typeof storefront['default-locale'] === 'string' && locales.includes(storefront['default-locale'])
+      ? storefront['default-locale']
+      : locales.includes('en') ? 'en' : locales[0];
   const { title, subtitle, description, releaseNotes, keywords, links } = localizedText(storefront);
+
+  // The About text from a Markdown file (site.toml `about`, else the README of a project whose
+  // listing has no description), rendered once and filed under the default locale; the site's
+  // locale ladder hands it to every other locale.
+  const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? repoFromGit(projectRoot, log);
+  let about;
+  {
+    const source = aboutSource(projectRoot, opts.about ?? process.env.DAYSITE_ABOUT, Object.keys(description).length > 0, log);
+    if (source) about = await renderAbout(source.path, { repo, log });
+  }
 
   // App icon → served from the site, so the appindex needs no external asset host. It becomes the
   // landing page's app mark and the social image, both of which want the biggest source
@@ -457,7 +616,6 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
     break;
   }
 
-  const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? repoFromGit(projectRoot, log);
   const assetsByTarget = new Map();
   /** The release's launch scripts, by kind (`sh`, `ps1`), when it carries them. */
   const launch = {};
@@ -552,7 +710,6 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   function columnScreenshots(target, column) {
     const byLocale = {};
     const kind = columnKind(target, column);
-    const defaultLocale = locales.includes('en') ? 'en' : locales[0];
     // `website.<kind>` is resolved per locale by the CLI (a locale's own list first, then the
     // general one), keyed by the capture locale; `default` is a capture with no locale at all.
     const declared = galleryShots.listings?.[target]?.website?.[kind];
@@ -688,6 +845,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
         ...(Object.keys(title).length ? { title } : {}),
         ...(Object.keys(subtitle).length ? { subtitle } : {}),
         ...(Object.keys(description).length ? { description } : {}),
+        ...(about ? { about: { [defaultLocale]: about } } : {}),
         ...(Object.keys(keywords).length ? { keywords } : {}),
         ...(Object.keys(releaseNotes).length ? { releaseNotes } : {}),
         ...(Object.keys(launch).length ? { launch } : {}),
@@ -720,7 +878,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error(
       'usage: generate-appindex.mjs <project-root> <site-toml-dir> [--repo owner/name] ' +
         '[--release-assets FILE] [--tag vX.Y.Z] [--storefront FILE] [--out NAME] [--gallery NAME] ' +
-        '[--downloads DIR] [--download-prefix PATH]',
+        '[--downloads DIR] [--download-prefix PATH] [--about FILE]',
     );
     process.exit(2);
   }
@@ -733,5 +891,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     gallery: flags.gallery,
     downloads: flags.downloads && resolve(flags.downloads),
     downloadPrefix: flags['download-prefix'],
+    // Relative to the working directory on the command line, like --storefront; site.toml's
+    // key is relative to the project root instead.
+    about: flags.about && resolve(flags.about),
   });
 }

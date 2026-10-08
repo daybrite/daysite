@@ -16,13 +16,14 @@
 // downloads under `build/day/daysite/`, so a second run is fast. `--run <id>` picks a specific
 // workflow run; `--no-serve` generates the data and stops.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseTOML } from 'smol-toml';
 import { generateAppIndex } from './generate-appindex.mjs';
 import { assembleGallery } from './assemble-gallery.mjs';
 import { webpTree } from './webp.mjs';
-import { generateSite } from './generate-site.mjs';
+import { generateSite, siteAbout } from './generate-site.mjs';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // The conventional layout is a clone at <app>/website/.daysite/. `DAYSITE_CONFIG` points a bare
@@ -88,7 +89,9 @@ if (!flag('ci')) {
   if (existsSync(shots)) indexCaptures(shots);
   assembleGallery(shots, siteDir, { publicDir });
   await webpTree(join(publicDir, 'gallery'));
-  await generateAppIndex(projectRoot, siteDir, { publicDir });
+  // site.toml's `about`, the way generateSite reads it for the channel build.
+  const about = siteAbout(parseTOML(readFileSync(join(siteDir, 'site.toml'), 'utf8')));
+  await generateAppIndex(projectRoot, siteDir, { publicDir, about });
 } else {
   const cache = join(projectRoot, 'build', 'day', 'daysite');
   mkdirSync(cache, { recursive: true });

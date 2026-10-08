@@ -222,7 +222,7 @@ export function createSiteLoader(context: SiteBuildContext) {
       for (const k of Object.keys(obj)) seen.add(k);
     };
     // Collect from app-level promoted fields
-    for (const fld of ['title', 'subtitle', 'description', 'keywords', 'releaseNotes'] as const) {
+    for (const fld of ['title', 'subtitle', 'description', 'about', 'keywords', 'releaseNotes'] as const) {
       const v = app[fld];
       if (v && typeof v === 'object') visit(v as Record<string, unknown>);
     }
@@ -298,6 +298,9 @@ export function createSiteLoader(context: SiteBuildContext) {
     const title = pickText(platform.title ?? app.title, locale);
     const subtitle = pickText(platform.subtitle ?? app.subtitle, locale);
     const description = pickText(platform.description ?? app.description, locale);
+    // The generator writes the About HTML under the default locale only; the ladder in pickText
+    // hands it to every other locale, the way a listing's untranslated description reaches them.
+    const about = pickText(app.about, locale);
     const releaseNotes = pickText(platform.releaseNotes ?? app.releaseNotes, locale);
 
     // Assets are now in platform.assets
@@ -393,6 +396,7 @@ export function createSiteLoader(context: SiteBuildContext) {
       title: title.value ?? app.name,
       subtitle: subtitle.value ?? '',
       description: description.value ?? '',
+      about: about.value,
       releaseNotes: releaseNotes.value,
       iconURL,
       featureGraphicURL,

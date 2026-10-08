@@ -15,6 +15,7 @@
     "sample": "node scripts/sample.mjs"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "6.3.11",
     "@astrojs/sitemap": "^3.6.0",
     "@tailwindcss/vite": "^4.1.17",
     "astro": "^5.16.4",

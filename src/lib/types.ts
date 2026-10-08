@@ -10,6 +10,13 @@ export interface SiteInfo {
   appindex?: string;
   /** Tagline / subtitle. Plain string, or a locale-keyed map. */
   tagline?: string | LocalizedText;
+  /**
+   * A Markdown file the landing page's About section renders instead of the store description,
+   * relative to the project root (`about` in site.toml). The generator renders it into the
+   * appindex (`AppEntry.about`); the pages never read the file. Without it, a listing with no
+   * description text falls back to the project's README.md.
+   */
+  about?: string;
   accentColor?: string;
   defaultTheme?: 'light' | 'dark' | 'system';
   /** appindex `platforms` key preselected in the picker (e.g. "ios", "web"). */
@@ -106,6 +113,13 @@ export interface AppEntry {
   title?: LocalizedText;
   subtitle?: LocalizedText;
   description?: LocalizedText;
+  /**
+   * Day extension: the About section as HTML, rendered by the generator from a Markdown file
+   * (site.toml `about`, or the project's README when the listing has no description). Keyed by
+   * locale like the text fields, though the generator writes the default locale alone; shown in
+   * place of `description` when present.
+   */
+  about?: LocalizedText;
   keywords?: LocalizedKeywords;
   releaseNotes?: LocalizedText;
   /**
@@ -259,6 +273,8 @@ export interface PlatformView {
   title: string;
   subtitle: string;
   description: string;
+  /** The About section's HTML (`AppEntry.about`), which the page shows instead of `description`. */
+  about?: string;
   releaseNotes?: string;
   iconURL?: string;
   featureGraphicURL?: string;
