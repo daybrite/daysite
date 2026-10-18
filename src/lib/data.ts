@@ -279,8 +279,6 @@ export function createSiteLoader(context: SiteBuildContext) {
         return sh && `curl -fsSL ${sh} | bash -s -- --target ${platformId}`;
       case 'windows':
         return ps1 && `irm ${ps1} | iex`;
-      case 'windows-xaml':
-        return app.platforms.windows ? undefined : ps1 && `irm ${ps1} | iex`;
       default:
         return undefined;
     }

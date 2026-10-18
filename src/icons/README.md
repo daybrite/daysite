@@ -23,8 +23,7 @@ than "Linux".
 
 Three icons come from elsewhere:
 
-- **`windows`** (shared by the `windows-winui` and `windows-xaml` targets, which differ in
-  toolkit, not platform) — Simple Icons carries no Microsoft mark. Microsoft's legal team asked for the
+- **`windows`** (the `windows-winui` target) — Simple Icons carries no Microsoft mark. Microsoft's legal team asked for the
   removal of Windows, Office, and LinkedIn in 2024
   ([simple-icons#11236](https://github.com/simple-icons/simple-icons/issues/11236)). Font Awesome
   Free still ships one, under CC BY 4.0 rather than CC0 — so this icon is the one that carries an

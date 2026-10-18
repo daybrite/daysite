@@ -67,7 +67,7 @@ function fixture() {
     // Named by the index, absent from the tree. Must reach neither the site nor the index.
     entry('linux-gtk', null, 'light', 'ghost', { theme: 'light', locale: 'en' }),
     // The only capture of an otherwise-fine target — dropping it must drop the target too.
-    entry('windows-xaml', null, 'light', 'ghost', { theme: 'light', locale: 'en' }),
+    entry('macos-appkit', null, 'light', 'ghost', { theme: 'light', locale: 'en' }),
     // The only capture in the `fr` locale, likewise.
     entry('linux-gtk', null, 'light-fr', 'ghost', { theme: 'light', locale: 'fr' }),
   ];
@@ -85,7 +85,7 @@ function fixture() {
       site: 'https://example.test',
       themes: ['light', 'dark'],
       locales: ['en', 'fr'],
-      platforms: ['linux-gtk', 'ios-uikit', 'windows-xaml'],
+      platforms: ['linux-gtk', 'ios-uikit', 'macos-appkit'],
       shots: [
         { id: 'home', title: { en: 'Home' }, caption: null, source: 'src/lib.rs' },
         { id: 'scratch', title: null, caption: null, source: null },
@@ -135,7 +135,7 @@ test('a capture the index names but the tree lacks is dropped from the index', (
 test('the vocabularies are pruned to what survived', (t) => {
   const a = assemble();
   t.after(a.cleanup);
-  // windows-xaml and `fr` existed only on dropped captures.
+  // macos-appkit and `fr` existed only on dropped captures.
   assert.deepEqual(a.index.platforms, ['linux-gtk', 'ios-uikit']);
   assert.deepEqual(a.index.locales, ['en']);
   // Both themes survive, in the source index's order.

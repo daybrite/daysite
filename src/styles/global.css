@@ -28,7 +28,6 @@
   --pf-android: #34c759;
   --pf-macos: #5856d6;
   --pf-windows: #30b0c7;
-  --pf-windows-xaml: #30b0c7;
   --pf-linux-gtk: #00c7be;
   --pf-linux-qt: #32ade6;
   --pf-harmony: #ff3b30;
@@ -41,7 +40,6 @@
   --pf-android: #30d158;
   --pf-macos: #5e5ce6;
   --pf-windows: #40c8e0;
-  --pf-windows-xaml: #40c8e0;
   --pf-linux-gtk: #63e6e2;
   --pf-linux-qt: #64d2ff;
   --pf-harmony: #ff453a;
@@ -63,7 +61,6 @@
     --pf-android: #30d158;
     --pf-macos: #5e5ce6;
     --pf-windows: #40c8e0;
-  --pf-windows-xaml: #40c8e0;
     --pf-linux-gtk: #63e6e2;
     --pf-linux-qt: #64d2ff;
     --pf-harmony: #ff453a;

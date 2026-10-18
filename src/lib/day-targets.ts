@@ -6,10 +6,7 @@
  * by any App Fair consumer; the other seven are Day's additive extension. `target` is the Day
  * target id the entry was built from (`PlatformEntry.platform` carries it too).
  *
- * Windows has two entries because Day has two Windows targets: `windows-winui` (WinUI 3, the
- * one a new project gets) holds the conventional `windows` key, and the deprecated
- * `windows-xaml` keeps its own, so a release that still ships both shows both, the way the two
- * Linux desktops do. An app that ships only the XAML build appears under `windows-xaml` alone.
+ * Windows is `windows-winui` (WinUI 3) under the conventional `windows` key.
  */
 export interface DayTarget {
   /** appindex `platforms` key. */
@@ -41,7 +38,6 @@ export const DAY_TARGETS: DayTarget[] = [
   { key: 'linux-gtk', target: 'linux-gtk',     name: 'GNOME',     displayName: 'Linux (GTK 4 / GNOME)',    icon: 'linux-gtk',     device: 'desktop', packages: ['.appimage', '.flatpak'] },
   { key: 'linux-qt',  target: 'linux-qt',      name: 'KDE',       displayName: 'Linux (Qt 6 / KDE)',       icon: 'linux-qt',      device: 'desktop', packages: ['.appimage', '.flatpak'] },
   { key: 'windows',   target: 'windows-winui', name: 'Windows',   displayName: 'Windows (WinUI 3)',        icon: 'windows',       device: 'desktop', packages: ['.msix', '-setup.exe'] },
-  { key: 'windows-xaml', target: 'windows-xaml', name: 'Windows (XAML)', displayName: 'Windows (XAML)',    icon: 'windows',       device: 'desktop', packages: ['.msix', '-setup.exe'] },
   { key: 'web',       target: 'web-dom',       name: 'Web',       displayName: 'Web (DOM)',                icon: 'web-dom',       device: 'web',     packages: [] },
 ];
 
