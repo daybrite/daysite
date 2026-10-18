@@ -189,7 +189,7 @@ jobs:
         working-directory: ${{ runner.temp }}/day-sample
         run: |
           set -euo pipefail
-          "$DAY_BIN" build -p web-dom --profile release
+          "$DAY_BIN" build -t web-dom --profile release
           DIST="$(dirname "$(find build/day -path '*web-dom*' -name index.html | head -1)")"
           test -n "$DIST"
           echo "WEB_DIST=$DIST" >> "$GITHUB_ENV"

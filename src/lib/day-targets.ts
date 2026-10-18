@@ -11,7 +11,7 @@
 export interface DayTarget {
   /** appindex `platforms` key. */
   key: string;
-  /** Day target id (`day build -p <target>`). */
+  /** Day target id (`day build -t <target>`). */
   target: string;
   /** Short name for the platform picker. */
   name: string;

@@ -282,7 +282,7 @@ its landing page: `src/pages/site.webmanifest.ts` emits a web app manifest whose
 is the hosted app, whose identity defaults to that URL, whose scope is the whole site, whose icons are the favicon set above,
 and whose screenshots are the gallery's phone captures (narrow) and desktop captures (wide), and
 `Layout.astro` links it from every page. "Add to Home Screen" from the site then installs the
-app itself, with the same name and icon the app's own manifest declares (`day build -p web-dom`
+app itself, with the same name and icon the app's own manifest declares (`day build -t web-dom`
 writes that one, plus the offline service worker; see the day repository's docs/web.md, "Home
 screen and offline"). Without a staged web build the manifest is still emitted but not linked,
 so the site never installs as an app of its own.
