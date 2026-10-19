@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, utimesSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { webpTree } from './webp.mjs';
@@ -27,5 +27,34 @@ test('every PNG gets a WebP beside it with the same name, once', async (t) => {
 
 test('a tree that was never assembled is no error', async () => {
   const r = await webpTree(join(tmpdir(), 'daysite-webp-nowhere-' + process.pid));
-  assert.deepEqual(r, { made: 0, png: 0, webp: 0 });
+  assert.deepEqual(r, { made: 0, png: 0, webp: 0, unreadable: [] });
+});
+
+test('an unreadable PNG is named and skipped, and the rest still get their WebP', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'daysite-webp-bad-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const sharp = (await import('sharp')).default;
+  mkdirSync(join(root, 'android-mdc/dark'), { recursive: true });
+  for (const name of ['home.png', 'solitaire-flight.png']) {
+    await sharp({ create: { width: 64, height: 48, channels: 3, background: '#c04080' } })
+      .png({ compressionLevel: 0 })
+      .toFile(join(root, 'android-mdc/dark', name));
+  }
+  // What CI's capture held: one flipped byte inside the image data, so its chunk's CRC fails.
+  const bad = join(root, 'android-mdc/dark/solitaire-flight.png');
+  const bytes = readFileSync(bad);
+  const idat = bytes.indexOf('IDAT');
+  bytes[idat + 40] ^= 0xff;
+  writeFileSync(bad, bytes);
+  const warned = [];
+  t.mock.method(console, 'warn', (line) => warned.push(line));
+
+  const r = await webpTree(root, { concurrency: 2 });
+  assert.equal(r.made, 1);
+  assert.ok(existsSync(join(root, 'android-mdc/dark/home.webp')));
+  assert.ok(!existsSync(join(root, 'android-mdc/dark/solitaire-flight.webp')));
+  assert.deepEqual(r.unreadable.map((u) => u.file), ['android-mdc/dark/solitaire-flight.png']);
+  assert.ok(r.unreadable[0].reason.length > 0);
+  assert.equal(warned.length, 1);
+  assert.match(warned[0], /^::warning::android-mdc\/dark\/solitaire-flight\.png: /);
 });

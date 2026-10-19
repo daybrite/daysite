@@ -126,7 +126,10 @@ export async function generateSite(projectRoot, siteDir, specs, opts = {}) {
       // The WebP beside each published capture (scripts/webp.mjs), unless the caller skips it.
       if (opts.webp !== false) {
         const r = await webpTree(join(publicDir, ...`${p}gallery`.split('/')));
-        if (!opts.quiet) console.log(`[webp] ${r.made} file(s) encoded for ${p || 'the root'} channel: ${(r.png / 1e6).toFixed(1)} MB of PNG, ${(r.webp / 1e6).toFixed(1)} MB of WebP`);
+        if (!opts.quiet) {
+          const unreadable = r.unreadable.length ? `; ${r.unreadable.length} unreadable PNG(s) left without a WebP` : '';
+          console.log(`[webp] ${r.made} file(s) encoded for ${p || 'the root'} channel: ${(r.png / 1e6).toFixed(1)} MB of PNG, ${(r.webp / 1e6).toFixed(1)} MB of WebP${unreadable}`);
+        }
       }
     }
     await generateAppIndex(projectRoot, siteDir, {
