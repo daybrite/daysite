@@ -1,4 +1,4 @@
-// day-dom shim — the DOM half of the web-dom backend (toolkits/day-dom/src/lib.rs is the
+// day-toolkit-dom shim — the DOM half of the web-dom backend (crates/day-toolkit-dom/src/lib.rs is the
 // Rust half; the two mirror each other's tables). Owns every real DOM call, keyed by numeric
 // element ids, and calls back into wasm through a handful of exports. Plain ES module: no
 // bundler, no wasm-bindgen.
@@ -6,7 +6,7 @@
 let wasm = null;            // wasm exports once instantiated
 const els = [null, null];   // element registry; id 1 = the day root (set in start())
 let lastSetRoute = null;    // the route we last wrote to the hash (echo suppression)
-const PREF_NS = 'day.pref.'; // localStorage namespace for day-part-prefs
+const PREF_NS = 'day.pref.'; // localStorage namespace for day-part-preferences
 let scriptWs = null;        // dayscript WebSocket once armed (?dayscript= token present)
 let scriptOutbox = [];      // reply lines queued while the socket is still connecting
 const httpInflight = new Map(); // request id → AbortController (day-part-http's browser arm)
@@ -121,7 +121,7 @@ const env = {
       val === '' ? el.removeAttribute(name) : el.setAttribute(name, '');
     } else el.setAttribute(name, val);
   },
-  // The piece-renderer escape hatch (docs/extending.md): day-dom's own EL_* kind codes cover only
+  // The piece-renderer escape hatch (docs/extending.md): day-toolkit-dom's own EL_* kind codes cover only
   // the built-in vocabulary, so an external piece creates its element by tag name and drives it
   // with zero-argument method calls (`play`, `pause`, `load`, …).
   day_dom_create_tag(t, tl) { return register(document.createElement(str(t, tl))); },
@@ -443,7 +443,7 @@ const env = {
     geoWatch = 0;
   },
 
-  // Preferences (docs/prefs.md): the browser arm of day-part-prefs. localStorage can throw
+  // Preferences (docs/prefs.md): the browser arm of day-part-preferences. localStorage can throw
   // (private browsing, storage pressure) — failures report as absent/uncommitted, matching
   // the part's contract on every platform.
   day_dom_pref_set(k, kl, v, vl) {
@@ -533,7 +533,7 @@ const env = {
   },
   day_dom_http_abort(id) { httpInflight.get(id)?.abort(); },
 
-  // App-local files (docs/fs.md): the browser arm of day-part-fs, stored in the Origin
+  // App-local files (docs/fs.md): the browser arm of day-part-filesystem, stored in the Origin
   // Private File System — a real origin-scoped file hierarchy.
   // One operation per request id (op: 0 read, 1 write, 2 remove, 3 list); the completion
   // re-enters wasm exactly once: day_fs_done (bytes; list joins names with \u001f,
@@ -615,7 +615,7 @@ function selectAmong(group, idx) {
   [...group.children].forEach((b, i) => b.classList.toggle('selected', i === idx));
 }
 
-// ---- day-part-fs store (see day_dom_fs_start) ---------------------------------------------
+// ---- day-part-filesystem store (see day_dom_fs_start) ---------------------------------------------
 
 /** Resolve `path` under the origin's private OPFS root and run `op`. */
 async function fsOpfs(op, path, data) {

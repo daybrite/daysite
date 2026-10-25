@@ -52,7 +52,7 @@ const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // conventional names; the rest are Day's extension (mirrors src/lib/day-targets.ts).
 const TARGET_KEYS = {
   'ios-uikit': 'ios',
-  'android-mdc': 'android',
+  'android-material': 'android',
   'macos-appkit': 'macos',
   'windows-winui': 'windows',
   'linux-gtk': 'linux-gtk',
@@ -68,7 +68,7 @@ const TARGET_KEYS = {
 // document that merely describes one.
 const TARGET_PACKAGES = {
   'ios-uikit': ['.ipa'],
-  'android-mdc': ['.apk', '.aab'],
+  'android-material': ['.apk', '.aab'],
   'macos-appkit': ['.dmg'],
   'windows-winui': ['.msix', '-setup.exe'],
   'linux-gtk': ['.appimage', '.flatpak'],
@@ -696,7 +696,7 @@ export async function generateAppIndex(projectRoot, outDir, opts = {}) {
   function columnKind(target, column) {
     if (column !== target) return column.slice(target.length + 1);
     if (target === 'ios-uikit') return 'iphone';
-    if (target === 'android-mdc') return 'phone';
+    if (target === 'android-material') return 'phone';
     return 'default';
   }
   /** One column's captures as a locale-keyed asset list: the declared list for the column's

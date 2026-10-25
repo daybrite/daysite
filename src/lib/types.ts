@@ -207,7 +207,7 @@ export interface AssetFile {
 
 /** Day extension — one downloadable package. */
 export interface ArtifactEntry {
-  /** File name of the release asset, e.g. "day-skies-android-mdc.apk". */
+  /** File name of the release asset, e.g. "day-skies-android-material.apk". */
   name: string;
   url: string;
   size?: number;

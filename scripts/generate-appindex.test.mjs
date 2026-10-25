@@ -103,7 +103,7 @@ function storefrontDoc() {
     schema: 1,
     project: {
       name: 'demo', id: 'dev.example.demo', title: 'Demo', version: '1.2.3', build: 7,
-      targets: ['ios-uikit', 'android-mdc', 'macos-appkit'],
+      targets: ['ios-uikit', 'android-material', 'macos-appkit'],
       store: { 'apple-app-id': '42', 'google-play-id': 'dev.example.demo' },
     },
     'default-locale': 'en',

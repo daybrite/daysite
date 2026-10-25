@@ -1,4 +1,4 @@
-/* day-dom base stylesheet — the web backend's native theme. Class names mirror the two
+/* day-toolkit-dom base stylesheet — the web backend's native theme. Class names mirror the two
    halves of the toolkit (src/lib.rs sets them; shim.js creates them). Layout is owned by
    day-core: almost everything is absolutely positioned by set_frame, so this file styles
    surfaces and controls, never placement. */
@@ -48,7 +48,7 @@ html, body {
 /* Type sizing (docs/web.md). Two goals: match the generosity of a native app's default text, and
    respect the OS accessibility text size the way the native backends' `preferredFont(forTextStyle:)`
    does. `--day-text-scale` lifts the whole rem ramp a touch so the UI doesn't read as miniscule
-   next to native; day-dom's ramp applies the same factor.
+   next to native; day-toolkit-dom's ramp applies the same factor.
      - Desktop keeps a FIXED base (1rem = the browser's font-size preference), so Safari and Chrome
        on the same Mac render identically and nothing shrinks to the bare 13px system size.
      - Touch devices anchor `html` to `-apple-system-body`, whose value IS iOS Dynamic Type: every
@@ -61,7 +61,7 @@ html { font-size: 100%; }
 }
 
 /* The control font — buttons, fields, pickers, sidebar rows, and chrome inherit this (labels
-   carry their own rem ramp). Must stay in sync with measure_str() in day-dom (same rem × scale). */
+   carry their own rem ramp). Must stay in sync with measure_str() in day-toolkit-dom (same rem × scale). */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
@@ -96,7 +96,7 @@ body {
 }
 .day-label.placeholder { color: var(--day-fg-dim); }
 
-/* The `.selectable()` modifier (day-dom set_selectable): opt an element's text back into
+/* The `.selectable()` modifier (day-toolkit-dom set_selectable): opt an element's text back into
    selection, overriding the #day-root default. `text` re-enables even under an ancestor's `none`.
    Comes after .day-label so it wins on a selectable label; a text cursor signals the affordance. */
 .day-selectable, .day-selectable * {

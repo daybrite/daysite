@@ -163,7 +163,7 @@ jobs:
           # appindex data instead of a two-entry subset. Only web-dom is built below: the runner
           # has no Xcode, NDK, Qt or WinAppSDK, and that is the ordinary case anyway — platform
           # entries come from Day.toml while artifacts come from a release the site links.
-          # ios-uikit and android-mdc are also what give the scaffold a store/ (the template
+          # ios-uikit and android-material are also what give the scaffold a store/ (the template
           # drops it for a store-less target set), so the store-listing path is exercised too.
           #
           # --locales is what gives the picker something to show: the site's locale list comes
@@ -172,7 +172,7 @@ jobs:
           # the scaffold's own default and is deliberately absent from the list — passing
           # en-US would stand up a second en-US/ tree beside en/.
           "$DAY_BIN" new app day-sample --no-input \
-            --toolkit macos-appkit,ios-uikit,android-mdc,linux-gtk \
+            --toolkit macos-appkit,ios-uikit,android-material,linux-gtk \
             --toolkit linux-qt,windows-winui,harmony-arkui,web-dom \
             --locales zh-Hans-CN,es-ES,pt-BR,fr-FR,de-DE,ja-JP,ko-KR,it-IT,ru-RU,ar-SA \
             --locales id-ID,tr-TR,vi-VN,th-TH,pl-PL,nl-NL,zh-Hant-TW,uk-UA,cs-CZ,ms-MY
@@ -276,7 +276,7 @@ jobs:
           # Each platform is bookmarkable as `#<target>`, which the picker resolves from the map
           # the server writes. The map is the whole contract between the URL and the selection,
           # so a target missing from it is a fragment that silently does nothing.
-          for target in ios-uikit android-mdc harmony-arkui macos-appkit linux-gtk linux-qt windows-winui web-dom; do
+          for target in ios-uikit android-material harmony-arkui macos-appkit linux-gtk linux-qt windows-winui web-dom; do
             grep -o 'data-slugs="[^"]*"' dist/en/index.html | grep -qF "$target" || {
               echo "no #$target fragment: the picker's slug map is missing it" >&2
               exit 1

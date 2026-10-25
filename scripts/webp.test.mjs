@@ -34,14 +34,14 @@ test('an unreadable PNG is named and skipped, and the rest still get their WebP'
   const root = mkdtempSync(join(tmpdir(), 'daysite-webp-bad-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sharp = (await import('sharp')).default;
-  mkdirSync(join(root, 'android-mdc/dark'), { recursive: true });
+  mkdirSync(join(root, 'android-material/dark'), { recursive: true });
   for (const name of ['home.png', 'solitaire-flight.png']) {
     await sharp({ create: { width: 64, height: 48, channels: 3, background: '#c04080' } })
       .png({ compressionLevel: 0 })
-      .toFile(join(root, 'android-mdc/dark', name));
+      .toFile(join(root, 'android-material/dark', name));
   }
   // What CI's capture held: one flipped byte inside the image data, so its chunk's CRC fails.
-  const bad = join(root, 'android-mdc/dark/solitaire-flight.png');
+  const bad = join(root, 'android-material/dark/solitaire-flight.png');
   const bytes = readFileSync(bad);
   const idat = bytes.indexOf('IDAT');
   bytes[idat + 40] ^= 0xff;
@@ -51,10 +51,10 @@ test('an unreadable PNG is named and skipped, and the rest still get their WebP'
 
   const r = await webpTree(root, { concurrency: 2 });
   assert.equal(r.made, 1);
-  assert.ok(existsSync(join(root, 'android-mdc/dark/home.webp')));
-  assert.ok(!existsSync(join(root, 'android-mdc/dark/solitaire-flight.webp')));
-  assert.deepEqual(r.unreadable.map((u) => u.file), ['android-mdc/dark/solitaire-flight.png']);
+  assert.ok(existsSync(join(root, 'android-material/dark/home.webp')));
+  assert.ok(!existsSync(join(root, 'android-material/dark/solitaire-flight.webp')));
+  assert.deepEqual(r.unreadable.map((u) => u.file), ['android-material/dark/solitaire-flight.png']);
   assert.ok(r.unreadable[0].reason.length > 0);
   assert.equal(warned.length, 1);
-  assert.match(warned[0], /^::warning::android-mdc\/dark\/solitaire-flight\.png: /);
+  assert.match(warned[0], /^::warning::android-material\/dark\/solitaire-flight\.png: /);
 });

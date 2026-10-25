@@ -32,7 +32,7 @@ export interface DayTarget {
 // picker disagree about where a platform belongs.
 export const DAY_TARGETS: DayTarget[] = [
   { key: 'ios',       target: 'ios-uikit',     name: 'iOS',       displayName: 'iOS (UIKit)',              icon: 'ios-uikit',     device: 'phone',   packages: ['.ipa'] },
-  { key: 'android',   target: 'android-mdc',   name: 'Android',   displayName: 'Android (Material)',       icon: 'android-mdc',   device: 'phone',   packages: ['.apk', '.aab'] },
+  { key: 'android',   target: 'android-material',   name: 'Android',   displayName: 'Android (Material)',       icon: 'android-material',   device: 'phone',   packages: ['.apk', '.aab'] },
   { key: 'harmony',   target: 'harmony-arkui', name: 'HarmonyOS', displayName: 'HarmonyOS (ArkUI)',        icon: 'harmony-arkui', device: 'phone',   packages: ['.hap'] },
   { key: 'macos',     target: 'macos-appkit',  name: 'macOS',     displayName: 'macOS (AppKit)',           icon: 'macos-appkit',  device: 'desktop', packages: ['.dmg'] },
   { key: 'linux-gtk', target: 'linux-gtk',     name: 'GNOME',     displayName: 'Linux (GTK 4 / GNOME)',    icon: 'linux-gtk',     device: 'desktop', packages: ['.appimage', '.flatpak'] },

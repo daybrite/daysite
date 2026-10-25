@@ -21,7 +21,7 @@ const CHROME: Record<string, string> = {
 
 const BEZEL: Record<string, string> = {
   'ios-uikit': 'iphone',
-  'android-mdc': 'android',
+  'android-material': 'android',
   'harmony-arkui': 'harmony',
 };
 

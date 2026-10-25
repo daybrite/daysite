@@ -303,5 +303,5 @@ test('the first release moves the branch build, and its old prefix stops being s
 test('a packed name becomes the name the release asset would have', () => {
   assert.equal(releaseAssetName('Day Skies.dmg'), 'day-skies.dmg');
   assert.equal(releaseAssetName('Demo-unsigned.ipa'), 'demo.ipa');
-  assert.equal(releaseAssetName('demo-android-mdc.aab'), 'demo-android-mdc.aab');
+  assert.equal(releaseAssetName('demo-android-material.aab'), 'demo-android-material.aab');
 });
