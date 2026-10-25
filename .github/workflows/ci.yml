@@ -13,6 +13,14 @@ permissions:
   id-token: write
 
 jobs:
+  # Retired Day crate names and Rust imports (daybrite/actions check-crate-names).
+  crate-names:
+    name: crate names
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: daybrite/actions/.github/actions/check-crate-names@main
+
   # Offline contracts: independent of the Day CLI, published releases, and live app metadata.
   customization:
     runs-on: ubuntu-latest
