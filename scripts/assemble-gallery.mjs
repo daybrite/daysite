@@ -37,7 +37,7 @@ const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Day target ids that may appear as capture directories but are development stand-ins
 // (macos-gtk exercises linux-gtk's toolkit) or tool droppings — not publication targets.
-const SKIP_DIRS = new Set(['_drive', 'macos-gtk', 'macos-qt', 'windows-gtk', 'windows-qt', 'android-widget']);
+const SKIP_DIRS = new Set(['_drive', 'macos-gtk', 'macos-qt', 'android-widget']);
 
 const THEMES = new Set(['light', 'dark']);
 
