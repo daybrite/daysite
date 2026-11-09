@@ -318,6 +318,31 @@ const captureLocaleName = (code: string) =>
      shell took the whole lane height while the capture inside kept its own width. Give the width
      the definite base instead and let the height follow the glass. */
   .gal-frame .sh-dev[data-landscape] { height: auto; width: 100%; }
+  /* A column whose target wears no shell (lib/shells.ts does not know the id: a capture set
+     from before a target was renamed, or a target newer than this template) puts its
+     <picture> straight in the lane. Nothing above bounds a bare image, so a portrait phone
+     capture stood at the full height its lane width implies, taller than the lane, and the
+     row's overflow-x container grew a vertical scrollbar. Shape the bare picture the way a
+     bezel is shaped: a lane-high flex box, so the image's max-height has a definite base.
+     Not `display: contents`: that would make the <source> a grid item too, and it would take
+     the lane's one explicit row while the image fell into an implicit, unbounded one. */
+  .gal-frame > picture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    max-width: 100%;
+    min-height: 0;
+  }
+  .gal-frame > img,
+  .gal-frame > picture > img {
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
   .gal-img { border-radius: 6px; }
 
   /* The row's source chip: the file the screen is rendered from, monospace like a path. */
