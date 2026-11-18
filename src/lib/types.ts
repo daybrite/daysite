@@ -78,6 +78,11 @@ export interface SiteInfo {
    * (`scripts/optimize-png.mjs`). `true` is oxipng level 1; a number 0–6 names the level.
    */
   'optimize-png'?: boolean | number;
+  /**
+   * `/rss.xml` (`[feed]` in site.toml). `releases` is how many of the newest GitHub releases
+   * it lists, 5 by default; 0 leaves them out.
+   */
+  feed?: { releases?: number };
 }
 
 /**

@@ -143,6 +143,8 @@ const faviconHref = (p: string) => baseURL + p.replace(/^\/+/, '');
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
     <link rel="canonical" href={canonical} />
+    {/* Feed readers find the site's feed (pages/rss.xml.ts) from any page. */}
+    <link rel="alternate" type="application/rss+xml" title="RSS" href={`${baseURL}rss.xml`} />
 
     {/* A development channel's pages describe a build that changes with every commit, and the
         release pages describe the same app. Letting both into an index would put "development

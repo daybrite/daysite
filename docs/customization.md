@@ -128,6 +128,36 @@ Daysite injects its app landing/gallery/channel routes into this source tree. Yo
 them. App Fair uses Astro's standard `src/content.config.ts`, `glob()` loader, validated
 Markdown frontmatter, `getCollection()`, and `render()`. A theme can instead use MDX, RSS,
 another content source, or another Astro integration.
+## The feed
+
+Every site publishes `/rss.xml`, and every page names it for feed readers. It lists the app's
+newest GitHub releases, each with its release notes as the body and a link to this site (not
+to GitHub). Drafts and pre-releases are left out. Five releases are listed; site.toml changes
+that, and `0` leaves releases out:
+
+```toml
+[feed]
+releases = 3
+```
+
+The notes are read from GitHub while the site builds, with `GH_TOKEN` or `GITHUB_TOKEN` when
+the build has one. A build that cannot reach GitHub still publishes the feed, without them.
+
+A theme or project with a blog adds its posts, in full, by naming the content collection and
+the site path its posts are published under:
+
+```js
+export default {
+  apiVersion: 1,
+  feed: { blog: { collection: 'blog', path: '/en/blog/' } },
+};
+```
+
+A post needs a `title` and a date (`published`, `pubDate` or `date`) in its frontmatter;
+`summary` or `description` becomes the item's summary. Its address is the path plus the
+entry's id. A custom `srcDir` can replace the route with its own `src/pages/rss.xml.ts`
+after listing `/rss.xml` in `disabledRoutes`.
+
 The shared workflow publishes a static GitHub Pages artifact. Server-only Astro features need
 a deployment that runs a server; client integrations and prerendered blog content work here.
 

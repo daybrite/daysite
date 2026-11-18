@@ -56,7 +56,7 @@ addresses resolve the current deployment at runtime. Basic navigation and presen
 work with JavaScript disabled. No `<base>` element or client-side link repair is required.
 
 `host` still declares the **canonical public URL** for search engines, social metadata,
-sitemaps, robots.txt, and the generated GitHub Pages `CNAME`. Change it when adopting a new
+sitemaps, robots.txt, the feed, and the generated GitHub Pages `CNAME`. Change it when adopting a new
 domain and rebuild to update those declarations. Relative links do not configure DNS or GitHub
 Pages settings. For Actions deployments, configure the custom domain in the repository's
 **Settings → Pages**; GitHub ignores the artifact's `CNAME` file. See Day's

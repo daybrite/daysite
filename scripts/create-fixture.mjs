@@ -9,6 +9,9 @@ export async function createFixture(root, options = {}) {
   const siteDir = join(root, 'website');
   const publicDir = join(root, 'public');
   mkdirSync(siteDir, { recursive: true });
+  // A project's own blog (website/blog/), for themes that publish one.
+  mkdirSync(join(siteDir, 'blog'), { recursive: true });
+  writeFileSync(join(siteDir, 'blog/fixture-post.md'), '---\ntitle: Synthetic fixture post\nsummary: A post that exists to be rendered.\npublished: 2026-01-02\n---\nFixture post body with **emphasis**.\n');
   writeFileSync(join(siteDir, 'site.toml'), `host = ${JSON.stringify(options.host ?? 'https://example.test/Old-Project')}\npagefind = false\n`);
   const storefront = join(root, 'storefront.json');
   writeFileSync(storefront, JSON.stringify({

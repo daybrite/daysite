@@ -60,7 +60,7 @@ export async function loadCustomization(options = {}) {
   const result = {
     configPath, siteDir, themeDir: themeDir ? resolve(themeDir) : undefined,
     components: {}, customCss: [], publicDirs: [],
-    routes: [], srcDir: undefined, disabledRoutes: [], watchFiles: [configPath, resolve(siteDir, 'theme.css')],
+    routes: [], srcDir: undefined, disabledRoutes: [], feed: undefined, watchFiles: [configPath, resolve(siteDir, 'theme.css')],
   };
   for (const config of layers) {
     file(config, 'daysite customization');
@@ -101,6 +101,13 @@ function applyLayer(result, layer, root) {
   }
   for (const publicDir of layer.publicDirs ?? []) result.publicDirs.push(resolve(root, publicDir));
   if (layer.srcDir) result.srcDir = resolve(root, layer.srcDir);
+  if (layer.feed !== undefined) {
+    const blog = layer.feed?.blog;
+    if (!blog || typeof blog.collection !== 'string' || !blog.collection || typeof blog.path !== 'string' || !blog.path.startsWith('/')) {
+      throw new Error('feed.blog must name a content collection and the site path of its posts, such as { collection: "blog", path: "/en/blog/" }');
+    }
+    result.feed = { blog: { collection: blog.collection, path: blog.path } };
+  }
   const patterns = new Set();
   for (const route of layer.routes ?? []) {
     if (!route || typeof route.pattern !== 'string' || !route.pattern.startsWith('/')) throw new Error('A daysite route pattern must begin with /');

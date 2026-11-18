@@ -12,6 +12,7 @@ export const DEFAULT_ROUTES = {
   '/[locale]/apps/[app]': '[locale]/apps/[app]/index.astro',
   '/gallery': 'gallery/index.astro',
   '/robots.txt': 'robots.txt.ts',
+  '/rss.xml': 'rss.xml.ts',
   '/site.webmanifest': 'site.webmanifest.ts',
 };
 
@@ -87,7 +88,7 @@ export function daysiteIntegration(customization, options = {}) {
             find: `daysite/${name}`, replacement: resolve(TEMPLATE_ROOT, 'src/lib', `${name}.ts`),
           })),
         );
-        updateConfig({ vite: { resolve: { alias }, plugins: [{
+        updateConfig({ vite: { define: { __DAYSITE_FEED_BLOG__: JSON.stringify(customization.feed?.blog ?? null) }, resolve: { alias }, plugins: [{
           // Astro 5 interprets absolute virtual style/script IDs outside root as browser paths.
           // Mark those queries as filesystem URLs; keep original source IDs for compilation/HMR.
           name: 'daysite-external-astro-queries', enforce: 'pre',

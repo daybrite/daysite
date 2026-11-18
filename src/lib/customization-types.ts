@@ -34,4 +34,9 @@ export interface DaysiteOptions {
   publicDirs?: string[];
   routes?: { pattern: string; entrypoint: string; prerender?: boolean }[];
   disabledRoutes?: string[];
+  /**
+   * A blog whose posts join the release notes in `/rss.xml`, in full: the content collection
+   * that holds them and the site path they are published under (`/en/blog/` + the post's id).
+   */
+  feed?: { blog: { collection: string; path: string } };
 }
